@@ -844,7 +844,7 @@ async def start_passive_recon(
                 cmd,
                 stdout=subprocess.DEVNULL,
                 stderr=subprocess.DEVNULL,
-                cwd=str(Path(__file__).resolve().parent.parent.parent.parent)
+                cwd=str(Path.home())
             )
             process.wait()
         except Exception as e:

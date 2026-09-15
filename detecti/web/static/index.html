@@ -14,7 +14,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/static/css/dashboard.css?v=82">
+    <link rel="stylesheet" href="/static/css/dashboard.css?v=83">
     <script src="/static/js/cytoscape.min.js"></script>
     <script src="/static/js/cytoscape-cose-bilkent.js"></script>
     <script src="/static/js/lucide.min.js"></script>
@@ -44,44 +44,6 @@
 
                 <!-- Right: Database Selector, Export Actions & Targets Button -->
                 <div class="header-right">
-                    <!-- Export Report Dropdown -->
-                    <div class="header-control-group export-dropdown-wrapper">
-                        <button id="btn-export-dropdown" class="action-btn export-btn export-trigger-btn" aria-haspopup="true" aria-expanded="false" title="Export Attack Surface & Intelligence Data">
-                            <i data-lucide="download" class="ui-icon"></i>
-                            <span>Export Data</span>
-                            <i data-lucide="chevron-down" class="ui-icon dropdown-chevron"></i>
-                        </button>
-                        <div class="export-dropdown-menu" id="export-dropdown-menu">
-                            <button class="export-dropdown-item" id="export-item-json">
-                                <i data-lucide="file-code-2" class="ui-icon export-item-icon"></i>
-                                <div class="export-item-text">
-                                    <span class="export-item-title">JSON</span>
-                                    <span class="export-item-desc">Structured scan results</span>
-                                </div>
-                            </button>
-                            <button class="export-dropdown-item" id="export-item-md">
-                                <i data-lucide="file-text" class="ui-icon export-item-icon"></i>
-                                <div class="export-item-text">
-                                    <span class="export-item-title">Markdown</span>
-                                    <span class="export-item-desc">Executive documentation</span>
-                                </div>
-                            </button>
-                            <button class="export-dropdown-item" id="export-item-html">
-                                <i data-lucide="globe" class="ui-icon export-item-icon"></i>
-                                <div class="export-item-text">
-                                    <span class="export-item-title">HTML</span>
-                                    <span class="export-item-desc">Interactive browser report</span>
-                                </div>
-                            </button>
-                            <button class="export-dropdown-item" id="export-item-csv">
-                                <i data-lucide="file-spreadsheet" class="ui-icon export-item-icon"></i>
-                                <div class="export-item-text">
-                                    <span class="export-item-title">CSV</span>
-                                    <span class="export-item-desc">Spreadsheet data format</span>
-                                </div>
-                            </button>
-                        </div>
-                    </div>
 
                     <!-- Target Management Drawer Trigger Button (At the far right corner) -->
                     <div class="header-control-group">
@@ -258,11 +220,121 @@
 
             <!-- Graph Container -->
             <main class="graph-container">
-                <div class="canvas-search-container" style="position: absolute; top: 20px; left: 20px; z-index: 100; width: 350px; max-width: calc(100vw - 40px); background: #1e1e2d; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); border: 1px solid #333; padding: 5px;">
-                    <div class="search-group" style="margin: 0; background: transparent; border: none; box-shadow: none;">
-                        <i data-lucide="search" class="ui-icon search-lead-icon"></i>
-                        <input type="text" id="search-input" placeholder="Search nodes (IP, domain, CVE, port...)" class="search-input" style="background: rgba(0,0,0,0.2); color: #fff;">
-                        <button id="clear-search" class="clear-btn" aria-label="Clear Search"><i data-lucide="x" class="ui-icon"></i></button>
+                <div class="canvas-toolbar" id="canvas-toolbar" style="position: absolute; top: 20px; left: 20px; z-index: 100; display: flex; flex-direction: column; gap: 8px;">
+                    <style>
+                        .segmented-toolbar button:hover { background: rgba(255, 255, 255, 0.08) !important; }
+                        .segmented-toolbar button.active { background: rgba(0, 240, 255, 0.15) !important; color: #00f0ff !important; }
+                    </style>
+                    <!-- Toolbar Buttons (Segmented Bar) -->
+                    <div class="segmented-toolbar" style="display: flex; background: rgba(25, 27, 38, 0.95); border: 1px solid var(--border-color); border-radius: 6px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.5); backdrop-filter: blur(10px);">
+                        <button id="btn-toggle-search" aria-label="Toggle Search" style="background: transparent; border: none; border-right: 1px solid var(--border-color); padding: 8px 16px; color: var(--text-white); cursor: pointer; display: flex; align-items: center; gap: 6px; font-size: 0.85rem; transition: all 0.2s;">
+                            <i data-lucide="search" class="ui-icon"></i> Search
+                        </button>
+                        <button id="btn-toggle-filters" aria-label="Toggle Filters" style="background: transparent; border: none; border-right: 1px solid var(--border-color); padding: 8px 16px; color: var(--text-white); cursor: pointer; display: flex; align-items: center; gap: 6px; font-size: 0.85rem; transition: all 0.2s;">
+                            <i data-lucide="filter" class="ui-icon"></i> Filters
+                        </button>
+                        <button id="btn-toggle-export" aria-label="Toggle Export" style="background: transparent; border: none; padding: 8px 16px; color: var(--text-white); cursor: pointer; display: flex; align-items: center; gap: 6px; font-size: 0.85rem; transition: all 0.2s;">
+                            <i data-lucide="download" class="ui-icon"></i> Export
+                        </button>
+                    </div>
+
+                    <!-- Search Popover -->
+                    <div id="search-popover" class="toolbar-popover hidden" style="display: none; width: 350px; max-width: calc(100vw - 40px); background: rgba(30, 30, 45, 0.95); border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.5); border: 1px solid #444; padding: 5px; backdrop-filter: blur(5px);">
+                        <div class="search-group" style="margin: 0; background: transparent; border: none; box-shadow: none;">
+                            <i data-lucide="search" class="ui-icon search-lead-icon"></i>
+                            <input type="text" id="search-input" placeholder="Search nodes (IP, domain, CVE, port...)" class="search-input" style="background: rgba(0,0,0,0.2); color: #fff; outline: none; border: none;">
+                            <button id="clear-search" class="clear-btn" aria-label="Clear Search"><i data-lucide="x" class="ui-icon"></i></button>
+                        </div>
+                    </div>
+
+                    <!-- Filters Popover -->
+                    <div id="filters-popover" class="toolbar-popover hidden" style="display: none; width: 280px; background: rgba(30, 30, 45, 0.95); border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.5); border: 1px solid #444; padding: 12px; backdrop-filter: blur(5px);">
+                        <div class="filter-group" style="display: flex; flex-direction: column;">
+                            <label class="filter-checkbox filter-3d-matrix-item" style="border-bottom: 1px solid rgba(140, 82, 255, 0.25); padding-bottom: 0.7rem; margin-bottom: 0.2rem;">
+                                <input type="checkbox" id="pop-filter-3d-matrix">
+                                <span class="checkmark"></span>
+                                <span style="color: #00e5ff; font-weight: 600;">3D Risk Matrix</span>&nbsp;<span style="color: var(--text-muted); font-size: 0.78rem;">(Active + Threat + Impact)</span>
+                            </label>
+                            <label class="filter-checkbox">
+                                <input type="checkbox" id="pop-filter-kev">
+                                <span class="checkmark"></span>
+                                <span style="color: #ff4757; font-weight: 600;">CISA KEV</span>&nbsp;<span style="color: var(--text-muted); font-size: 0.78rem;">(Known Exploited)</span>
+                            </label>
+                            <label class="filter-checkbox">
+                                <input type="checkbox" id="pop-filter-high-epss">
+                                <span class="checkmark"></span>
+                                <span style="color: #ffa502; font-weight: 600;">High EPSS</span>&nbsp;<span style="color: var(--text-muted); font-size: 0.78rem;">(>50% Probability)</span>
+                            </label>
+                            <label class="filter-checkbox">
+                                <input type="checkbox" id="pop-filter-critical">
+                                <span class="checkmark"></span>
+                                <span style="color: #ff3838; font-weight: 600;">Critical Severity</span>&nbsp;<span style="color: var(--text-muted); font-size: 0.78rem;">(CVSS 9.0+)</span>
+                            </label>
+                            <label class="filter-checkbox">
+                                <input type="checkbox" id="pop-filter-hide-low-info">
+                                <span class="checkmark"></span>
+                                <span style="color: #70a1ff; font-weight: 600;">Hide Low &amp; Info</span>&nbsp;<span style="color: var(--text-muted); font-size: 0.78rem;">(Noise Reduction)</span>
+                            </label>
+                            <label class="filter-checkbox">
+                                <input type="checkbox" id="pop-filter-nuclei-only">
+                                <span class="checkmark"></span>
+                                <span style="color: #c084fc; font-weight: 600;">Nuclei Findings Only</span>&nbsp;<span style="color: var(--text-muted); font-size: 0.78rem;">(Templates)</span>
+                            </label>
+                            <label class="filter-checkbox">
+                                <input type="checkbox" id="pop-filter-with-pocs">
+                                <span class="checkmark"></span>
+                                <span style="color: #00d2d3; font-weight: 600;">Verified Public PoCs</span>&nbsp;<span style="color: var(--text-muted); font-size: 0.78rem;">(ExploitDB / GitHub)</span>
+                            </label>
+                            <label class="filter-checkbox" style="border-top: 1px solid rgba(255, 255, 255, 0.08); padding-top: 0.5rem; margin-top: 0.2rem;">
+                                <input type="checkbox" id="pop-filter-services-only">
+                                <span class="checkmark"></span>
+                                <span style="color: #2ed573; font-weight: 600;">Exposed Services</span>&nbsp;<span style="color: var(--text-muted); font-size: 0.78rem;">(All Branches)</span>
+                            </label>
+                            <label class="filter-checkbox">
+                                <input type="checkbox" id="pop-filter-verified-services">
+                                <span class="checkmark"></span>
+                                <span style="color: #26de81; font-weight: 600;">Verified Active Services</span>&nbsp;<span style="color: var(--text-muted); font-size: 0.78rem;">(Masscan / HTTP)</span>
+                            </label>
+                            <label class="filter-checkbox">
+                                <input type="checkbox" id="pop-filter-vuln-services">
+                                <span class="checkmark"></span>
+                                <span style="color: #eb4d4b; font-weight: 600;">Vulnerable Services</span>&nbsp;<span style="color: var(--text-muted); font-size: 0.78rem;">(Direct Findings)</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Export Popover -->
+                    <div id="export-popover" class="toolbar-popover hidden" style="display: none; width: 220px; background: rgba(30, 30, 45, 0.95); border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.5); border: 1px solid #444; padding: 6px; backdrop-filter: blur(5px);">
+                        <div style="display: flex; flex-direction: column; gap: 4px;">
+                            <button class="export-dropdown-item" id="pop-export-item-json" style="background: transparent; border: none; padding: 10px; border-radius: 6px; color: #fff; display: flex; align-items: center; gap: 10px; cursor: pointer; text-align: left; transition: background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.1)'" onmouseout="this.style.background='transparent'">
+                                <i data-lucide="file-code-2" class="ui-icon export-item-icon" style="color: #00f0ff;"></i>
+                                <div class="export-item-text" style="display: flex; flex-direction: column; line-height: 1.2;">
+                                    <span class="export-item-title" style="font-weight: 600; font-size: 0.85rem;">JSON</span>
+                                    <span class="export-item-desc" style="font-size: 0.7rem; color: #888;">Structured scan results</span>
+                                </div>
+                            </button>
+                            <button class="export-dropdown-item" id="pop-export-item-md" style="background: transparent; border: none; padding: 10px; border-radius: 6px; color: #fff; display: flex; align-items: center; gap: 10px; cursor: pointer; text-align: left; transition: background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.1)'" onmouseout="this.style.background='transparent'">
+                                <i data-lucide="file-text" class="ui-icon export-item-icon" style="color: #4ecdc4;"></i>
+                                <div class="export-item-text" style="display: flex; flex-direction: column; line-height: 1.2;">
+                                    <span class="export-item-title" style="font-weight: 600; font-size: 0.85rem;">Markdown</span>
+                                    <span class="export-item-desc" style="font-size: 0.7rem; color: #888;">Executive documentation</span>
+                                </div>
+                            </button>
+                            <button class="export-dropdown-item" id="pop-export-item-html" style="background: transparent; border: none; padding: 10px; border-radius: 6px; color: #fff; display: flex; align-items: center; gap: 10px; cursor: pointer; text-align: left; transition: background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.1)'" onmouseout="this.style.background='transparent'">
+                                <i data-lucide="globe" class="ui-icon export-item-icon" style="color: #f59e0b;"></i>
+                                <div class="export-item-text" style="display: flex; flex-direction: column; line-height: 1.2;">
+                                    <span class="export-item-title" style="font-weight: 600; font-size: 0.85rem;">HTML</span>
+                                    <span class="export-item-desc" style="font-size: 0.7rem; color: #888;">Interactive browser report</span>
+                                </div>
+                            </button>
+                            <button class="export-dropdown-item" id="pop-export-item-csv" style="background: transparent; border: none; padding: 10px; border-radius: 6px; color: #fff; display: flex; align-items: center; gap: 10px; cursor: pointer; text-align: left; transition: background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.1)'" onmouseout="this.style.background='transparent'">
+                                <i data-lucide="file-spreadsheet" class="ui-icon export-item-icon" style="color: #2ecc71;"></i>
+                                <div class="export-item-text" style="display: flex; flex-direction: column; line-height: 1.2;">
+                                    <span class="export-item-title" style="font-weight: 600; font-size: 0.85rem;">CSV</span>
+                                    <span class="export-item-desc" style="font-size: 0.7rem; color: #888;">Spreadsheet data format</span>
+                                </div>
+                            </button>
+                        </div>
                     </div>
                 </div>
                 <div id="spacebar-pan-hint" class="spacebar-pan-hint"><i data-lucide="hand" class="ui-icon" style="width: 14px; height: 14px; vertical-align: middle;"></i> Pan Mode (Spacebar or Right-Click held) - Drag to move view</div>
@@ -468,7 +540,7 @@
     </div>
 
     <script src="/static/js/api.js?v=10"></script>
-    <script src="/static/js/graph.js?v=82"></script>
+    <script src="/static/js/graph.js?v=83"></script>
     
     <script>
         // Debug logging & icon initialization

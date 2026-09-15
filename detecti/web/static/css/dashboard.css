@@ -3800,3 +3800,75 @@ html, body {
     background: rgba(239, 68, 68, 0.1);
 }
 
+
+/* Sidebar Mini Mode */
+.sidebar.mini-mode {
+    width: 65px !important;
+    padding-left: 0.8rem;
+    padding-right: 0.8rem;
+    overflow-x: hidden;
+    transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.sidebar {
+    transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1), margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1), left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.sidebar.mini-mode .title-text,
+.sidebar.mini-mode .accordion-icon,
+.sidebar.mini-mode .sidebar-footer,
+.sidebar.mini-mode .sidebar-mobile-header {
+    display: none !important;
+}
+
+.sidebar.mini-mode .accordion-header {
+    justify-content: center;
+    padding: 10px 0;
+}
+
+.sidebar.mini-mode .accordion-body {
+    display: none !important;
+}
+
+.sidebar.mini-mode .panel-title-icon {
+    margin-right: 0;
+    width: 22px;
+    height: 22px;
+}
+
+/* Overriding Target Drawer to be a Centered Modal Command Center */
+.targets-drawer {
+    position: fixed !important;
+    top: 50% !important;
+    left: 50% !important;
+    transform: translate(-50%, -50%) scale(0.95) !important;
+    width: 1100px !important;
+    max-width: 95vw !important;
+    height: 90vh !important;
+    background: rgba(18, 20, 28, 0.95) !important;
+    backdrop-filter: blur(10px) !important;
+    border: 1px solid rgba(0, 240, 255, 0.3) !important;
+    border-radius: 12px !important;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8), 0 0 20px rgba(0, 240, 255, 0.1) !important;
+    z-index: 1050 !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+.targets-drawer.open {
+    transform: translate(-50%, -50%) scale(1) !important;
+    opacity: 1 !important;
+    pointer-events: all !important;
+}
+
+.targets-drawer-header {
+    border-radius: 12px 12px 0 0 !important;
+    background: rgba(25, 27, 38, 0.95) !important;
+}
+
+.drawer-tab-pane {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}

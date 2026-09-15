@@ -2072,8 +2072,11 @@ class EASMDashboard {
                 {
                     selector: 'node[type="target"], node[is_root="true"]',
                     style: {
-                        'background-color': '#0D0E12',
-                        'label': 'DetecTI-CLI\n(Target Root)',
+                        'background-color': '#111116',
+                        'label': function(ele) {
+                            const name = ele.data('name') || ele.data('label') || 'Target';
+                            return `${name}\n(Scope Anchor)`;
+                        },
                         'color': '#ffffff',
                         'text-valign': 'bottom',
                         'text-halign': 'center',
@@ -2085,14 +2088,16 @@ class EASMDashboard {
                         'text-wrap': 'wrap',
                         'font-size': '12px',
                         'font-weight': 'bold',
-                        'width': '64px',
-                        'height': '64px',
-                        'shape': 'round-rectangle',
-                        'border-width': '0px',
-                        'background-image': '/static/img/DetecTI_Security_Logo.png',
-                        'background-fit': 'contain',
-                        'background-width': '100%',
-                        'background-height': '100%',
+                        'width': '75px',
+                        'height': '75px',
+                        'shape': 'ellipse',
+                        'border-width': '2px',
+                        'border-style': 'dotted',
+                        'border-color': '#8c52ff',
+                        'background-image': 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiM4YzUyZmYiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIiBjbGFzcz0ibHVjaWRlIGx1Y2lkZS1yYWRhciI+PHBhdGggZD0iTTE5LjA3IDQuOTNBMTAgMTAgMCAwIDAgNi45OSAzLjM0Ii8+PHBhdGggZD0iTTQgNmguMDEiLz48cGF0aCBkPSJNMi4yOSA5LjYyQTEwIDEwIDAgMSAwIDIxLjMxIDguMzUiLz48cGF0aCBkPSJNMTYuMjQgNy43NkE2IDYgMCAxIDAgOC4yMyAxNi42NyIvPjxwYXRoIGQ9Ik0xMiAxOGguMDEiLz48cGF0aCBkPSJNMTcuOTkgMTEuNjZBNiA2IDAgMCAxIDE1Ljc3IDE2LjY3Ii8+PGNpcmNsZSBjeD0iMTIiIGN5PSIxMiIgcj0iMiIvPjxwYXRoIGQ9Im0xMy40MSAxMC41OSA1LjY2LTUuNjYiLz48L3N2Zz4=',
+                        'background-fit': 'none',
+                        'background-width': '65%',
+                        'background-height': '65%',
                         'background-position-x': '50%',
                         'background-position-y': '50%',
                         'background-opacity': 1
@@ -2164,8 +2169,8 @@ class EASMDashboard {
                     style: {
                         'background-color': '#9b59b6',
                         'background-image': 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiMwMDAwMDAiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cmVjdCB4PSIxNiIgeT0iMTYiIHdpZHRoPSI2IiBoZWlnaHQ9IjYiIHJ4PSIxIj48L3JlY3Q+PHJlY3QgeD0iMiIgeT0iMTYiIHdpZHRoPSI2IiBoZWlnaHQ9IjYiIHJ4PSIxIj48L3JlY3Q+PHJlY3QgeD0iOSIgeT0iMiIgd2lkdGg9IjYiIGhlaWdodD0iNiIgcng9IjEiPjwvcmVjdD48cGF0aCBkPSJNNSAxNnYtM2ExIDEgMCAwIDEgMS0xaDEyYTEgMSAwIDAgMSAxIDF2MyI+PC9wYXRoPjxwYXRoIGQ9Ik0xMiAxMlY4Ij48L3BhdGg+PC9zdmc+',
-                        'background-width': '55%',
-                        'background-height': '55%',
+                        'background-width': '65%',
+                        'background-height': '65%',
                         'background-position-x': '50%',
                         'background-position-y': '50%',
                         'label': function(ele) {
@@ -2207,7 +2212,7 @@ class EASMDashboard {
                         'height': '44px',
                         'shape': 'hexagon',
                         'border-width': '1.5px',
-                        'border-style': 'dashed',
+                        'border-style': 'dotted',
                         'border-color': '#f59e0b',
                         'opacity': 0.85
                     }
@@ -2251,7 +2256,7 @@ class EASMDashboard {
                     style: {
                         'border-color': '#f97316',
                         'border-width': '4px',
-                        'border-style': 'dashed'
+                        'border-style': 'dotted'
                     }
                 },
                 
@@ -2480,7 +2485,7 @@ class EASMDashboard {
                         'shape': 'round-hexagon',
                         'border-width': '2.5px',
                         'border-color': '#ffffff',
-                        'border-style': 'dashed',
+                        'border-style': 'dotted',
                         'cursor': 'pointer'
                     }
                 },
@@ -2499,7 +2504,7 @@ class EASMDashboard {
                         'shape': 'round-diamond',
                         'border-width': '2.5px',
                         'border-color': '#ffffff',
-                        'border-style': 'dashed',
+                        'border-style': 'dotted',
                         'cursor': 'pointer'
                     }
                 },
@@ -2753,40 +2758,37 @@ class EASMDashboard {
 
         const openSidebar = () => {
             if (!sidebar) return;
-            if (isMobileScreen()) {
+            if (window.innerWidth <= 1024) {
                 sidebar.classList.add('open');
                 if (sidebarBackdrop) sidebarBackdrop.classList.add('active');
             } else {
-                sidebar.classList.remove('collapsed');
+                sidebar.classList.remove('mini-mode');
+                sidebar.classList.remove('collapsed'); // Clean up old class just in case
             }
-            setTimeout(() => {
-                if (this.cy) this.cy.resize();
-            }, 320);
+            if (this.cy) setTimeout(() => this.cy.resize(), 300);
         };
 
         const closeSidebar = () => {
             if (!sidebar) return;
-            if (isMobileScreen()) {
+            if (window.innerWidth <= 1024) {
                 sidebar.classList.remove('open');
                 if (sidebarBackdrop) sidebarBackdrop.classList.remove('active');
             } else {
-                sidebar.classList.add('collapsed');
+                sidebar.classList.add('mini-mode');
             }
-            setTimeout(() => {
-                if (this.cy) this.cy.resize();
-            }, 320);
+            if (this.cy) setTimeout(() => this.cy.resize(), 300);
         };
 
         const toggleSidebar = () => {
             if (!sidebar) return;
-            if (isMobileScreen()) {
+            if (window.innerWidth <= 1024) {
                 if (sidebar.classList.contains('open')) {
                     closeSidebar();
                 } else {
                     openSidebar();
                 }
             } else {
-                if (sidebar.classList.contains('collapsed')) {
+                if (sidebar.classList.contains('mini-mode')) {
                     openSidebar();
                 } else {
                     closeSidebar();
@@ -2795,7 +2797,10 @@ class EASMDashboard {
         };
 
         if (toggleSidebarBtn) {
-            toggleSidebarBtn.addEventListener('click', toggleSidebar);
+            toggleSidebarBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                toggleSidebar();
+            });
         }
 
         if (closeSidebarBtn) {
@@ -2804,6 +2809,24 @@ class EASMDashboard {
 
         if (sidebarBackdrop) {
             sidebarBackdrop.addEventListener('click', closeSidebar);
+        }
+
+        // Close sidebar on desktop when clicking outside
+        document.addEventListener('click', (e) => {
+            if (window.innerWidth > 1024 && sidebar && !sidebar.classList.contains('mini-mode')) {
+                if (!sidebar.contains(e.target) && (!toggleSidebarBtn || !toggleSidebarBtn.contains(e.target))) {
+                    closeSidebar();
+                }
+            }
+        });
+
+        // Open sidebar on desktop when clicking on the mini-mode sidebar
+        if (sidebar) {
+            sidebar.addEventListener('click', (e) => {
+                if (window.innerWidth > 1024 && sidebar.classList.contains('mini-mode')) {
+                    openSidebar();
+                }
+            });
         }
 
         // Mutually exclusive sidebar accordions: opening one collapses the others
@@ -3169,86 +3192,107 @@ class EASMDashboard {
             this.applyLeadFilter({ relayout: true });
         };
 
-        // Filter checkboxes
-        const filter3dMatrix = document.getElementById('filter-3d-matrix');
-        if (filter3dMatrix) {
-            filter3dMatrix.addEventListener('change', (e) => {
-                this.filters.matrix3d = e.target.checked;
-                this.applyLeadFilter({ relayout: false });
+        // Floating Toolbar Popover Logic
+        const btnToggleSearch = document.getElementById('btn-toggle-search');
+        const btnToggleFilters = document.getElementById('btn-toggle-filters');
+        const btnToggleExport = document.getElementById('btn-toggle-export');
+        const searchPopover = document.getElementById('search-popover');
+        const filtersPopover = document.getElementById('filters-popover');
+        const exportPopover = document.getElementById('export-popover');
+        const searchInputBox = document.getElementById('search-input');
+
+        const closeAllPopovers = () => {
+            if (searchPopover) searchPopover.style.display = 'none';
+            if (filtersPopover) filtersPopover.style.display = 'none';
+            if (exportPopover) exportPopover.style.display = 'none';
+            if (btnToggleSearch) btnToggleSearch.classList.remove('active');
+            if (btnToggleFilters) btnToggleFilters.classList.remove('active');
+            if (btnToggleExport) btnToggleExport.classList.remove('active');
+        };
+
+        if (btnToggleSearch) {
+            btnToggleSearch.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const isHidden = !searchPopover.style.display || searchPopover.style.display === 'none';
+                closeAllPopovers();
+                if (isHidden) {
+                    searchPopover.style.display = 'block';
+                    btnToggleSearch.classList.add('active');
+                    if (searchInputBox) searchInputBox.focus();
+                }
             });
         }
 
-        const filterKev = document.getElementById('filter-kev');
-        if (filterKev) {
-            filterKev.addEventListener('change', (e) => {
-                this.filters.kev = e.target.checked;
-                this.applyLeadFilter({ relayout: false });
+        if (btnToggleFilters) {
+            btnToggleFilters.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const isHidden = !filtersPopover.style.display || filtersPopover.style.display === 'none';
+                closeAllPopovers();
+                if (isHidden) {
+                    filtersPopover.style.display = 'block';
+                    btnToggleFilters.classList.add('active');
+                }
             });
         }
 
-        const filterHighEpss = document.getElementById('filter-high-epss');
-        if (filterHighEpss) {
-            filterHighEpss.addEventListener('change', (e) => {
-                this.filters.highEpss = e.target.checked;
-                this.applyLeadFilter({ relayout: false });
+        if (btnToggleExport) {
+            btnToggleExport.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const isHidden = !exportPopover.style.display || exportPopover.style.display === 'none';
+                closeAllPopovers();
+                if (isHidden) {
+                    exportPopover.style.display = 'block';
+                    btnToggleExport.classList.add('active');
+                }
             });
         }
 
-        const filterCritical = document.getElementById('filter-critical');
-        if (filterCritical) {
-            filterCritical.addEventListener('change', (e) => {
-                this.filters.critical = e.target.checked;
-                this.applyLeadFilter({ relayout: false });
-            });
-        }
+        // Prevent closing when clicking inside popovers
+        if (searchPopover) searchPopover.addEventListener('click', e => e.stopPropagation());
+        if (filtersPopover) filtersPopover.addEventListener('click', e => e.stopPropagation());
 
-        const filterHideLowInfo = document.getElementById('filter-hide-low-info');
-        if (filterHideLowInfo) {
-            filterHideLowInfo.addEventListener('change', (e) => {
-                this.filters.hideLowInfo = e.target.checked;
-                this.applyLeadFilter({ relayout: false });
-            });
-        }
+        // Close popovers when clicking on canvas or outside
+        document.addEventListener('click', () => {
+            closeAllPopovers();
+        });
+        this.cy.on('tap', () => {
+            closeAllPopovers();
+        });
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                closeAllPopovers();
+            }
+        });
 
-        const filterNucleiOnly = document.getElementById('filter-nuclei-only');
-        if (filterNucleiOnly) {
-            filterNucleiOnly.addEventListener('change', (e) => {
-                this.filters.nucleiOnly = e.target.checked;
+        // Filter checkboxes sync (sidebar & popover)
+        const setupFilterSync = (idSide, idPop, filterKey) => {
+            const cbSide = document.getElementById(idSide);
+            const cbPop = document.getElementById(idPop);
+            
+            const handleChange = (e) => {
+                const val = e.target.checked;
+                if (cbSide && cbSide !== e.target) cbSide.checked = val;
+                if (cbPop && cbPop !== e.target) cbPop.checked = val;
+                this.filters[filterKey] = val;
                 this.applyLeadFilter({ relayout: false });
-            });
-        }
+            };
 
-        const filterWithPocs = document.getElementById('filter-with-pocs');
-        if (filterWithPocs) {
-            filterWithPocs.addEventListener('change', (e) => {
-                this.filters.withPocs = e.target.checked;
-                this.applyLeadFilter({ relayout: false });
-            });
-        }
+            if (cbSide) cbSide.addEventListener('change', handleChange);
+            if (cbPop) cbPop.addEventListener('change', handleChange);
+        };
 
-        const filterServicesOnly = document.getElementById('filter-services-only');
-        if (filterServicesOnly) {
-            filterServicesOnly.addEventListener('change', (e) => {
-                this.filters.servicesOnly = e.target.checked;
-                this.applyLeadFilter({ relayout: false });
-            });
-        }
+        setupFilterSync('filter-3d-matrix', 'pop-filter-3d-matrix', 'matrix3d');
+        setupFilterSync('filter-kev', 'pop-filter-kev', 'kev');
+        setupFilterSync('filter-high-epss', 'pop-filter-high-epss', 'highEpss');
+        setupFilterSync('filter-critical', 'pop-filter-critical', 'critical');
+        setupFilterSync('filter-hide-low-info', 'pop-filter-hide-low-info', 'hideLowInfo');
+        setupFilterSync('filter-nuclei-only', 'pop-filter-nuclei-only', 'nucleiOnly');
+        setupFilterSync('filter-with-pocs', 'pop-filter-with-pocs', 'withPocs');
+        setupFilterSync('filter-services-only', 'pop-filter-services-only', 'servicesOnly');
+        setupFilterSync('filter-verified-services', 'pop-filter-verified-services', 'verifiedServicesOnly');
+        setupFilterSync('filter-vuln-services', 'pop-filter-vuln-services', 'vulnServicesOnly');
 
-        const filterVerifiedServices = document.getElementById('filter-verified-services');
-        if (filterVerifiedServices) {
-            filterVerifiedServices.addEventListener('change', (e) => {
-                this.filters.verifiedServicesOnly = e.target.checked;
-                this.applyLeadFilter({ relayout: false });
-            });
-        }
 
-        const filterVulnServices = document.getElementById('filter-vuln-services');
-        if (filterVulnServices) {
-            filterVulnServices.addEventListener('change', (e) => {
-                this.filters.vulnServicesOnly = e.target.checked;
-                this.applyLeadFilter({ relayout: false });
-            });
-        }
 
         // Inspector close button
         const closeFloatingLeads = document.getElementById('close-floating-leads');
@@ -3265,26 +3309,7 @@ class EASMDashboard {
             });
         }
 
-        // Database Selector Dropdown Controls
-        const dbDropdownWrapper = document.getElementById('db-dropdown-wrapper');
-        const btnDbDropdown = document.getElementById('btn-db-dropdown');
 
-        if (btnDbDropdown && dbDropdownWrapper) {
-            btnDbDropdown.addEventListener('click', (e) => {
-                e.stopPropagation();
-                dbDropdownWrapper.classList.toggle('active');
-                const isExpanded = dbDropdownWrapper.classList.contains('active');
-                btnDbDropdown.setAttribute('aria-expanded', isExpanded ? 'true' : 'false');
-            });
-
-            // Close dropdown when clicking outside
-            document.addEventListener('click', (e) => {
-                if (!dbDropdownWrapper.contains(e.target)) {
-                    dbDropdownWrapper.classList.remove('active');
-                    btnDbDropdown.setAttribute('aria-expanded', 'false');
-                }
-            });
-        }
 
         // Delete Database Modal Controls
         const deleteDbModal = document.getElementById('delete-db-modal');
@@ -3309,58 +3334,25 @@ class EASMDashboard {
             });
         }
 
-        // Export Dropdown Controls
-        const exportDropdownWrapper = document.querySelector('.export-dropdown-wrapper');
-        const btnExportDropdown = document.getElementById('btn-export-dropdown');
-        const exportItemJson = document.getElementById('export-item-json');
-        const exportItemMd = document.getElementById('export-item-md');
-        const exportItemHtml = document.getElementById('export-item-html');
-        const exportItemCsv = document.getElementById('export-item-csv');
+        // New popover export buttons
+        const popExportItemJson = document.getElementById('pop-export-item-json');
+        const popExportItemMd = document.getElementById('pop-export-item-md');
+        const popExportItemHtml = document.getElementById('pop-export-item-html');
+        const popExportItemCsv = document.getElementById('pop-export-item-csv');
 
-        if (btnExportDropdown && exportDropdownWrapper) {
-            btnExportDropdown.addEventListener('click', (e) => {
-                e.stopPropagation();
-                exportDropdownWrapper.classList.toggle('active');
-                const isExpanded = exportDropdownWrapper.classList.contains('active');
-                btnExportDropdown.setAttribute('aria-expanded', isExpanded ? 'true' : 'false');
-            });
+        const bindExport = (btn, type) => {
+            if (btn) {
+                btn.addEventListener('click', () => {
+                    closeAllPopovers();
+                    this.triggerExport(type);
+                });
+            }
+        };
 
-            // Close dropdown when clicking outside
-            document.addEventListener('click', (e) => {
-                if (!exportDropdownWrapper.contains(e.target)) {
-                    exportDropdownWrapper.classList.remove('active');
-                    btnExportDropdown.setAttribute('aria-expanded', 'false');
-                }
-            });
-        }
-
-        if (exportItemJson) {
-            exportItemJson.addEventListener('click', () => {
-                if (exportDropdownWrapper) exportDropdownWrapper.classList.remove('active');
-                this.triggerExport('json');
-            });
-        }
-
-        if (exportItemMd) {
-            exportItemMd.addEventListener('click', () => {
-                if (exportDropdownWrapper) exportDropdownWrapper.classList.remove('active');
-                this.triggerExport('markdown');
-            });
-        }
-
-        if (exportItemHtml) {
-            exportItemHtml.addEventListener('click', () => {
-                if (exportDropdownWrapper) exportDropdownWrapper.classList.remove('active');
-                this.triggerExport('html');
-            });
-        }
-
-        if (exportItemCsv) {
-            exportItemCsv.addEventListener('click', () => {
-                if (exportDropdownWrapper) exportDropdownWrapper.classList.remove('active');
-                this.triggerExport('csv');
-            });
-        }
+        bindExport(popExportItemJson, 'json');
+        bindExport(popExportItemMd, 'markdown');
+        bindExport(popExportItemHtml, 'html');
+        bindExport(popExportItemCsv, 'csv');
     }
 
     async loadDatabases() {
@@ -7067,10 +7059,47 @@ class EASMDashboard {
         // Drawer Tabs Switching
         const tabBtns = document.querySelectorAll('.drawer-tab-btn');
         const tabPanes = {
+            'recon-tab': document.getElementById('tab-pane-recon'),
             'targets-tab': document.getElementById('tab-pane-targets'),
-            'masscan-tab': document.getElementById('tab-pane-masscan'),
-            'nuclei-tab': document.getElementById('tab-pane-nuclei'),
+            'logs-tab': document.getElementById('tab-pane-logs'),
         };
+
+        // Sub-tabs for Active Targeting (Masscan vs Nuclei)
+        const subTabBtns = document.querySelectorAll('.sub-tab-btn');
+        const subTabPanes = {
+            'masscan-config': document.getElementById('masscan-config'),
+            'nuclei-config': document.getElementById('nuclei-config'),
+        };
+
+        subTabBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const targetSubTab = btn.getAttribute('data-subtab');
+                subTabBtns.forEach(b => {
+                    b.classList.remove('active');
+                    b.style.background = 'transparent';
+                    b.style.border = '1px solid transparent';
+                    b.style.color = '#aaa';
+                });
+                btn.classList.add('active');
+                
+                // Style for active state depending on tab
+                if (targetSubTab === 'masscan-config') {
+                    btn.style.background = 'rgba(0,240,255,0.1)';
+                    btn.style.border = '1px solid #00f0ff';
+                    btn.style.color = '#00f0ff';
+                } else if (targetSubTab === 'nuclei-config') {
+                    btn.style.background = 'rgba(255,71,87,0.1)';
+                    btn.style.border = '1px solid #ff4757';
+                    btn.style.color = '#ff4757';
+                }
+
+                Object.keys(subTabPanes).forEach(k => {
+                    if (subTabPanes[k]) {
+                        subTabPanes[k].style.display = (k === targetSubTab) ? 'block' : 'none';
+                    }
+                });
+            });
+        });
 
         tabBtns.forEach(btn => {
             btn.addEventListener('click', () => {
@@ -7302,13 +7331,14 @@ class EASMDashboard {
     }
 
     switchToLogsTab() {
-        const targetsTabBtn = document.querySelector('.drawer-tab-btn[data-tab="targets-tab"]');
-        if (targetsTabBtn) {
-            targetsTabBtn.click();
+        // Automatically open logs tab when forcing logs
+        const logsTabBtn = document.querySelector('.drawer-tab-btn[data-tab="logs-tab"]');
+        if (logsTabBtn) {
+            logsTabBtn.click();
         }
         const consoleEl = document.getElementById('scan-live-console');
         if (consoleEl) {
-            consoleEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            consoleEl.scrollIntoView({ behavior: 'smooth', block: 'end' });
         }
     }
 

@@ -14,7 +14,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/static/css/dashboard.css?v=78">
+    <link rel="stylesheet" href="/static/css/dashboard.css?v=82">
     <script src="/static/js/cytoscape.min.js"></script>
     <script src="/static/js/cytoscape-cose-bilkent.js"></script>
     <script src="/static/js/lucide.min.js"></script>
@@ -370,7 +370,7 @@
                 <div class="drawer-tab-pane" id="tab-pane-targets" style="display: none; flex: 1;">
                     <div style="display: flex; flex-direction: row; gap: 20px; height: 100%;">
                         <!-- Left Column: Marked Targets -->
-                        <div style="flex: 0 0 38%; display: flex; flex-direction: column; max-height: calc(90vh - 120px);">
+                        <div style="flex: 0 0 38%; display: flex; flex-direction: column; ">
                             <div class="targets-section" style="flex: 1; display: flex; flex-direction: column; margin-bottom: 0;">
                                 <div class="targets-section-title logs-header-row">
                                     <div class="logs-title-left">
@@ -394,7 +394,7 @@
                         </div>
 
                         <!-- Right Column: Masscan & Nuclei Configs -->
-                        <div style="flex: 1; display: flex; flex-direction: column; background: rgba(0,0,0,0.15); border-radius: 8px; border: 1px solid rgba(255,255,255,0.05); padding: 15px; overflow-y: auto; max-height: calc(90vh - 120px);">
+                        <div style="flex: 1; display: flex; flex-direction: column; background: rgba(0,0,0,0.15); border-radius: 8px; border: 1px solid rgba(255,255,255,0.05); padding: 15px; overflow-y: auto; ">
                             <!-- Sub-tabs -->
                             <div style="display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px; flex-shrink: 0;">
                                 <button type="button" class="sub-tab-btn active" data-subtab="masscan-config" style="background: rgba(0,240,255,0.1); border: 1px solid #00f0ff; color: #00f0ff; padding: 6px 12px; border-radius: 6px; cursor: pointer; display: flex; align-items: center; gap: 6px; font-size: 0.85rem;">
@@ -468,7 +468,7 @@
     </div>
 
     <script src="/static/js/api.js?v=10"></script>
-    <script src="/static/js/graph.js?v=78"></script>
+    <script src="/static/js/graph.js?v=82"></script>
     
     <script>
         // Debug logging & icon initialization

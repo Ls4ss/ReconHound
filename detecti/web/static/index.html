@@ -14,7 +14,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/static/css/dashboard.css?v=88">
+    <link rel="stylesheet" href="/static/css/dashboard.css?v=89">
     <script src="/static/js/cytoscape.min.js"></script>
     <script src="/static/js/cytoscape-cose-bilkent.js"></script>
     <script src="/static/js/lucide.min.js"></script>
@@ -414,9 +414,173 @@
                             </div>
 
                             <div id="masscan-config" class="sub-tab-content">
+
+                    <div class="targets-global-actions" style="margin-bottom: 20px;">
+                        <button id="btn-scan-all-targets" class="btn-primary-action scan-all-btn" title="Run Active Port Scan on all targets" style="width: 100%;">
+                            <i data-lucide="server" class="ui-icon"></i>
+                            <span>Scan Targets</span>
+                        </button>
+                    </div>
+
+                    <div class="targets-section config-section">
+                        <div class="targets-section-title">
+                            <i data-lucide="settings-2" class="ui-icon"></i>
+                            <span>Port Discovery Parameters</span>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="input-custom-ports" class="form-label">Custom Ports Specification:</label>
+                            <input type="text" id="input-custom-ports" class="drawer-text-input" placeholder="e.g. -p21-25,80,443,3306,8080 or --top-ports 50" value="--top-ports 100">
+                        </div>
+
+                        <!-- Performance / Rate Slider -->
+                        <div class="form-group">
+                            <div class="slider-header">
+                                <label for="input-scan-rate" class="form-label">Scan Rate (Packets/sec):</label>
+                                <span id="scan-rate-display" class="rate-value-badge">1000 pps</span>
+                            </div>
+                            <input type="range" id="input-scan-rate" min="100" max="10000" step="100" value="1000" class="drawer-range-slider">
+                            <div class="slider-ticks">
+                                <span>100</span>
+                                <span>1000</span>
+                                <span>5000</span>
+                                <span>10000</span>
+                            </div>
+                        </div>
+
+                        <!-- Checkboxes -->
+                        <div class="form-group checkboxes-group">
+                            <label class="drawer-checkbox-label">
+                                <input type="checkbox" id="chk-scan-pn" checked>
+                                <span class="custom-checkbox"></span>
+                                <span>-Pn (Disable ping / host discovery)</span>
+                            </label>
+                            <label class="drawer-checkbox-label">
+                                <input type="checkbox" id="chk-scan-banners" checked>
+                                <span class="custom-checkbox"></span>
+                                <span>--banners (Banner grabbing & service detection)</span>
+                            </label>
+                        </div>
+
+                        <!-- Extra Parameters -->
+                        <div class="form-group">
+                            <label for="input-extra-flags" class="form-label">Custom Flags / Extra Parameters:</label>
+                            <input type="text" id="input-extra-flags" class="drawer-text-input" placeholder="e.g. --adapter-ip 192.168.1.50">
+                        </div>
+                    </div>
+
                             </div>
 
                             <div id="nuclei-config" class="sub-tab-content" style="display: none;">
+
+                    <div class="targets-global-actions" style="margin-bottom: 20px;">
+                        <button id="btn-run-all-nuclei" class="btn-primary-action btn-nuclei-action" title="Run Nuclei vulnerability scan on all targets" style="width: 100%;">
+                            <i data-lucide="shield-alert" class="ui-icon"></i>
+                            <span>Run Nuclei on All Targets</span>
+                        </button>
+                    </div>
+
+                    <!-- Severity Selection -->
+                    <div class="targets-section">
+                        <div class="targets-section-title">
+                            <i data-lucide="alert-triangle" class="ui-icon"></i>
+                            <span>Vulnerability Severity Filter</span>
+                        </div>
+                        <div class="form-group checkboxes-group">
+                            <label class="drawer-checkbox-label sev-critical">
+                                <input type="checkbox" id="chk-nuclei-sev-critical" checked>
+                                <span class="custom-checkbox custom-checkbox-red"></span>
+                                <span class="sev-tag-label sev-critical-text">Critical</span>
+                            </label>
+                            <label class="drawer-checkbox-label sev-high">
+                                <input type="checkbox" id="chk-nuclei-sev-high" checked>
+                                <span class="custom-checkbox custom-checkbox-orange"></span>
+                                <span class="sev-tag-label sev-high-text">High</span>
+                            </label>
+                            <label class="drawer-checkbox-label sev-medium">
+                                <input type="checkbox" id="chk-nuclei-sev-medium">
+                                <span class="custom-checkbox custom-checkbox-yellow"></span>
+                                <span class="sev-tag-label sev-medium-text">Medium</span>
+                            </label>
+                            <label class="drawer-checkbox-label sev-low">
+                                <input type="checkbox" id="chk-nuclei-sev-low">
+                                <span class="custom-checkbox custom-checkbox-blue"></span>
+                                <span class="sev-tag-label sev-low-text">Low</span>
+                            </label>
+                            <label class="drawer-checkbox-label sev-info">
+                                <input type="checkbox" id="chk-nuclei-sev-info">
+                                <span class="custom-checkbox custom-checkbox-slate"></span>
+                                <span class="sev-tag-label sev-info-text">Info</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Template Tags Presets & Custom Tags -->
+                    <div class="targets-section">
+                        <div class="targets-section-title">
+                            <i data-lucide="tags" class="ui-icon"></i>
+                            <span>Template Tags Selection</span>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Preset Tags:</label>
+                            <div class="nuclei-tags-grid">
+                                <label class="tag-chip-label">
+                                    <input type="checkbox" class="chk-nuclei-tag" value="cve" checked>
+                                    <span class="tag-chip">cve</span>
+                                </label>
+                                <label class="tag-chip-label">
+                                    <input type="checkbox" class="chk-nuclei-tag" value="exposure">
+                                    <span class="tag-chip">exposure</span>
+                                </label>
+                                <label class="tag-chip-label">
+                                    <input type="checkbox" class="chk-nuclei-tag" value="panel">
+                                    <span class="tag-chip">panel</span>
+                                </label>
+                                <label class="tag-chip-label">
+                                    <input type="checkbox" class="chk-nuclei-tag" value="default-credentials">
+                                    <span class="tag-chip">default-credentials</span>
+                                </label>
+                                <label class="tag-chip-label">
+                                    <input type="checkbox" class="chk-nuclei-tag" value="misconfig">
+                                    <span class="tag-chip">misconfig</span>
+                                </label>
+                                <label class="tag-chip-label">
+                                    <input type="checkbox" class="chk-nuclei-tag" value="takeover">
+                                    <span class="tag-chip">takeover</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="input-nuclei-custom-tags" class="form-label">Additional Custom Tags (comma-separated):</label>
+                            <input type="text" id="input-nuclei-custom-tags" class="drawer-text-input" placeholder="e.g. ssl, rce, lfi, tech">
+                        </div>
+                    </div>
+
+                    <!-- Performance Controls -->
+                    <div class="targets-section">
+                        <div class="targets-section-title">
+                            <i data-lucide="gauge" class="ui-icon"></i>
+                            <span>Performance Controls</span>
+                        </div>
+                        <div class="nuclei-perf-grid">
+                            <div class="form-group">
+                                <label for="input-nuclei-rate-limit" class="form-label">Rate Limit (-rl):</label>
+                                <input type="number" id="input-nuclei-rate-limit" class="drawer-text-input" value="150" min="10" max="2000" step="10">
+                                <span class="input-hint">req/sec</span>
+                            </div>
+                            <div class="form-group">
+                                <label for="input-nuclei-concurrency" class="form-label">Concurrency (-c):</label>
+                                <input type="number" id="input-nuclei-concurrency" class="drawer-text-input" value="25" min="1" max="200" step="5">
+                                <span class="input-hint">parallel templates</span>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="input-nuclei-custom-flags" class="form-label">Extra Nuclei CLI Flags:</label>
+                            <input type="text" id="input-nuclei-custom-flags" class="drawer-text-input" placeholder="e.g. -retries 2 -timeout 10">
+                        </div>
+                    </div>
+
                             </div>
                         </div>
                     </div>
@@ -476,7 +640,7 @@
     </div>
 
     <script src="/static/js/api.js?v=10"></script>
-    <script src="/static/js/graph.js?v=88"></script>
+    <script src="/static/js/graph.js?v=89"></script>
     
     <script>
         // Debug logging & icon initialization

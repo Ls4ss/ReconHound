@@ -14,7 +14,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/static/css/dashboard.css?v=83">
+    <link rel="stylesheet" href="/static/css/dashboard.css?v=84">
     <script src="/static/js/cytoscape.min.js"></script>
     <script src="/static/js/cytoscape-cose-bilkent.js"></script>
     <script src="/static/js/lucide.min.js"></script>
@@ -136,70 +136,6 @@
                                     <span class="metric-value" id="epss-count">-</span>
                                     <span class="metric-label">High EPSS (&gt;50%)</span>
                                 </div>
-                            </div>
-                        </div>
-                    </details>
-                </div>
-
-                <!-- Filters Accordion Panel -->
-                <div class="panel filters-accordion-panel lead-accordion-panel">
-                    <details class="sidebar-accordion" id="filters-accordion" name="sidebar-accordion-group">
-                        <summary class="accordion-header">
-                            <span class="accordion-title"><i data-lucide="sliders-horizontal" class="ui-icon panel-title-icon"></i> <span class="title-text">Filters</span></span>
-                            <i data-lucide="chevron-down" class="ui-icon accordion-icon"></i>
-                        </summary>
-                        <div class="accordion-body">
-                            <div class="filter-group">
-                                <label class="filter-checkbox filter-3d-matrix-item" style="border-bottom: 1px solid rgba(140, 82, 255, 0.25); padding-bottom: 0.7rem; margin-bottom: 0.2rem;">
-                                    <input type="checkbox" id="filter-3d-matrix">
-                                    <span class="checkmark"></span>
-                                    <span style="color: #00e5ff; font-weight: 600;">3D Risk Matrix</span>&nbsp;<span style="color: var(--text-muted); font-size: 0.78rem;">(Active + Threat + Impact)</span>
-                                </label>
-                                <label class="filter-checkbox">
-                                    <input type="checkbox" id="filter-kev">
-                                    <span class="checkmark"></span>
-                                    <span style="color: #ff4757; font-weight: 600;">CISA KEV</span>&nbsp;<span style="color: var(--text-muted); font-size: 0.78rem;">(Known Exploited)</span>
-                                </label>
-                                <label class="filter-checkbox">
-                                    <input type="checkbox" id="filter-high-epss">
-                                    <span class="checkmark"></span>
-                                    <span style="color: #ffa502; font-weight: 600;">High EPSS</span>&nbsp;<span style="color: var(--text-muted); font-size: 0.78rem;">(&gt;50% Probability)</span>
-                                </label>
-                                <label class="filter-checkbox">
-                                    <input type="checkbox" id="filter-critical">
-                                    <span class="checkmark"></span>
-                                    <span style="color: #ff3838; font-weight: 600;">Critical Severity</span>&nbsp;<span style="color: var(--text-muted); font-size: 0.78rem;">(CVSS 9.0+)</span>
-                                </label>
-                                <label class="filter-checkbox">
-                                    <input type="checkbox" id="filter-hide-low-info">
-                                    <span class="checkmark"></span>
-                                    <span style="color: #70a1ff; font-weight: 600;">Hide Low &amp; Info</span>&nbsp;<span style="color: var(--text-muted); font-size: 0.78rem;">(Noise Reduction)</span>
-                                </label>
-                                <label class="filter-checkbox">
-                                    <input type="checkbox" id="filter-nuclei-only">
-                                    <span class="checkmark"></span>
-                                    <span style="color: #c084fc; font-weight: 600;">Nuclei Findings Only</span>&nbsp;<span style="color: var(--text-muted); font-size: 0.78rem;">(Templates)</span>
-                                </label>
-                                <label class="filter-checkbox">
-                                    <input type="checkbox" id="filter-with-pocs">
-                                    <span class="checkmark"></span>
-                                    <span style="color: #00d2d3; font-weight: 600;">Verified Public PoCs</span>&nbsp;<span style="color: var(--text-muted); font-size: 0.78rem;">(ExploitDB / GitHub)</span>
-                                </label>
-                                <label class="filter-checkbox" style="border-top: 1px solid rgba(255, 255, 255, 0.08); padding-top: 0.5rem; margin-top: 0.2rem;">
-                                    <input type="checkbox" id="filter-services-only">
-                                    <span class="checkmark"></span>
-                                    <span style="color: #2ed573; font-weight: 600;">Exposed Services</span>&nbsp;<span style="color: var(--text-muted); font-size: 0.78rem;">(All Branches)</span>
-                                </label>
-                                <label class="filter-checkbox">
-                                    <input type="checkbox" id="filter-verified-services">
-                                    <span class="checkmark"></span>
-                                    <span style="color: #26de81; font-weight: 600;">Verified Active Services</span>&nbsp;<span style="color: var(--text-muted); font-size: 0.78rem;">(Masscan / HTTP)</span>
-                                </label>
-                                <label class="filter-checkbox">
-                                    <input type="checkbox" id="filter-vuln-services">
-                                    <span class="checkmark"></span>
-                                    <span style="color: #eb4d4b; font-weight: 600;">Vulnerable Services</span>&nbsp;<span style="color: var(--text-muted); font-size: 0.78rem;">(Direct Findings)</span>
-                                </label>
                             </div>
                         </div>
                     </details>
@@ -540,7 +476,7 @@
     </div>
 
     <script src="/static/js/api.js?v=10"></script>
-    <script src="/static/js/graph.js?v=83"></script>
+    <script src="/static/js/graph.js?v=84"></script>
     
     <script>
         // Debug logging & icon initialization

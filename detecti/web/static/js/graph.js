@@ -6855,6 +6855,74 @@ class EASMDashboard {
         }
 
         // Update Masscan "Run Masscan on Targets" / "Stop Port Scan" button
+        
+
+        
+        // Passive Recon Execution
+        const btnRunRecon = document.getElementById('btn-run-recon');
+        if (btnRunRecon) {
+            // Remove old listeners to be safe (though we stripped them above)
+            const newBtn = btnRunRecon.cloneNode(true);
+            btnRunRecon.parentNode.replaceChild(newBtn, btnRunRecon);
+            
+            newBtn.addEventListener('click', async () => {
+                const targetInput = document.getElementById('input-recon-target');
+                const dbInput = document.getElementById('input-recon-dbname');
+                const target = targetInput ? targetInput.value.trim() : '';
+                const dbName = dbInput ? dbInput.value.trim() : '';
+
+                if (!target) {
+                    this.showNotification('Error', 'Target is required for Passive Recon.', 'error');
+                    return;
+                }
+
+                // Visual feedback
+                const originalText = newBtn.innerHTML;
+                newBtn.innerHTML = '<i data-lucide="loader" class="ui-icon spin"></i><span>Starting...</span>';
+                newBtn.disabled = true;
+                if (window.lucide) window.lucide.createIcons();
+
+                try {
+                    const response = await fetch('/api/v1/scan/recon', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ target: target, db_name: dbName })
+                    });
+                    
+                    const data = await response.json();
+                    if (!response.ok) throw new Error(data.detail || 'Failed to start Passive Recon');
+
+                    this.showNotification('Success', data.message, 'success');
+                    
+                    if (data.new_active_db) {
+                        this.currentDbName = data.clean_name;
+                        const dbSelect = document.getElementById('db-select');
+                        if (dbSelect) {
+                            this.fetchDatabases();
+                        }
+                        const badge = document.getElementById('current-db-badge');
+                        if(badge) badge.textContent = data.clean_name;
+                    }
+
+                    // Start polling so we get logs and targets
+                    this.fetchTargets();
+                    this.startStatusPolling();
+
+                    // Jump to logs tab
+                    this.switchToLogsTab();
+                    this.fetchGraphData();
+
+                } catch (error) {
+                    console.error('Error starting recon:', error);
+                    this.showNotification('Error', error.message, 'error');
+                } finally {
+                    newBtn.innerHTML = originalText;
+                    newBtn.disabled = false;
+                    if (window.lucide) window.lucide.createIcons();
+                }
+            });
+        }
+
         const scanAllBtn = document.getElementById('btn-scan-all-targets');
         if (scanAllBtn) {
             if (isAnyMasscanRunning) {
@@ -7116,6 +7184,74 @@ class EASMDashboard {
         });
 
         // Scan All Ports button (toggles start vs stop)
+        
+
+        
+        // Passive Recon Execution
+        const btnRunRecon = document.getElementById('btn-run-recon');
+        if (btnRunRecon) {
+            // Remove old listeners to be safe (though we stripped them above)
+            const newBtn = btnRunRecon.cloneNode(true);
+            btnRunRecon.parentNode.replaceChild(newBtn, btnRunRecon);
+            
+            newBtn.addEventListener('click', async () => {
+                const targetInput = document.getElementById('input-recon-target');
+                const dbInput = document.getElementById('input-recon-dbname');
+                const target = targetInput ? targetInput.value.trim() : '';
+                const dbName = dbInput ? dbInput.value.trim() : '';
+
+                if (!target) {
+                    this.showNotification('Error', 'Target is required for Passive Recon.', 'error');
+                    return;
+                }
+
+                // Visual feedback
+                const originalText = newBtn.innerHTML;
+                newBtn.innerHTML = '<i data-lucide="loader" class="ui-icon spin"></i><span>Starting...</span>';
+                newBtn.disabled = true;
+                if (window.lucide) window.lucide.createIcons();
+
+                try {
+                    const response = await fetch('/api/v1/scan/recon', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ target: target, db_name: dbName })
+                    });
+                    
+                    const data = await response.json();
+                    if (!response.ok) throw new Error(data.detail || 'Failed to start Passive Recon');
+
+                    this.showNotification('Success', data.message, 'success');
+                    
+                    if (data.new_active_db) {
+                        this.currentDbName = data.clean_name;
+                        const dbSelect = document.getElementById('db-select');
+                        if (dbSelect) {
+                            this.fetchDatabases();
+                        }
+                        const badge = document.getElementById('current-db-badge');
+                        if(badge) badge.textContent = data.clean_name;
+                    }
+
+                    // Start polling so we get logs and targets
+                    this.fetchTargets();
+                    this.startStatusPolling();
+
+                    // Jump to logs tab
+                    this.switchToLogsTab();
+                    this.fetchGraphData();
+
+                } catch (error) {
+                    console.error('Error starting recon:', error);
+                    this.showNotification('Error', error.message, 'error');
+                } finally {
+                    newBtn.innerHTML = originalText;
+                    newBtn.disabled = false;
+                    if (window.lucide) window.lucide.createIcons();
+                }
+            });
+        }
+
         const scanAllBtn = document.getElementById('btn-scan-all-targets');
         if (scanAllBtn) {
             scanAllBtn.addEventListener('click', () => {

@@ -69,6 +69,15 @@ class DatabaseManager:
         with sqlite3.connect(self.db_path) as conn:
             conn.executescript(SCHEMA_SQL)
             
+
+            # Auto-migrate: ensure input_target exists in scan_logs table
+            try:
+                log_cols = [row[1] for row in conn.execute("PRAGMA table_info(scan_logs)").fetchall()]
+                if "input_target" not in log_cols:
+                    conn.execute("ALTER TABLE scan_logs ADD COLUMN input_target TEXT")
+            except Exception:
+                pass
+
             # Auto-migrate: ensure source column exists in vulnerabilities table
             try:
                 cols = [row[1] for row in conn.execute("PRAGMA table_info(vulnerabilities)").fetchall()]

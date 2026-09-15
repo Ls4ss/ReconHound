@@ -546,11 +546,6 @@ class TargetActionRequest(BaseModel):
 
 
 
-class PassiveReconRequest(BaseModel):
-    target: str
-    db_name: Optional[str] = None
-
-
 class ActiveScanRequest(BaseModel):
     targets: Optional[List[str]] = None
     preset: Optional[str] = "top100"
@@ -769,102 +764,6 @@ async def check_scan_permissions() -> Dict:
         "available": masscan_runner.is_available(),
     }
 
-
-
-@router.post("/scan/recon")
-async def start_passive_recon(
-    req: PassiveReconRequest,
-    request: Request,
-    background_tasks: BackgroundTasks
-) -> Dict:
-    """Start a background passive recon scan using detecti-cli."""
-    target = req.target.strip()
-    if not target:
-        raise HTTPException(status_code=400, detail="Target is required")
-
-    cmd = [sys.executable, "-m", "detecti.cli", "scan", "-t", target]
-    
-    db_name = None
-    if req.db_name and req.db_name.strip():
-        db_name = req.db_name.strip()
-        cmd.extend(["--create-db", db_name])
-    else:
-        # If no DB name provided, detecti-cli defaults to the target name as DB name
-        # We need to know it so we can switch to it.
-        # detecti-cli cleans the target name (e.g., example.com -> example_com)
-        db_name = target.replace(".", "_").replace("/", "_").replace(":", "_")
-
-    # Pre-emptively switch the Web UI database to the new one so logs stream immediately
-    dbs_dir = _get_dbs_dir()
-    
-    if not db_name.endswith(".sqlite"):
-        filename = f"{db_name}.sqlite"
-    else:
-        filename = db_name
-        
-    safe_filename = Path(filename).name
-    db_file = dbs_dir / safe_filename
-    
-    # Switch database in app state
-    db_manager = DatabaseManager(db_file)
-    request.app.state.db_manager = db_manager
-    request.app.state.db_path = str(db_file.resolve())
-    
-    # Clear global state associated with previous DB
-    _target_registry.clear()
-    
-    # Add target to registry so UI knows it's scanning
-    import ipaddress
-    target_type = "ip"
-    try:
-        ipaddress.ip_address(target)
-    except ValueError:
-        target_type = "fqdn"
-        
-    _target_registry[target] = {
-        "ip": target,
-        "target_type": target_type,
-        "status": "scanning",
-        "nuclei_status": "idle",
-        "ports_count": 0,
-        "ports": [],
-        "vulns_count": 0,
-        "error": None,
-        "added_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-        "last_scan": None,
-        "last_nuclei_scan": None,
-    }
-
-    # Run the command in a background process
-    def run_cli_scan(manager):
-        try:
-            _append_scan_log("info", f"Launched detecti-cli passive recon against {target}", target=target, db=manager)
-            import subprocess
-            process = subprocess.Popen(
-                cmd,
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL,
-                cwd=str(Path.home())
-            )
-            process.wait()
-        except Exception as e:
-            _append_scan_log("error", f"Recon process error: {str(e)}", target=target, db=manager)
-            if target in _target_registry:
-                _target_registry[target]["error"] = str(e)
-        finally:
-            if target in _target_registry:
-                _target_registry[target]["status"] = "idle"
-                _target_registry[target]["last_scan"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-            _append_scan_log("info", f"detecti-cli passive recon completed for {target}", target=target, db=manager)
-
-    background_tasks.add_task(run_cli_scan, db_manager)
-
-    return {
-        "success": True,
-        "message": f"Passive recon started for {target}. Switched to DB {safe_filename}.",
-        "new_active_db": safe_filename,
-        "clean_name": db_file.stem
-    }
 
 
 @router.post("/scan/active")

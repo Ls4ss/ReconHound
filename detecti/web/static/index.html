@@ -14,7 +14,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/static/css/dashboard.css?v=93">
+    <link rel="stylesheet" href="/static/css/dashboard.css?v=96">
     <script src="/static/js/cytoscape.min.js"></script>
     <script src="/static/js/cytoscape-cose-bilkent.js"></script>
     <script src="/static/js/lucide.min.js"></script>
@@ -74,26 +74,6 @@
                     <button id="close-sidebar" class="sidebar-close-btn" aria-label="Close Sidebar"><i data-lucide="x" class="ui-icon"></i></button>
                 </div>
 
-                
-                <!-- Database Selector Accordion -->
-                <div class="panel db-panel lead-accordion-panel">
-                    <details class="sidebar-accordion" id="db-sidebar-accordion" name="sidebar-accordion-group">
-                        <summary class="accordion-header">
-                            <span class="accordion-title"><i data-lucide="database" class="ui-icon panel-title-icon"></i> <span class="title-text">Databases</span></span>
-                            <i data-lucide="chevron-down" class="ui-icon accordion-icon"></i>
-                        </summary>
-                        <div class="accordion-body" style="padding: 0;">
-                            <div class="db-dropdown-header" style="background: rgba(0,0,0,0.2); padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.05); display: flex; justify-content: space-between;">
-                                <span style="font-size: 0.8rem; color: #aaa;">Attack Surface Databases</span>
-                                <span class="db-count-badge" id="db-count-badge" style="background: rgba(0, 240, 255, 0.2); color: #00f0ff; padding: 2px 6px; border-radius: 10px; font-size: 0.7rem;">0</span>
-                            </div>
-                            <div class="db-dropdown-list" id="db-dropdown-list" style="display: flex; flex-direction: column; gap: 4px; max-height: 250px; overflow-y: auto;">
-                                <!-- Dynamic DB List Items populated via JS -->
-                            </div>
-                        </div>
-                    </details>
-                </div>
-
 <!-- Metrics Accordion Panel -->
                 <div class="panel metrics-panel lead-accordion-panel">
                     <details class="sidebar-accordion" id="metrics-accordion" name="sidebar-accordion-group" open>
@@ -140,6 +120,28 @@
                         </div>
                     </details>
                 </div>
+
+
+                
+                <!-- Database Selector Accordion -->
+                <div class="panel db-panel lead-accordion-panel">
+                    <details class="sidebar-accordion" id="db-sidebar-accordion" name="sidebar-accordion-group">
+                        <summary class="accordion-header">
+                            <span class="accordion-title"><i data-lucide="database" class="ui-icon panel-title-icon"></i> <span class="title-text">Databases</span></span>
+                            <i data-lucide="chevron-down" class="ui-icon accordion-icon"></i>
+                        </summary>
+                        <div class="accordion-body" style="padding: 0;">
+                            <div class="db-dropdown-header" style="background: rgba(0,0,0,0.2); padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.05); display: flex; justify-content: space-between;">
+                                <span style="font-size: 0.8rem; color: #aaa;">Attack Surface Databases</span>
+                                <span class="db-count-badge" id="db-count-badge" style="background: rgba(0, 240, 255, 0.2); color: #00f0ff; padding: 2px 6px; border-radius: 10px; font-size: 0.7rem;">0</span>
+                            </div>
+                            <div class="db-dropdown-list" id="db-dropdown-list" style="display: flex; flex-direction: column; gap: 4px; max-height: 250px; overflow-y: auto;">
+                                <!-- Dynamic DB List Items populated via JS -->
+                            </div>
+                        </div>
+                    </details>
+                </div>
+
 
 
                 <!-- Sidebar Footer -->
@@ -333,11 +335,7 @@
 
             <!-- Drawer Navigation Tabs -->
             <div class="targets-drawer-tabs">
-                <button type="button" class="drawer-tab-btn active" data-tab="recon-tab">
-                    <i data-lucide="radar" class="tab-icon"></i>
-                    <span>Passive Recon</span>
-                </button>
-                <button type="button" class="drawer-tab-btn" data-tab="targets-tab">
+                <button type="button" class="drawer-tab-btn active" data-tab="targets-tab">
                     <i data-lucide="crosshair" class="tab-icon"></i>
                     <span>Active Targeting</span>
                 </button>
@@ -348,34 +346,9 @@
             </div>
 
             <div class="targets-drawer-content">
-                <!-- TAB 0: Passive Recon -->
-                <div class="drawer-tab-pane active" id="tab-pane-recon">
-                    <!-- Recon Configuration Section -->
-                    <div class="targets-section config-section">
-                        <div class="targets-section-title">
-                            <i data-lucide="radar" class="ui-icon"></i>
-                            <span>New Scan (Passive Recon)</span>
-                        </div>
-                        <div class="form-group">
-                            <label for="input-recon-target" class="form-label">Target (-t):</label>
-                            <input type="text" id="input-recon-target" class="drawer-text-input" placeholder="e.g. detecti.com.br, 192.168.1.0/24, AS1234">
-                            <span style="font-size: 0.75rem; color: #888; margin-top: 4px; display: block;">Supports Domain, IP, CIDR, ASN, or specific search queries.</span>
-                        </div>
-                        <div class="form-group">
-                            <label for="input-recon-dbname" class="form-label">Database Name (--create-db) [Optional]:</label>
-                            <input type="text" id="input-recon-dbname" class="drawer-text-input" placeholder="e.g. my_custom_scan">
-                        </div>
-                        <div class="targets-global-actions" style="margin-top: 20px;">
-                            <button id="btn-run-recon" class="btn-primary-action scan-all-btn" style="background: rgba(140, 82, 255, 0.15); border-color: #8c52ff; color: #8c52ff;" title="Run Passive Enumeration">
-                                <i data-lucide="play" class="ui-icon"></i>
-                                <span>Execute Recon</span>
-                            </button>
-                        </div>
-                    </div>
-                </div>
 
                 <!-- TAB 1: Active Targeting (Split View) -->
-                <div class="drawer-tab-pane" id="tab-pane-targets" style="display: none; flex: 1; min-height: 0;">
+                <div class="drawer-tab-pane active" id="tab-pane-targets" style="display: flex; flex: 1; min-height: 0;">
                     <div style="display: flex; flex-direction: row; gap: 20px; flex: 1; min-height: 0;">
                         <!-- Left Column: Marked Targets -->
                         <div style="flex: 0 0 38%; display: flex; flex-direction: column; min-height: 0;">
@@ -640,7 +613,7 @@
     </div>
 
     <script src="/static/js/api.js?v=10"></script>
-    <script src="/static/js/graph.js?v=93"></script>
+    <script src="/static/js/graph.js?v=96"></script>
     
     <script>
         // Debug logging & icon initialization

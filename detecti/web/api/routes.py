@@ -413,6 +413,113 @@ async def get_assets(db: Optional[DatabaseManager] = Depends(get_db_manager)) ->
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to get assets: {str(e)}")
 
+@router.get("/assets/{asset_type}/{asset_value}/impact")
+async def get_asset_impact(
+    asset_type: str,
+    asset_value: str,
+    db: Optional[DatabaseManager] = Depends(get_db_manager)
+):
+    """Calculate cascading data that will be destroyed if this asset is deleted."""
+    if not db or not Path(db.db_path).exists():
+        raise HTTPException(status_code=400, detail="No active database")
+        
+    try:
+        import sqlite3
+        impact = {}
+        with sqlite3.connect(db.db_path) as conn:
+            if asset_type == "domain":
+                d = conn.execute("SELECT id FROM domains WHERE name = ?", (asset_value,)).fetchone()
+                if not d:
+                    return {"error": "Domain not found"}
+                d_id = d[0]
+                subs = conn.execute("SELECT id FROM subdomains WHERE domain_id = ?", (d_id,)).fetchall()
+                sub_ids = [s[0] for s in subs]
+                impact["subdomains"] = len(sub_ids)
+                if sub_ids:
+                    placeholders = ",".join("?" * len(sub_ids))
+                    mappings = conn.execute(f"SELECT COUNT(*) FROM subdomain_ips WHERE subdomain_id IN ({placeholders})", sub_ids).fetchone()[0]
+                    impact["dns_links"] = mappings
+                else:
+                    impact["dns_links"] = 0
+            elif asset_type == "subdomain":
+                s = conn.execute("SELECT id FROM subdomains WHERE name = ?", (asset_value,)).fetchone()
+                if not s:
+                    return {"error": "Subdomain not found"}
+                s_id = s[0]
+                impact["dns_links"] = conn.execute("SELECT COUNT(*) FROM subdomain_ips WHERE subdomain_id = ?", (s_id,)).fetchone()[0]
+            elif asset_type == "ip":
+                i = conn.execute("SELECT id FROM ip_addresses WHERE ip = ?", (asset_value,)).fetchone()
+                if not i:
+                    return {"error": "IP not found"}
+                i_id = i[0]
+                impact["dns_links"] = conn.execute("SELECT COUNT(*) FROM subdomain_ips WHERE ip_id = ?", (i_id,)).fetchone()[0]
+                svcs = conn.execute("SELECT id FROM services WHERE ip_id = ?", (i_id,)).fetchall()
+                svc_ids = [s[0] for s in svcs]
+                impact["services"] = len(svc_ids)
+                vuln_count = conn.execute("SELECT COUNT(*) FROM vulnerabilities WHERE ip_id = ?", (i_id,)).fetchone()[0]
+                if svc_ids:
+                    placeholders = ",".join("?" * len(svc_ids))
+                    vuln_count += conn.execute(f"SELECT COUNT(*) FROM vulnerabilities WHERE service_id IN ({placeholders})", svc_ids).fetchone()[0]
+                impact["vulnerabilities"] = vuln_count
+        return impact
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.delete("/assets/{asset_type}/{asset_value}")
+async def delete_asset(
+    asset_type: str,
+    asset_value: str,
+    db: Optional[DatabaseManager] = Depends(get_db_manager)
+):
+    """Delete an asset and all its children safely."""
+    if not db or not Path(db.db_path).exists():
+        raise HTTPException(status_code=400, detail="No active database")
+        
+    try:
+        import sqlite3
+        with sqlite3.connect(db.db_path) as conn:
+            if asset_type == "domain":
+                d = conn.execute("SELECT id FROM domains WHERE name = ?", (asset_value,)).fetchone()
+                if d:
+                    d_id = d[0]
+                    subs = conn.execute("SELECT id FROM subdomains WHERE domain_id = ?", (d_id,)).fetchall()
+                    sub_ids = [s[0] for s in subs]
+                    if sub_ids:
+                        placeholders = ",".join("?" * len(sub_ids))
+                        conn.execute(f"DELETE FROM subdomain_ips WHERE subdomain_id IN ({placeholders})", sub_ids)
+                    conn.execute("DELETE FROM subdomains WHERE domain_id = ?", (d_id,))
+                    conn.execute("DELETE FROM domains WHERE id = ?", (d_id,))
+            elif asset_type == "subdomain":
+                s = conn.execute("SELECT id FROM subdomains WHERE name = ?", (asset_value,)).fetchone()
+                if s:
+                    s_id = s[0]
+                    conn.execute("DELETE FROM subdomain_ips WHERE subdomain_id = ?", (s_id,))
+                    conn.execute("DELETE FROM subdomains WHERE id = ?", (s_id,))
+            elif asset_type == "ip":
+                i = conn.execute("SELECT id FROM ip_addresses WHERE ip = ?", (asset_value,)).fetchone()
+                if i:
+                    i_id = i[0]
+                    conn.execute("DELETE FROM subdomain_ips WHERE ip_id = ?", (i_id,))
+                    svcs = conn.execute("SELECT id FROM services WHERE ip_id = ?", (i_id,)).fetchall()
+                    svc_ids = [s[0] for s in svcs]
+                    vulns = conn.execute("SELECT id FROM vulnerabilities WHERE ip_id = ?", (i_id,)).fetchall()
+                    vuln_ids = [v[0] for v in vulns]
+                    if svc_ids:
+                        placeholders = ",".join("?" * len(svc_ids))
+                        srv_vulns = conn.execute(f"SELECT id FROM vulnerabilities WHERE service_id IN ({placeholders})", svc_ids).fetchall()
+                        vuln_ids.extend([v[0] for v in srv_vulns])
+                    if vuln_ids:
+                        placeholders = ",".join("?" * len(vuln_ids))
+                        conn.execute(f"DELETE FROM exploits WHERE vulnerability_id IN ({placeholders})", vuln_ids)
+                        conn.execute(f"DELETE FROM vulnerabilities WHERE id IN ({placeholders})", vuln_ids)
+                    if svc_ids:
+                        placeholders = ",".join("?" * len(svc_ids))
+                        conn.execute(f"DELETE FROM services WHERE id IN ({placeholders})", svc_ids)
+                    conn.execute("DELETE FROM ip_addresses WHERE id = ?", (i_id,))
+            conn.commit()
+        return {"status": "success", "message": f"Asset {asset_value} deleted."}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 @router.get("/export")
 async def export_graph_data(

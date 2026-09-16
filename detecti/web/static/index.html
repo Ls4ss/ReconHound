@@ -825,6 +825,11 @@
                     document.getElementById('delete-asset-modal').style.display = 'none';
                     if (window.populateInventoryTable) window.populateInventoryTable();
                     
+                    // Clear it locally from Target Registry UI
+                    if (window.dashboard && window.dashboard.markedTargets) {
+                        window.dashboard.markedTargets.delete(value);
+                    }
+                    
                     // Refresh graph visually if possible
                     if (window.dashboard && window.dashboard.loadGraph) {
                         await window.dashboard.loadGraph();

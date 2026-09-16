@@ -358,9 +358,35 @@ async def get_assets(db: Optional[DatabaseManager] = Depends(get_db_manager)) ->
         assets = []
         
         with sqlite3.connect(db.db_path) as conn:
+            # Get domains
+            d_cursor = conn.execute("SELECT name FROM domains")
+            for row in d_cursor.fetchall():
+                assets.append({
+                    "type": "domain",
+                    "value": row[0],
+                    "services": 0,
+                    "ports_list": None,
+                    "vulnerabilities": 0,
+                    "has_cisa_kev": False
+                })
+                
+            # Get subdomains
+            s_cursor = conn.execute("SELECT name FROM subdomains")
+            for row in s_cursor.fetchall():
+                assets.append({
+                    "type": "subdomain",
+                    "value": row[0],
+                    "services": 0,
+                    "ports_list": None,
+                    "vulnerabilities": 0,
+                    "has_cisa_kev": False
+                })
+
+            # Get IPs
             cursor = conn.execute("""
                 SELECT ip.ip, ip.org, ip.country, ip.asn,
                        COUNT(DISTINCT s.id) as service_count,
+                       GROUP_CONCAT(DISTINCT s.port || CASE WHEN s.protocol IS NOT NULL THEN '/' || s.protocol ELSE '' END) as ports_list,
                        COUNT(DISTINCT v.id) as vuln_count,
                        MAX(CASE WHEN v.is_cisa_kev = 1 THEN 1 ELSE 0 END) as has_kev
                 FROM ip_addresses ip
@@ -378,8 +404,9 @@ async def get_assets(db: Optional[DatabaseManager] = Depends(get_db_manager)) ->
                     "country": row[2] or "Unknown",
                     "asn": row[3] or "Unknown",
                     "services": row[4],
-                    "vulnerabilities": row[5],
-                    "has_cisa_kev": bool(row[6])
+                    "ports_list": row[5],
+                    "vulnerabilities": row[6],
+                    "has_cisa_kev": bool(row[7])
                 })
         
         return assets

@@ -33,7 +33,7 @@
                     <a href="https://detecti.com.br" target="_blank" rel="noopener noreferrer" class="header-brand" title="Visit DetecTI Security Official Website (detecti.com.br)">
                         <img src="/static/img/DetecTI_Security_Logo.png" alt="DetecTI Security Logo" class="brand-logo">
                         <div class="brand-text">
-                            <h1 class="brand-title">Detec<span class="ti-highlight">TI</span>-CLI</h1>
+                            <h1 class="brand-title">Detec<span class="ti-highlight">TI</span><span style="font-size: 0.75em; font-weight: 500;">CLI</span></h1>
                             <span class="brand-subtitle">Cyber Lead Intelligence</span>
                         </div>
                     </a>
@@ -142,7 +142,13 @@
                     </details>
                 </div>
 
-
+                <!-- Inventory Button Panel -->
+                <div class="panel inventory-panel lead-accordion-panel" style="margin-top: 10px;">
+                    <div id="btn-toggle-inventory" class="accordion-header" style="border-radius: 6px;">
+                        <span class="accordion-title"><i data-lucide="table" class="ui-icon panel-title-icon"></i> <span class="title-text">Inventory</span></span>
+                        <i data-lucide="arrow-up-right" class="ui-icon accordion-icon"></i>
+                    </div>
+                </div>
 
                 <!-- Sidebar Footer -->
                 <div class="sidebar-footer">
@@ -317,9 +323,55 @@
             </div>
         </div>
 
+        <!-- Inventory Drawer Backdrop for Mobile/Tablet -->
+        <div id="inventory-backdrop" class="drawer-backdrop"></div>
+
+        <!-- Inventory Drawer (Bottom) -->
+        <div class="inventory-drawer" id="inventory-drawer" style="position: absolute; bottom: -100vh; left: 0; right: 0; height: 50vh; background: var(--bg-card); z-index: 1000; transition: bottom 0.3s cubic-bezier(0.16, 1, 0.3, 1); display: flex; flex-direction: column; border-top: 1px solid var(--border-color); box-shadow: 0 -10px 30px rgba(0,0,0,0.5);">
+            <!-- Resize Handle -->
+            <div id="inventory-resizer" style="height: 12px; width: 100%; cursor: ns-resize; position: absolute; top: -6px; left: 0; z-index: 1001; background: transparent; display: flex; justify-content: center; align-items: center;" title="Drag to resize">
+                <div style="width: 40px; height: 4px; background: rgba(255,255,255,0.2); border-radius: 4px;"></div>
+            </div>
+            
+            <div class="inventory-header" style="display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; border-bottom: 1px solid rgba(255, 255, 255, 0.08); background: var(--bg-header);">
+                <h3 style="margin: 0; display: flex; align-items: center; gap: 8px; font-size: 1rem;"><i data-lucide="table" class="ui-icon" style="color: var(--cyan-accent);"></i> Asset Inventory Details</h3>
+                <button class="close-btn" id="close-inventory-drawer" aria-label="Close Inventory" style="background: transparent; border: none; cursor: pointer; color: var(--text-muted);"><i data-lucide="x" class="ui-icon"></i></button>
+            </div>
+            <div class="inventory-content" style="flex: 1; padding: 0; overflow: auto; background: var(--bg-secondary);">
+                <table style="width: 100%; border-collapse: collapse; text-align: left; color: var(--text-primary); font-size: 0.85rem; font-family: var(--font-mono);">
+                    <thead style="position: sticky; top: 0; z-index: 10;">
+                        <tr style="background: rgba(30, 30, 45, 0.95); backdrop-filter: blur(5px); color: var(--text-muted); border-bottom: 1px solid rgba(255,255,255,0.1);">
+                            <th style="padding: 12px 20px; font-weight: 600; text-transform: uppercase; font-size: 0.75rem;">Asset</th>
+                            <th style="padding: 12px; font-weight: 600; text-transform: uppercase; font-size: 0.75rem;">Type</th>
+                            <th style="padding: 12px; font-weight: 600; text-transform: uppercase; font-size: 0.75rem;">Ports / Services</th>
+                            <th style="padding: 12px; font-weight: 600; text-transform: uppercase; font-size: 0.75rem;">Vulnerabilities (CVEs)</th>
+                            <th style="padding: 12px; font-weight: 600; text-transform: uppercase; font-size: 0.75rem;">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Placeholder rows -->
+                        <tr style="border-bottom: 1px solid rgba(255,255,255,0.03); transition: background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.02)'" onmouseout="this.style.background='transparent'">
+                            <td style="padding: 12px 20px; color: var(--cyan-accent);">example.com</td>
+                            <td style="padding: 12px;">Domain</td>
+                            <td style="padding: 12px; color: var(--text-muted);">N/A</td>
+                            <td style="padding: 12px; color: var(--text-muted);">0 Findings</td>
+                            <td style="padding: 12px;"><span style="background: rgba(46, 204, 113, 0.15); color: #2ecc71; padding: 2px 8px; border-radius: 12px; font-size: 0.7rem;">Active</span></td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid rgba(255,255,255,0.03); transition: background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.02)'" onmouseout="this.style.background='transparent'">
+                            <td style="padding: 12px 20px; color: var(--purple-light);">192.168.1.1</td>
+                            <td style="padding: 12px;">IP Address</td>
+                            <td style="padding: 12px;">80 (HTTP), 443 (HTTPS)</td>
+                            <td style="padding: 12px;"><span style="color: #ef4444; font-weight: bold;">2 Critical</span>, <span style="color: #f59e0b;">1 High</span></td>
+                            <td style="padding: 12px;"><span style="background: rgba(46, 204, 113, 0.15); color: #2ecc71; padding: 2px 8px; border-radius: 12px; font-size: 0.7rem;">Active</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
         <!-- Targets Drawer Backdrop for Mobile/Tablet -->
         <div id="targets-backdrop" class="drawer-backdrop"></div>
-
+        
         <!-- Target Management Drawer (Right) -->
         <div class="targets-drawer" id="targets-drawer">
             <div class="targets-drawer-header">
@@ -686,6 +738,130 @@
                     logoutBtn.style.opacity = '1';
                 });
             }
+        });
+    </script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const btnInventory = document.getElementById('btn-toggle-inventory');
+            const drawerInventory = document.getElementById('inventory-drawer');
+            const backdropInventory = document.getElementById('inventory-backdrop');
+            const closeInventory = document.getElementById('close-inventory-drawer');
+
+            window.populateInventoryTable = async function() {
+                const tbody = document.querySelector('.inventory-content tbody');
+                if (!tbody) return;
+                
+                tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding: 30px; color: var(--text-muted);"><i data-lucide="loader" style="animation: spin 1s linear infinite; width: 24px; height: 24px; color: var(--cyan-accent);"></i><br><br>Loading complete inventory...</td></tr>`;
+                if (window.lucide) window.lucide.createIcons();
+
+                try {
+                    let assets = [];
+                    if (window.api && window.api.getAssets) {
+                        assets = await window.api.getAssets();
+                    }
+
+                    let html = '';
+                    if (!assets || assets.length === 0) {
+                        html = `<tr><td colspan="5" style="text-align:center; padding: 20px; color: var(--text-muted);">No assets found in the database.</td></tr>`;
+                    } else {
+                        assets.forEach(asset => {
+                            const label = asset.value;
+                            const type = asset.type;
+                            const svcsCount = asset.services || 0;
+                            const vulnsCount = asset.vulnerabilities || 0;
+                            const portsList = asset.ports_list || '';
+                            
+                            let svcsText = svcsCount > 0 ? `${svcsCount} Service(s)` : 'N/A';
+                            if (portsList) {
+                                let parts = portsList.split(',');
+                                if (parts.length > 5) {
+                                    svcsText = parts.slice(0, 5).join(', ') + ` +${parts.length - 5} more`;
+                                } else {
+                                    svcsText = portsList.replace(/,/g, ', ');
+                                }
+                            }
+                            
+                            let vulnBadge = vulnsCount > 0 ? `<span style="color: #ef4444; font-weight: bold;">${vulnsCount} Findings</span>` : `<span style="color: var(--text-muted);">0 Findings</span>`;
+                            if (asset.has_cisa_kev) {
+                                vulnBadge += ` <span style="background: rgba(239, 68, 68, 0.2); border: 1px solid #ef4444; color: #ff4757; padding: 1px 6px; border-radius: 4px; font-size: 0.65rem; margin-left: 5px;">KEV</span>`;
+                            }
+                            
+                            let statusBadge = `<span style="background: rgba(46, 204, 113, 0.15); color: #2ecc71; padding: 2px 8px; border-radius: 12px; font-size: 0.7rem;">Mapped</span>`;
+                            let nameColor = type === 'ip' ? 'var(--purple-light)' : (type === 'domain' ? 'var(--cyan-accent)' : '#4ecdc4');
+                            
+                            html += `
+                                <tr style="border-bottom: 1px solid rgba(255,255,255,0.03); transition: background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.02)'" onmouseout="this.style.background='transparent'">
+                                    <td style="padding: 12px 20px; color: ${nameColor};">${label}</td>
+                                    <td style="padding: 12px; text-transform: capitalize;">${type}</td>
+                                    <td style="padding: 12px; color: var(--text-muted);">${svcsText}</td>
+                                    <td style="padding: 12px;">${vulnBadge}</td>
+                                    <td style="padding: 12px;">${statusBadge}</td>
+                                </tr>
+                            `;
+                        });
+                    }
+                    tbody.innerHTML = html;
+                } catch (e) {
+                    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding: 20px; color: #ef4444;">Failed to load inventory data.</td></tr>`;
+                    console.error('Failed to load inventory:', e);
+                }
+            };
+
+            function toggleInventory() {
+                const isOpen = drawerInventory.style.bottom === '0px';
+                if (isOpen) {
+                    drawerInventory.style.bottom = '-100vh';
+                    if(backdropInventory) backdropInventory.classList.remove('active');
+                } else {
+                    if (window.populateInventoryTable) window.populateInventoryTable();
+                    drawerInventory.style.bottom = '0px';
+                    if(backdropInventory) backdropInventory.classList.add('active');
+                }
+            }
+
+            if (btnInventory) btnInventory.addEventListener('click', toggleInventory);
+            if (closeInventory) closeInventory.addEventListener('click', toggleInventory);
+            if (backdropInventory) backdropInventory.addEventListener('click', toggleInventory);
+
+            // Resizing logic
+            const resizer = document.getElementById('inventory-resizer');
+            let isResizing = false;
+            let startY;
+            let startHeight;
+
+            if (resizer) {
+                resizer.addEventListener('mousedown', (e) => {
+                    isResizing = true;
+                    startY = e.clientY;
+                    drawerInventory.style.transition = 'none'; // Disable transition for smooth dragging
+                    startHeight = drawerInventory.getBoundingClientRect().height;
+                    document.body.style.cursor = 'ns-resize';
+                    e.preventDefault();
+                });
+            }
+
+            document.addEventListener('mousemove', (e) => {
+                if (!isResizing) return;
+                const deltaY = startY - e.clientY;
+                let newHeight = startHeight + deltaY;
+                
+                const minHeight = window.innerHeight * 0.2; // 20vh limit
+                const maxHeight = window.innerHeight * 0.9; // 90vh limit
+                
+                if (newHeight < minHeight) newHeight = minHeight;
+                if (newHeight > maxHeight) newHeight = maxHeight;
+                
+                drawerInventory.style.height = `${newHeight}px`;
+            });
+
+            document.addEventListener('mouseup', () => {
+                if (isResizing) {
+                    isResizing = false;
+                    drawerInventory.style.transition = 'bottom 0.3s cubic-bezier(0.16, 1, 0.3, 1)'; // Restore transition
+                    document.body.style.cursor = 'default';
+                }
+            });
         });
     </script>
 

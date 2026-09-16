@@ -3612,6 +3612,14 @@ class EASMDashboard {
             ]);
             await this.loadGraph();
             await this.syncTargetsFromBackend();
+            
+            // Dynamically refresh inventory drawer if open
+            if (window.populateInventoryTable) {
+                const drawer = document.getElementById('inventory-drawer');
+                if (drawer && drawer.style.bottom === '0px') {
+                    window.populateInventoryTable();
+                }
+            }
 
             if (loadingEl) {
                 loadingEl.style.display = 'none';

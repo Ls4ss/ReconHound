@@ -33,7 +33,10 @@
                     <a href="https://detecti.com.br" target="_blank" rel="noopener noreferrer" class="header-brand" title="Visit DetecTI Security Official Website (detecti.com.br)">
                         <img src="/static/img/DetecTI_Security_Logo.png" alt="DetecTI Security Logo" class="brand-logo">
                         <div class="brand-text">
-                            <h1 class="brand-title">Detec<span class="ti-highlight">TI</span><span style="font-size: 0.75em; font-weight: 500;">CLI</span></h1>
+                            <h1 class="brand-title" style="display: flex; align-items: center; gap: 8px;">
+                                <span>Detec<span class="ti-highlight">TI</span><span style="font-size: 0.75em; font-weight: 500;">CLI</span></span>
+                                <span style="font-size: 0.5em; background: rgba(0, 240, 255, 0.1); color: var(--cyan-accent); border: 1px solid rgba(0, 240, 255, 0.3); padding: 1px 6px; border-radius: 4px; font-weight: bold; font-family: var(--font-mono); letter-spacing: 0.5px;">v2.1.2</span>
+                            </h1>
                             <span class="brand-subtitle">Cyber Lead Intelligence</span>
                         </div>
                     </a>
@@ -345,25 +348,11 @@
                             <th style="padding: 12px; font-weight: 600; text-transform: uppercase; font-size: 0.75rem;">Type</th>
                             <th style="padding: 12px; font-weight: 600; text-transform: uppercase; font-size: 0.75rem;">Ports / Services</th>
                             <th style="padding: 12px; font-weight: 600; text-transform: uppercase; font-size: 0.75rem;">Vulnerabilities (CVEs)</th>
-                            <th style="padding: 12px; font-weight: 600; text-transform: uppercase; font-size: 0.75rem;">Status</th>
+                            <th style="padding: 12px; font-weight: 600; text-transform: uppercase; font-size: 0.75rem;">Actions</th>
                         </tr>
                     </thead>
                     <tbody>
-                        <!-- Placeholder rows -->
-                        <tr style="border-bottom: 1px solid rgba(255,255,255,0.03); transition: background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.02)'" onmouseout="this.style.background='transparent'">
-                            <td style="padding: 12px 20px; color: var(--cyan-accent);">example.com</td>
-                            <td style="padding: 12px;">Domain</td>
-                            <td style="padding: 12px; color: var(--text-muted);">N/A</td>
-                            <td style="padding: 12px; color: var(--text-muted);">0 Findings</td>
-                            <td style="padding: 12px;"><span style="background: rgba(46, 204, 113, 0.15); color: #2ecc71; padding: 2px 8px; border-radius: 12px; font-size: 0.7rem;">Active</span></td>
-                        </tr>
-                        <tr style="border-bottom: 1px solid rgba(255,255,255,0.03); transition: background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.02)'" onmouseout="this.style.background='transparent'">
-                            <td style="padding: 12px 20px; color: var(--purple-light);">192.168.1.1</td>
-                            <td style="padding: 12px;">IP Address</td>
-                            <td style="padding: 12px;">80 (HTTP), 443 (HTTPS)</td>
-                            <td style="padding: 12px;"><span style="color: #ef4444; font-weight: bold;">2 Critical</span>, <span style="color: #f59e0b;">1 High</span></td>
-                            <td style="padding: 12px;"><span style="background: rgba(46, 204, 113, 0.15); color: #2ecc71; padding: 2px 8px; border-radius: 12px; font-size: 0.7rem;">Active</span></td>
-                        </tr>
+                        <!-- Placeholder row replaced dynamically -->
                     </tbody>
                 </table>
             </div>
@@ -664,6 +653,40 @@
         </div>
     </div>
 
+    <!-- Delete Asset Confirmation Modal -->
+    <div class="modal-backdrop" id="delete-asset-modal" style="display: none;">
+        <div class="modal-dialog delete-db-modal-dialog">
+            <div class="modal-header">
+                <div class="modal-title-row">
+                    <i data-lucide="alert-triangle" class="ui-icon modal-danger-icon" style="color: #ef4444;"></i>
+                    <h3>Delete Asset</h3>
+                </div>
+                <button type="button" class="modal-close-btn" id="btn-close-delete-asset-modal" aria-label="Close">
+                    <i data-lucide="x" class="ui-icon"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete <strong id="delete-asset-target-name" style="color: var(--cyan-accent, #00f0ff);"></strong> from the database?</p>
+                <div id="delete-asset-impact-container" style="background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.05); border-radius: 6px; padding: 12px; margin-top: 15px;">
+                    <p style="margin: 0 0 10px 0; font-size: 0.85rem; color: #ccc;">This action will also permanently destroy:</p>
+                    <ul id="delete-asset-impact-list" style="margin: 0; padding-left: 20px; font-size: 0.85rem; color: #ef4444; line-height: 1.6;">
+                        <li>Loading impact data...</li>
+                    </ul>
+                </div>
+                <p class="modal-warning-text" style="color: var(--text-muted); font-size: 0.82rem; margin-top: 15px; line-height: 1.4;">
+                    This action cannot be undone and will affect all reports and graphs.
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="action-btn modal-cancel-btn" id="btn-cancel-delete-asset">Cancel</button>
+                <button type="button" class="action-btn modal-danger-btn" id="btn-confirm-delete-asset" style="background: #dc2626; border-color: #ef4444; color: #fff;">
+                    <i data-lucide="trash-2" class="ui-icon" style="width: 14px; height: 14px;"></i>
+                    <span>Delete</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
     <script src="/static/js/api.js?v=10"></script>
     <script src="/static/js/graph.js?v=96"></script>
     
@@ -748,6 +771,98 @@
             const backdropInventory = document.getElementById('inventory-backdrop');
             const closeInventory = document.getElementById('close-inventory-drawer');
 
+            let currentDeleteAsset = null;
+
+            window.promptDeleteAsset = async function(type, value) {
+                currentDeleteAsset = { type, value };
+                const modal = document.getElementById('delete-asset-modal');
+                document.getElementById('delete-asset-target-name').textContent = value;
+                
+                const impactList = document.getElementById('delete-asset-impact-list');
+                impactList.innerHTML = '<li><i data-lucide="loader" style="animation: spin 1s linear infinite; width: 14px; height: 14px; margin-right: 5px;"></i> Calculating impact...</li>';
+                if (window.lucide) window.lucide.createIcons();
+                
+                modal.style.display = 'flex';
+                
+                try {
+                    const res = await fetch(`/api/v1/assets/${encodeURIComponent(type)}/${encodeURIComponent(value)}/impact`);
+                    if (!res.ok) throw new Error('Impact fetch failed');
+                    const impact = await res.json();
+                    
+                    let impactHtml = '';
+                    if (impact.subdomains !== undefined && impact.subdomains > 0) impactHtml += `<li><strong>${impact.subdomains}</strong> Subdomain(s)</li>`;
+                    if (impact.services !== undefined && impact.services > 0) impactHtml += `<li><strong>${impact.services}</strong> Service(s) / Open Port(s)</li>`;
+                    if (impact.vulnerabilities !== undefined && impact.vulnerabilities > 0) impactHtml += `<li><strong>${impact.vulnerabilities}</strong> Vulnerability/CVE(s)</li>`;
+                    if (impact.dns_links !== undefined && impact.dns_links > 0) impactHtml += `<li><strong>${impact.dns_links}</strong> DNS Mapping(s) (Graph Edges)</li>`;
+                    
+                    if (!impactHtml) impactHtml = '<li>No dependent data found. Safe to delete.</li>';
+                    
+                    impactList.innerHTML = impactHtml;
+                } catch (e) {
+                    impactList.innerHTML = '<li>Unable to calculate impact. Assume all linked data will be deleted.</li>';
+                }
+            };
+            
+            document.getElementById('btn-close-delete-asset-modal')?.addEventListener('click', () => {
+                document.getElementById('delete-asset-modal').style.display = 'none';
+            });
+            document.getElementById('btn-cancel-delete-asset')?.addEventListener('click', () => {
+                document.getElementById('delete-asset-modal').style.display = 'none';
+            });
+            document.getElementById('btn-confirm-delete-asset')?.addEventListener('click', async () => {
+                if (!currentDeleteAsset) return;
+                const { type, value } = currentDeleteAsset;
+                const btn = document.getElementById('btn-confirm-delete-asset');
+                const originalHtml = btn.innerHTML;
+                
+                btn.innerHTML = '<i data-lucide="loader" style="animation: spin 1s linear infinite; width: 14px; height: 14px;"></i> Deleting...';
+                if (window.lucide) window.lucide.createIcons();
+                
+                try {
+                    const res = await fetch(`/api/v1/assets/${encodeURIComponent(type)}/${encodeURIComponent(value)}`, { method: 'DELETE' });
+                    if (!res.ok) throw new Error('Delete failed');
+                    
+                    document.getElementById('delete-asset-modal').style.display = 'none';
+                    if (window.populateInventoryTable) window.populateInventoryTable();
+                    
+                    // Refresh graph visually if possible
+                    if (window.dashboard && window.dashboard.loadGraph) {
+                        await window.dashboard.loadGraph();
+                        await window.dashboard.syncTargetsFromBackend();
+                    }
+                } catch (e) {
+                    alert('Error deleting asset: ' + e.message);
+                } finally {
+                    btn.innerHTML = originalHtml;
+                }
+            });
+
+            window.toggleInventoryTarget = async function(assetValue, btnElement) {
+                if (!window.dashboard) return;
+                
+                const isTarget = window.dashboard.markedTargets.has(assetValue);
+                
+                try {
+                    // Provide optimistic visual feedback
+                    if (isTarget) {
+                        btnElement.innerHTML = '<i data-lucide="crosshair" style="width: 18px; height: 18px;"></i>';
+                        btnElement.style.color = '#64748b';
+                        btnElement.title = 'Add to Targets';
+                        await window.dashboard.removeTarget(assetValue);
+                    } else {
+                        btnElement.innerHTML = '<i data-lucide="check-circle" style="width: 18px; height: 18px;"></i>';
+                        btnElement.style.color = '#10b981';
+                        btnElement.title = 'Remove from Targets';
+                        await window.dashboard.setTarget(assetValue);
+                    }
+                    if (window.lucide) window.lucide.createIcons({ root: btnElement });
+                } catch (err) {
+                    console.error("Failed to toggle target from inventory", err);
+                    // Revert visually on failure
+                    if (window.populateInventoryTable) window.populateInventoryTable(); 
+                }
+            };
+
             window.populateInventoryTable = async function() {
                 const tbody = document.querySelector('.inventory-content tbody');
                 if (!tbody) return;
@@ -762,6 +877,7 @@
                     }
 
                     let html = '';
+                        // NO NEED TO RENDER ROWS IF EMPTY -> DONE IN THE IF
                     if (!assets || assets.length === 0) {
                         html = `<tr><td colspan="5" style="text-align:center; padding: 20px; color: var(--text-muted);">No assets found in the database.</td></tr>`;
                     } else {
@@ -787,7 +903,22 @@
                                 vulnBadge += ` <span style="background: rgba(239, 68, 68, 0.2); border: 1px solid #ef4444; color: #ff4757; padding: 1px 6px; border-radius: 4px; font-size: 0.65rem; margin-left: 5px;">KEV</span>`;
                             }
                             
-                            let statusBadge = `<span style="background: rgba(46, 204, 113, 0.15); color: #2ecc71; padding: 2px 8px; border-radius: 12px; font-size: 0.7rem;">Mapped</span>`;
+                            const isTarget = window.dashboard && window.dashboard.markedTargets && window.dashboard.markedTargets.has(label);
+                            const targetIcon = isTarget ? 'check-circle' : 'crosshair';
+                            const targetColor = isTarget ? '#10b981' : '#64748b';
+                            const targetTitle = isTarget ? 'Remove from Targets' : 'Add to Targets';
+                            
+                            let targetBadge = `
+                                <div style="display: flex; align-items: center; gap: 8px;">
+                                    <button onclick="window.toggleInventoryTarget('${label}', this)" class="inventory-target-btn" title="${targetTitle}" style="background: transparent; border: none; cursor: pointer; display: flex; align-items: center; justify-content: flex-start; color: ${targetColor}; transition: color 0.2s;">
+                                        <i data-lucide="${targetIcon}" style="width: 18px; height: 18px;"></i>
+                                    </button>
+                                    <button onclick="window.promptDeleteAsset('${type}', '${label}')" class="inventory-delete-btn" title="Delete Asset" style="background: transparent; border: none; cursor: pointer; display: flex; align-items: center; justify-content: flex-start; color: #ef4444; transition: color 0.2s;">
+                                        <i data-lucide="trash-2" style="width: 18px; height: 18px;"></i>
+                                    </button>
+                                </div>
+                            `;
+
                             let nameColor = type === 'ip' ? 'var(--purple-light)' : (type === 'domain' ? 'var(--cyan-accent)' : '#4ecdc4');
                             
                             html += `
@@ -796,12 +927,13 @@
                                     <td style="padding: 12px; text-transform: capitalize;">${type}</td>
                                     <td style="padding: 12px; color: var(--text-muted);">${svcsText}</td>
                                     <td style="padding: 12px;">${vulnBadge}</td>
-                                    <td style="padding: 12px;">${statusBadge}</td>
+                                    <td style="padding: 12px;">${targetBadge}</td>
                                 </tr>
                             `;
                         });
                     }
                     tbody.innerHTML = html;
+                    if (window.lucide) window.lucide.createIcons();
                 } catch (e) {
                     tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding: 20px; color: #ef4444;">Failed to load inventory data.</td></tr>`;
                     console.error('Failed to load inventory:', e);

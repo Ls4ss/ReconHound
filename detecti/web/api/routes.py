@@ -517,6 +517,11 @@ async def delete_asset(
                         conn.execute(f"DELETE FROM services WHERE id IN ({placeholders})", svc_ids)
                     conn.execute("DELETE FROM ip_addresses WHERE id = ?", (i_id,))
             conn.commit()
+            
+        global _target_registry
+        if asset_value in _target_registry:
+            del _target_registry[asset_value]
+            
         return {"status": "success", "message": f"Asset {asset_value} deleted."}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

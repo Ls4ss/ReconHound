@@ -181,6 +181,10 @@ flowchart TD
   - **Bidirectional Inspector Navigation**:
     - Inspecting a **Host IP** displays all active **Associated FQDNs & Virtual Hosts** with dedicated focus and filter buttons.
     - Inspecting an **FQDN Target** displays its **Resolved IP** with a 1-click `[ ⌖ Focus ]` crosshair button.
+  - **Comprehensive Asset Inventory & Safe Deletion**:
+    - **Global Inventory Drawer**: A slide-up spreadsheet-style drawer aggregating all mapped FQDNs and IPs across the database, bypassing active graph filters.
+    - **1-Click Target Toggles**: Mark or unmark any inventory asset as an active scan target instantly with optimistic UI feedback (crosshair / green check-circle).
+    - **Cascading Asset Deletion with Impact Analysis**: Safely delete false-positives or out-of-scope assets directly from the UI. Features a pre-deletion **Impact Analysis** engine that calculates and displays exact counts of dependent services, vulnerabilities, exploits, and DNS edges that will be destroyed in a cascade, ensuring strict SQLite referential integrity before you confirm the action.
   - **Hierarchical (Left-Right, Default) DAG Layout**:
     - Left-to-Right orientation flowing from `Target Root (x=0)` $\rightarrow$ `FQDN Targets / Host IPs (x=280)` $\rightarrow$ `Services (x=IP.x+110)` $\rightarrow$ `CVEs (x=Srv.x+80)`.
     - Matrix grid supporting up to 9 Host IPs per vertical column with dynamic clearance to eliminate node overlap across large enterprise ranges.

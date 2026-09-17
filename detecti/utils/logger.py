@@ -295,9 +295,9 @@ def render_summary_panel(summary: Any, elapsed: float) -> Panel:
     )
 
 
-def render_executive_summary(result: ScanResult) -> None:
+def render_executive_summary(result: ScanResult, is_cve_flag: bool = False) -> None:
     """Render high-impact executive summary focusing on key metrics, perimeter stats, and actionable dashboard access."""
-    is_cve = (result.target_type == "cve") or result.target.strip().upper().startswith("CVE-")
+    is_cve = is_cve_flag or (result.target_type == "cve") or result.target.strip().upper().startswith("CVE-")
 
     # 1. Executive Summary Panel
     console.print("")
@@ -332,7 +332,6 @@ def render_executive_summary(result: ScanResult) -> None:
             print_section_header(f"CVE Threat Intelligence ({len(unique_vulns)} Vulnerability Details)")
             table = Table(show_header=True, header_style="bold red", show_lines=True)
             table.add_column("CVE ID", style="bold white", width=16)
-            table.add_column("Affected Target", style="bold cyan", width=18)
             table.add_column("Severity / CVSS", style="bold", width=16)
             table.add_column("EPSS Risk", style="yellow", width=12)
             table.add_column("CISA KEV", style="bold", width=12)
@@ -348,7 +347,7 @@ def render_executive_summary(result: ScanResult) -> None:
                 exploits_info = [f"[bold red]{exp.source}:[/bold red] {exp.url}" for exp in v.exploits]
                 exploit_cell = "\n".join(exploits_info) if exploits_info else "[dim]None[/dim]"
 
-                table.add_row(v.cve_id, h_ip, cvss_cell, epss_cell, kev_cell, exploit_cell)
+                table.add_row(v.cve_id, cvss_cell, epss_cell, kev_cell, exploit_cell)
 
             console.print(table)
 
@@ -362,7 +361,7 @@ def render_executive_summary(result: ScanResult) -> None:
                 summary_parts.append(f"[bold cyan]{len(subdomains)} Subdomains[/bold cyan] (via crt.sh / DNS)")
             if assoc_domains:
                 summary_parts.append(f"[bold blue]{len(assoc_domains)} Associated Domains[/bold blue] (via Reverse WHOIS)")
-            console.print(f"\n 🌐 [bold]Perimeter Intelligence:[/bold] {' • '.join(summary_parts)}")
+            console.print(f"\n [+] [bold]Perimeter Intelligence:[/bold] {' • '.join(summary_parts)}")
 
         # 4. DetecTIHound Web Dashboard Quick Access Callout (Only for asset/perimeter scans)
         real_ip = get_real_ip()
@@ -371,8 +370,8 @@ def render_executive_summary(result: ScanResult) -> None:
         dashboard_box = [
             "[bold cyan]DetecTIHound — Interactive Attack Surface Graph[/bold cyan]",
             "Explore full relational topology, technical banners, and active scans:",
-            f"  👉 [bold white]Local Access:[/bold white]   [bold underline cyan]http://localhost:{port}[/bold underline cyan]",
-            f"  👉 [bold white]Network Access:[/bold white] [bold underline cyan]http://{real_ip}:{port}[/bold underline cyan]",
+            f"  -> [bold white]Local Access:[/bold white]   [bold underline cyan]http://localhost:{port}[/bold underline cyan]",
+            f"  -> [bold white]Network Access:[/bold white] [bold underline cyan]http://{real_ip}:{port}[/bold underline cyan]",
         ]
         console.print(Panel("\n".join(dashboard_box), border_style="cyan", expand=False))
 

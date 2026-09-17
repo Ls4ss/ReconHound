@@ -69,6 +69,17 @@ def _banner_format_help(self, ctx, formatter):
 
 click.Command.format_help = _banner_format_help
 
+import typer.core
+if hasattr(typer.core, "TyperArgument"):
+    _orig_make_metavar = typer.core.TyperArgument.make_metavar
+    def _patched_make_metavar(self, ctx=None):
+        return click.Argument.make_metavar(self, ctx)
+    typer.core.TyperArgument.make_metavar = _patched_make_metavar
+if hasattr(typer.core, "TyperOption"):
+    def _patched_option_make_metavar(self, ctx=None):
+        return click.Option.make_metavar(self, ctx)
+    typer.core.TyperOption.make_metavar = _patched_option_make_metavar
+
 # Hardcode cli_name for global wrapper execution
 cli_name = "detecti-cli"
 
@@ -133,13 +144,11 @@ def target_to_db_name(target: str) -> str:
     return cleaned_name
 
 
-@app.command(name="scan")
-def scan_command(
-    target: Optional[str] = typer.Option(
-        None,
-        "-t",
-        "--target",
-        help="Target IP, CIDR, domain, email, CVE, search query, or targets file (e.g., targets.txt)",
+@app.command(name="recon")
+def recon_command(
+    target: str = typer.Argument(
+        ...,
+        help="Target IP, CIDR, domain, email, or targets file (e.g., targets.txt)",
     ),
     output_format: str = typer.Option(
         "table",
@@ -159,38 +168,79 @@ def scan_command(
         "--output-dir",
         help="Directory to save generated JSON/Markdown/HTML reports",
     ),
-    cvss_filter: Optional[str] = typer.Option(
-        None,
-        "--cvss",
-        help="Filter vulnerabilities by CVSS severity: critical, high, medium, low",
-    ),
     create_db: Optional[str] = typer.Option(
         None,
         "--create-db",
         help="Custom name for SQLite database in ./data/dbs/ (optional, defaults to target root)",
     ),
 ) -> None:
-    """Execute complete attack surface mapping and threat intelligence analysis.
+    """Execute passive attack surface mapping and reconnaissance.
     
     Examples:
-      {cli_name} scan -t example.com
-      {cli_name} scan -t example.com --create-db custom_name
-      {cli_name} scan -t 192.168.1.0/24
-      {cli_name} scan -t CVE-2021-44228
-    """.format(cli_name=cli_name)
+      detecti-cli recon example.com
+      detecti-cli recon example.com --create-db custom_name
+      detecti-cli recon 192.168.1.0/24
+    """
     
-    # Check if target is provided
     if not target:
         print_banner()
-        print_error("Target is required. Use -t/--target to specify a target.")
-        print_info("Examples:")
-        print_info(f"  {cli_name} scan -t example.com")
-        print_info(f"  {cli_name} scan -t targets.txt")
-        print_info(f"  {cli_name} scan -t 192.168.1.0/24")
-        print_info(f"  {cli_name} scan -t CVE-2021-44228")
-        print_info(f"Use '{cli_name} scan --help' for more options.")
+        print_error("Target is required.")
+        print_info(f"Usage: {cli_name} recon <target>")
         raise typer.Exit(1)
+        
+    _execute_scan(target, output_format, output_file, output_dir, create_db, cli_name, is_intel=False)
 
+
+@app.command(name="intel")
+def intel_command(
+    cve_id: str = typer.Argument(
+        ...,
+        help="Target CVE or Threat ID (e.g., CVE-2021-44228)",
+    ),
+    output_format: str = typer.Option(
+        "table",
+        "-o",
+        "--format",
+        help="Output report format: table, json, markdown, html, csv, all",
+    ),
+    output_file: Optional[Path] = typer.Option(
+        None,
+        "-f",
+        "--output-file",
+        help="Custom file path to export the report",
+    ),
+    output_dir: Optional[Path] = typer.Option(
+        None,
+        "-d",
+        "--output-dir",
+        help="Directory to save generated reports",
+    ),
+) -> None:
+    """Execute threat intelligence lookup for specific vulnerabilities.
+    
+    Examples:
+      detecti-cli intel CVE-2021-44228
+      detecti-cli intel CVE-2023-22527 --format json
+    """
+    
+    if not cve_id:
+        print_banner()
+        print_error("CVE ID is required.")
+        print_info(f"Usage: {cli_name} intel <cve_id>")
+        raise typer.Exit(1)
+        
+    _execute_scan(cve_id, output_format, output_file, output_dir, None, cli_name, is_intel=True)
+
+
+def _execute_scan(
+    target: str,
+    output_format: str,
+    output_file: Optional[Path],
+    output_dir: Optional[Path],
+    create_db: Optional[str],
+    cli_name: str,
+    is_intel: bool = False
+) -> None:
     # Pre-validate target before starting scan progress
     try:
         temp_engine = ThreatTrackEngine()
@@ -198,7 +248,10 @@ def scan_command(
     except (FileNotFoundError, ValueError) as exc:
         print_banner()
         print_error(str(exc))
-        print_info("Target must be a valid IP, CIDR, Domain, URL, CVE, existing File, or Shodan Query filter (e.g., org:'Target', port:443).")
+        if is_intel:
+            print_info("Target must be a valid CVE (e.g., CVE-2021-44228) or an existing File containing CVEs.")
+        else:
+            print_info("Target must be a valid IP, CIDR, Domain, URL, CVE, existing File, or Shodan Query filter (e.g., org:'Target', port:443).")
         raise typer.Exit(1)
 
     print_banner()
@@ -207,11 +260,9 @@ def scan_command(
     console.print(f" [cyan]Target:[/cyan] [bold white]{target}[/bold white]")
     if create_db:
         console.print(f" [cyan]Custom DB:[/cyan] [bold white]{create_db}[/bold white]")
-    if cvss_filter:
-        console.print(f" [cyan]CVSS Filter:[/cyan] [bold yellow]{cvss_filter.upper()}[/bold yellow]")
 
     # Shift-Left: Initialize Database before scan begins to capture live logs
-    is_cve = target.strip().upper().startswith("CVE-")
+    is_cve = target.strip().upper().startswith("CVE-") or is_intel
     db_manager = None
     final_db_name = None
     if not is_cve:
@@ -248,7 +299,6 @@ def scan_command(
             engine.scan(
                 target=target,
                 enabled_modules=["all"],
-                cvss_filter=cvss_filter,
             )
         )
 
@@ -292,15 +342,21 @@ def scan_command(
                 if ws_manager.is_running():
                     status = ws_manager.get_status() or {}
                     srv_port = status.get("port", port)
-                    print_info(f"🌐 DetecTIHound WebGUI is already active (PID: {status.get('pid', 'N/A')}).")
-                    console.print(f"  👉 [bold cyan]Local URL:[/bold cyan]   [bold underline cyan]http://localhost:{srv_port}[/bold underline cyan] (Select [bold cyan]{final_db_name or db_name}[/bold cyan] in database dropdown)")
-                    console.print(f"  👉 [bold cyan]Network URL:[/bold cyan] [bold underline cyan]http://{real_ip}:{srv_port}[/bold underline cyan]")
+                    print_info(f"DetecTIHound WebGUI is already active (PID: {status.get('pid', 'N/A')}).")
+                    real_ip = get_real_ip()
+                    console.print(f" [+] [bold cyan]Local URL:[/bold cyan]   [bold underline cyan]http://localhost:{srv_port}[/bold underline cyan] (Select [bold cyan]{final_db_name or db_name}[/bold cyan] in database dropdown)")
+                    if real_ip != "127.0.0.1":
+                        console.print(f" [+] [bold cyan]Network URL:[/bold cyan] [bold underline cyan]http://{real_ip}:{srv_port}[/bold underline cyan]")
                 else:
                     started = ws_manager.start_server(final_db_name or db_name, host, port)
                     if started:
-                        print_success(f"🚀 DetecTIHound WebGUI started automatically with database: [bold cyan]{final_db_name or db_name}[/bold cyan]")
-                        console.print(f"  👉 [bold cyan]Local URL:[/bold cyan]   [bold underline cyan]http://localhost:{port}[/bold underline cyan]")
-                        console.print(f"  👉 [bold cyan]Network URL:[/bold cyan] [bold underline cyan]http://{real_ip}:{port}[/bold underline cyan]")
+                        print_success(f"DetecTIHound WebGUI started automatically with database: [bold cyan]{final_db_name or db_name}[/bold cyan]")
+                        
+                        # Fix network IP detection
+                        real_ip = get_real_ip()
+                        console.print(f" [+] [bold cyan]Local URL:[/bold cyan]   [bold underline cyan]http://localhost:{port}[/bold underline cyan]")
+                        if real_ip != "127.0.0.1":
+                            console.print(f" [+] [bold cyan]Network URL:[/bold cyan] [bold underline cyan]http://{real_ip}:{port}[/bold underline cyan]")
                     else:
                         print_info(f"Open DetecTIHound: [bold cyan]{cli_name} hound start --db {final_db_name or db_name}[/bold cyan]")
             except Exception as e:
@@ -310,7 +366,7 @@ def scan_command(
 
     # 1. Executive Terminal Output
     if output_format.lower() in ("table", "all") or not output_file:
-        render_executive_summary(result)
+        render_executive_summary(result, is_cve_flag=is_cve)
 
     # 2. File Export Handling
     safe_target = "".join(c if c.isalnum() else "_" for c in target)[:40]
@@ -426,7 +482,7 @@ def config_check_command(
     needs_setup = not all(c.get("ok", False) for k, c in checks.items() if k != "nuclei")
     if needs_setup and not setup:
         console.print(
-            "\n[bold yellow]💡 Tip:[/bold yellow] Run [bold cyan]./detecti-cli setup[/bold cyan] or [bold cyan]./detecti-cli config-check --setup[/bold cyan] to automatically configure missing prerequisites.\n"
+            "\n[bold yellow]Note:[/bold yellow] Run [bold cyan]./detecti-cli setup[/bold cyan] or [bold cyan]./detecti-cli config-check --setup[/bold cyan] to automatically configure missing prerequisites.\n"
         )
 
 
@@ -490,17 +546,17 @@ def start_server(
         
         if success:
             real_ip = get_real_ip()
-            print_success(f"✅ DetecTIHound web server started successfully!")
-            console.print(f"  👉 [bold cyan]Local Access:[/bold cyan]   [bold underline cyan]http://localhost:{port}[/bold underline cyan]")
-            console.print(f"  👉 [bold cyan]Network Access:[/bold cyan] [bold underline cyan]http://{real_ip}:{port}[/bold underline cyan]")
+            print_success(f"[+] DetecTIHound web server started successfully!")
+            console.print(f"  -> [bold cyan]Local Access:[/bold cyan]   [bold underline cyan]http://localhost:{port}[/bold underline cyan]")
+            console.print(f"  -> [bold cyan]Network Access:[/bold cyan] [bold underline cyan]http://{real_ip}:{port}[/bold underline cyan]")
             if db:
-                print_info(f"📊 Initial Database: {db}")
+                print_info(f"[i] Initial Database: {db}")
             else:
-                print_info(f"📊 Database: Dynamic selector active in Web UI")
-            print_info(f"🔧 Use '{cli_name} hound status' to check server status")
-            print_info(f"🛑 Use '{cli_name} hound stop' to stop the server")
+                print_info(f"[i] Database: Dynamic selector active in Web UI")
+            print_info(f"[+] Use '{cli_name} hound status' to check server status")
+            print_info(f"[-] Use '{cli_name} hound stop' to stop the server")
         else:
-            print_error("❌ Failed to start web server")
+            print_error("[-] Failed to start web server")
             print_info("Check that the port is available and dependencies are installed")
             
     except FileNotFoundError as e:
@@ -536,7 +592,7 @@ def server_status() -> None:
             table.add_column("Value", style="green")
             
             real_ip = get_real_ip()
-            table.add_row("Status", "🟢 RUNNING")
+            table.add_row("Status", "[bold green]RUNNING[/bold green]")
             table.add_row("PID", str(status['pid']))
             table.add_row("Local URL", f"http://localhost:{status['port']}")
             table.add_row("Network URL", f"http://{real_ip}:{status['port']}")
@@ -554,9 +610,9 @@ def server_status() -> None:
                 table.add_row("Memory Usage", f"{status['memory_mb']:.1f} MB")
             
             console.print(table)
-            print_success(f"🌐 Access Dashboard: [bold underline cyan]http://localhost:{status['port']}[/bold underline cyan] | [bold underline cyan]http://{real_ip}:{status['port']}[/bold underline cyan]")
+            print_success(f"Access Dashboard: [bold underline cyan]http://localhost:{status['port']}[/bold underline cyan] | [bold underline cyan]http://{real_ip}:{status['port']}[/bold underline cyan]")
         else:
-            print_warning("🔴 Web server is not running")
+            print_warning("Web server is not running")
             print_info(f"Use '{cli_name} hound start' to start the server")
             
     except Exception as e:
@@ -580,15 +636,15 @@ def stop_server() -> None:
         manager = WebServerManager()
         
         if not manager.is_running():
-            print_warning("🔴 Web server is not running")
+            print_warning("Web server is not running")
             return
         
-        print_info("🛑 Stopping web server...")
+        print_info("Stopping web server...")
         
         if manager.stop_server():
-            print_success("✅ Web server stopped successfully")
+            print_success("Web server stopped successfully")
         else:
-            print_error("❌ Failed to stop web server")
+            print_error("Failed to stop web server")
             
     except Exception as e:
         print_error(f"Failed to stop server: {e}")

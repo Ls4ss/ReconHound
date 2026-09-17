@@ -368,7 +368,7 @@ class GraphBuilder:
                 is_waf = domain_waf_map.get(domain_id, False)
                 node_data = {
                     "id": f"dom_{domain_id}",
-                    "label": f"🛡️ [Origin] {domain_name}" if is_waf else domain_name,
+                    "label": f"[+] [Origin] {domain_name}" if is_waf else domain_name,
                     "type": "domain",
                     "name": domain_name,
                     "related_subdomains": domain_subs,
@@ -397,7 +397,7 @@ class GraphBuilder:
                 is_waf = sub_info.get("is_waf_bypass", False)
                 node_data = {
                     "id": f"sub_{sub_id}",
-                    "label": f"🛡️ [Origin] {sub_info['name']}" if is_waf else sub_info["name"],
+                    "label": f"[+] [Origin] {sub_info['name']}" if is_waf else sub_info["name"],
                     "type": "subdomain",
                     "name": sub_info["name"],
                     "domain_id": parent_dom_id,

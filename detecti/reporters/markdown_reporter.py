@@ -37,8 +37,8 @@ class MarkdownReporter:
         lines.append(f"| **Associated Domains** | `{summary.associated_domains_count}` | Reverse WHOIS & Organization correlation |")
         lines.append(f"| **Open Ports & Services** | `{summary.open_ports_count}` | Exposed internet-facing services |")
         lines.append(f"| **Identified Vulnerabilities (CVEs)** | `{summary.vulnerabilities_count}` | Public CVE references |")
-        lines.append(f"| 🚨 **CISA Known Exploited (KEV)** | `{summary.cisa_kev_count}` | **Confirmed actively exploited in the wild** |")
-        lines.append(f"| 💥 **Public Exploits & PoCs** | `{summary.exploits_count}` | ExploitDB entries and GitHub PoCs |")
+        lines.append(f"| [!] **CISA Known Exploited (KEV)** | `{summary.cisa_kev_count}` | **Confirmed actively exploited in the wild** |")
+        lines.append(f"| [!] **Public Exploits & PoCs** | `{summary.exploits_count}` | ExploitDB entries and GitHub PoCs |")
         lines.append("")
 
         # 3. Critical Threat Intelligence Alerts
@@ -52,7 +52,7 @@ class MarkdownReporter:
                 cisa_kev_vulns.append((f.host_ip or result.target, f.vulnerability))
 
         if cisa_kev_vulns:
-            lines.append("## 2. ⚠️ Critical Risk Highlights (CISA KEV)")
+            lines.append("## 2. [!] Critical Risk Highlights (CISA KEV)")
             lines.append("The following vulnerabilities are cataloged by CISA as actively exploited in cyberattacks:")
             lines.append("")
             for host_ip, v in cisa_kev_vulns:
@@ -103,7 +103,7 @@ class MarkdownReporter:
                 if host.asn:
                     org_str += f" ({host.asn})"
 
-                lines.append(f"### 🖥️ Host: `{host.ip}`")
+                lines.append(f"### [+] Host: `{host.ip}`")
                 lines.append(f"- **Organization / ISP:** {org_str}")
                 lines.append(f"- **Location:** {loc_str}")
                 lines.append(f"- **Operating System:** {host.os or 'N/A'}")
@@ -139,7 +139,7 @@ class MarkdownReporter:
                         sev_val = v.cvss_severity.value if hasattr(v.cvss_severity, "value") else str(v.cvss_severity)
                         sev_badge = f"`{sev_val}`"
                         epss_str = f"{v.epss.epss_score * 100:.2f}% (p{v.epss.epss_percentile * 100:.0f})" if v.epss else "N/A"
-                        kev_str = "🚨 **YES**" if v.in_cisa_kev else "No"
+                        kev_str = "[!] **YES**" if v.in_cisa_kev else "No"
                         exp_count = f"**{len(v.exploits)} PoCs**" if v.exploits else "0"
                         cwe_str = v.cwe_name or v.cwe_id or "N/A"
 
@@ -181,7 +181,7 @@ class MarkdownReporter:
                     sev_val = v.cvss_severity.value if hasattr(v.cvss_severity, "value") else str(v.cvss_severity)
                     sev_badge = f"`{sev_val}`"
                     epss_str = f"{v.epss.epss_score * 100:.2f}%" if v.epss else "N/A"
-                    kev_str = "🚨 **YES**" if v.in_cisa_kev else "No"
+                    kev_str = "[!] **YES**" if v.in_cisa_kev else "No"
                     exp_count = f"**{len(v.exploits)} PoCs**" if v.exploits else "0"
                     cwe_str = v.cwe_name or v.cwe_id or "N/A"
                     lines.append(f"| [{v.cve_id}](https://nvd.nist.gov/vuln/detail/{v.cve_id}) | {cwe_str} | {cvss_str} | {sev_badge} | {epss_str} | {kev_str} | {exp_count} |")

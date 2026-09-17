@@ -44,15 +44,18 @@ detecti-cli --help
 ## 💻 CLI Usage Examples
 
 ```bash
-# Scan a single IP or CIDR Subnet
-detecti-cli scan -t 142.250.191.68
-detecti-cli scan -t 142.250.191.0/24
+# Recon a single IP or CIDR Subnet
+detecti-cli recon 142.250.191.68
+detecti-cli recon 142.250.191.0/24
 
-# Scan a Domain (Subdomains + Reverse WHOIS + Infrastructure)
-detecti-cli scan -t spacex.com
+# Recon a Domain (Subdomains + Reverse WHOIS + Infrastructure)
+detecti-cli recon spacex.com
 
-# Scan a Batch Target List from File
-detecti-cli scan -t targets.txt
+# Recon a Batch Target List from File
+detecti-cli recon targets.txt
+
+# Fetch Threat Intelligence for a specific CVE
+detecti-cli intel CVE-2021-44228
 
 # Start the Interactive EASM Web Dashboard (DetecTIHound)
 detecti-cli hound start

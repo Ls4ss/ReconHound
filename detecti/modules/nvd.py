@@ -104,7 +104,7 @@ class NVDModule(BaseModule):
 
     def is_configured(self) -> bool:
         """Check if NVD custom API key is configured (optional, public rate limit fallback)."""
-        from config import is_placeholder_key
+        from detecti.config import is_placeholder_key
         return bool(settings.nvd_api_key and not is_placeholder_key(settings.nvd_api_key))
 
     async def run(

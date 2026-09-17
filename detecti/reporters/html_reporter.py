@@ -294,7 +294,7 @@ class HTMLReporter:
                 <div class="subtitle">External Attack Surface Management &amp; Vulnerability Assessment &bull; <a href="https://detecti.com.br" target="_blank" rel="noopener noreferrer">detecti.com.br</a></div>
             </div>
             <div class="header-actions">
-                <button class="btn-print" onclick="window.print()">🖨️ Print / Save PDF</button>
+                <button class="btn-print" onclick="window.print()">[i] Print / Save PDF</button>
             </div>
         </div>
 

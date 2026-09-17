@@ -39,7 +39,7 @@ class ShodanModule(BaseModule):
         """Check if valid Shodan API key is set."""
         if self._auth_failed:
             return False
-        from config import is_placeholder_key
+        from detecti.config import is_placeholder_key
         return bool(settings.shodan_api_key and not is_placeholder_key(settings.shodan_api_key))
 
     async def validate_credentials(self) -> bool:

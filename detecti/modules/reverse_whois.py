@@ -31,7 +31,7 @@ class ReverseWhoisModule(BaseModule):
 
     def is_configured(self) -> bool:
         """Check if WhoisFreaks paid API is configured (optional - free fallback available)."""
-        from config import is_placeholder_key
+        from detecti.config import is_placeholder_key
         return bool(settings.whoisfreaks_api_key and not is_placeholder_key(settings.whoisfreaks_api_key))
 
     async def run(

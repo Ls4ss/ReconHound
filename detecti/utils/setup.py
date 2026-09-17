@@ -226,13 +226,13 @@ class SetupManager:
             msg = info.get("message", "")
 
             if is_ok and "Needs" not in status:
-                status_styled = f"[bold green]✔ {status}[/bold green]"
+                status_styled = f"[bold green][+] {status}[/bold green]"
             elif "Optional" in status:
-                status_styled = f"[yellow]⚠ {status}[/yellow]"
+                status_styled = f"[yellow][!] {status}[/yellow]"
             elif not is_ok:
-                status_styled = f"[bold red]✘ {status}[/bold red]"
+                status_styled = f"[bold red][-] {status}[/bold red]"
             else:
-                status_styled = f"[yellow]⚠ {status}[/yellow]"
+                status_styled = f"[yellow][!] {status}[/yellow]"
 
             table.add_row(name, status_styled, msg)
 
@@ -240,12 +240,12 @@ class SetupManager:
 
     def run_automated_setup(self) -> bool:
         """Run automated setup: creates directories, .env file, configures capabilities, and updates databases."""
-        self.console.print("\n[bold cyan]🚀 Starting DetecTI-CLI Automated Environment Setup...[/bold cyan]\n")
+        self.console.print("\n[bold cyan]Starting DetecTI-CLI Automated Environment Setup...[/bold cyan]\n")
 
         all_success = True
 
         # Step 0: Dashboard Admin Password Setup
-        self.console.print("🔐 [bold white]Step 0/6: Configuring DetecTIHound Dashboard Admin...[/bold white]")
+        self.console.print("[+] [bold white]Step 0/6: Configuring DetecTIHound Dashboard Admin...[/bold white]")
         try:
             import getpass
             import sys
@@ -285,14 +285,14 @@ class SetupManager:
                         if pwd1 == pwd2 and len(pwd1) >= 4:
                             config_db.update_user_password("admin", get_password_hash(pwd1))
                             update_env_jwt(pwd1)
-                            self.console.print("  [green]✔ Admin password updated successfully.[/green]")
+                            self.console.print("  [green][+] Admin password updated successfully.[/green]")
                             break
                         elif len(pwd1) < 4:
                             self.console.print("  [red]Password must be at least 4 characters.[/red]")
                         else:
                             self.console.print("  [red]Passwords do not match. Try again.[/red]")
                 else:
-                    self.console.print("  [green]✔ Admin configuration skipped.[/green]")
+                    self.console.print("  [green][+] Admin configuration skipped.[/green]")
             else:
                 self.console.print("  [cyan]Creating default 'admin' user for the web dashboard.[/cyan]")
                 while True:
@@ -301,19 +301,19 @@ class SetupManager:
                     if pwd1 == pwd2 and len(pwd1) >= 4:
                         config_db.create_user("admin", get_password_hash(pwd1))
                         update_env_jwt(pwd1)
-                        self.console.print("  [green]✔ Admin user created successfully.[/green]")
+                        self.console.print("  [green][+] Admin user created successfully.[/green]")
                         break
                     elif len(pwd1) < 4:
                         self.console.print("  [red]Password must be at least 4 characters.[/red]")
                     else:
                         self.console.print("  [red]Passwords do not match. Try again.[/red]")
         except Exception as e:
-            self.console.print(f"  [red]⚠ Failed to configure admin: {e}[/red]")
+            self.console.print(f"  [red][!] Failed to configure admin: {e}[/red]")
             import traceback
             traceback.print_exc()
 
         # Step 1: Create Directories & Copy Demo DB
-        self.console.print("📁 [bold white]Step 1/6: Initializing project directories...[/bold white]")
+        self.console.print("[+] [bold white]Step 1/6: Initializing project directories...[/bold white]")
         for d in [DETECTI_HOME / "data" / "dbs", Path.cwd() / "reports"]:
             d.mkdir(parents=True, exist_ok=True)
             
@@ -321,42 +321,42 @@ class SetupManager:
         demo_db_dst = DETECTI_HOME / "data" / "dbs" / "example.com.sqlite"
         if demo_db_src.exists() and not demo_db_dst.exists():
             shutil.copy2(demo_db_src, demo_db_dst)
-            self.console.print("  [green]✔ Demo database (example.com.sqlite) initialized.[/green]")
+            self.console.print("  [green][+] Demo database (example.com.sqlite) initialized.[/green]")
             
-        self.console.print("  [green]✔ Operational directories verified (data/dbs, reports).[/green]")
+        self.console.print("  [green][+] Operational directories verified (data/dbs, reports).[/green]")
 
         # Step 2: Configure .env
-        self.console.print("\n⚙️ [bold white]Step 2/6: Checking environment configuration (.env)...[/bold white]")
+        self.console.print("\n[+] [bold white]Step 2/6: Checking environment configuration (.env)...[/bold white]")
         env_file = DETECTI_HOME / ".env"
         if env_file.exists():
-            self.console.print(f"  [green]✔ Existing .env file detected at {env_file} and preserved.[/green]")
+            self.console.print(f"  [green][+] Existing .env file detected at {env_file} and preserved.[/green]")
         else:
             env_content = "# DetecTI-CLI Configuration\n# Add your API Keys here for enhanced intelligence\nSHODAN_API_KEY=\nCENSYS_API_ID=\nCENSYS_API_SECRET=\nGITHUB_TOKEN=\n"
             env_file.write_text(env_content)
-            self.console.print(f"  [green]✔ Created default .env file at {env_file}.[/green]")
+            self.console.print(f"  [green][+] Created default .env file at {env_file}.[/green]")
 
         # Step 3: Python dependencies check / install
-        self.console.print("\n🐍 [bold white]Step 3/6: Verifying Python dependencies...[/bold white]")
+        self.console.print("\n[+] [bold white]Step 3/6: Verifying Python dependencies...[/bold white]")
         req_file = self.root_dir / "requirements.txt"
         dep_check = self.check_python_modules()
         if not dep_check["ok"] and req_file.exists():
             self.console.print(f"  [yellow]Installing missing dependencies: {', '.join(dep_check['missing'])}...[/yellow]")
             try:
                 subprocess.run([sys.executable, "-m", "pip", "install", "-r", str(req_file)], check=True)
-                self.console.print("  [green]✔ Python dependencies installed successfully.[/green]")
+                self.console.print("  [green][+] Python dependencies installed successfully.[/green]")
             except Exception as exc:
-                self.console.print(f"  [red]✘ Failed to install Python dependencies: {exc}[/red]")
+                self.console.print(f"  [red][-] Failed to install Python dependencies: {exc}[/red]")
                 all_success = False
         else:
-            self.console.print("  [green]✔ All Python core dependencies are satisfied.[/green]")
+            self.console.print("  [green][+] All Python core dependencies are satisfied.[/green]")
 
         # Step 4: Masscan capabilities configuration
-        self.console.print("\n⚡ [bold white]Step 4/6: Configuring Masscan network capabilities...[/bold white]")
+        self.console.print("\n[+] [bold white]Step 4/6: Configuring Masscan network capabilities...[/bold white]")
         masscan_bin = shutil.which("masscan")
         if masscan_bin:
             is_root = hasattr(os, "geteuid") and os.geteuid() == 0
             if is_root:
-                self.console.print("  [green]✔ Running as root: raw packet sockets are natively authorized.[/green]")
+                self.console.print("  [green][+] Running as root: raw packet sockets are natively authorized.[/green]")
             else:
                 setcap_bin = shutil.which("setcap")
                 if setcap_bin:
@@ -365,39 +365,39 @@ class SetupManager:
                         self.console.print(f"  [cyan]Applying Linux capabilities via setcap...[/cyan]")
                         res = subprocess.run(cmd, check=False)
                         if res.returncode == 0:
-                            self.console.print("  [green]✔ Granted non-root raw socket capabilities to masscan.[/green]")
+                            self.console.print("  [green][+] Granted non-root raw socket capabilities to masscan.[/green]")
                         else:
-                            self.console.print(f"  [yellow]⚠ Could not apply setcap automatically. Run manually if needed:[/yellow]\n    sudo setcap cap_net_raw,cap_net_admin,cap_net_bind_service+eip {masscan_bin}")
+                            self.console.print(f"  [yellow][!] Could not apply setcap automatically. Run manually if needed:[/yellow]\n    sudo setcap cap_net_raw,cap_net_admin,cap_net_bind_service+eip {masscan_bin}")
                     except Exception as exc:
-                        self.console.print(f"  [yellow]⚠ Note: Run manually if non-root WebGUI scanning is needed:\n    sudo setcap cap_net_raw,cap_net_admin,cap_net_bind_service+eip {masscan_bin}[/yellow]")
+                        self.console.print(f"  [yellow][!] Note: Run manually if non-root WebGUI scanning is needed:\n    sudo setcap cap_net_raw,cap_net_admin,cap_net_bind_service+eip {masscan_bin}[/yellow]")
                 else:
-                    self.console.print(f"  [yellow]⚠ 'setcap' binary not found. Masscan may require root permissions to scan.[/yellow]")
+                    self.console.print(f"  [yellow][!] 'setcap' binary not found. Masscan may require root permissions to scan.[/yellow]")
         else:
-            self.console.print("  [yellow]⚠ Masscan is not installed on this system.[/yellow]")
+            self.console.print("  [yellow][!] Masscan is not installed on this system.[/yellow]")
             self.console.print("    [dim]Install on Linux with: sudo apt install -y masscan (or pacman/dnf)[/dim]")
 
         # Step 5: ExploitDB Cache Update
-        self.console.print("\n💣 [bold white]Step 5/6: Initializing ExploitDB vulnerability mapping...[/bold white]")
+        self.console.print("\n[+] [bold white]Step 5/6: Initializing ExploitDB vulnerability mapping...[/bold white]")
         try:
             from detecti.modules.exploitdb import ExploitDBModule
             ExploitDBModule.update_database()
-            self.console.print("  [green]✔ ExploitDB mapping database initialized & updated.[/green]")
+            self.console.print("  [green][+] ExploitDB mapping database initialized & updated.[/green]")
         except Exception as exc:
-            self.console.print(f"  [yellow]⚠ ExploitDB update notice: {exc}[/yellow]")
+            self.console.print(f"  [yellow][!] ExploitDB update notice: {exc}[/yellow]")
 
         # Step 6: Nuclei Templates Check
-        self.console.print("\n🛡️ [bold white]Step 6/6: Checking Nuclei vulnerability engine...[/bold white]")
+        self.console.print("\n[+] [bold white]Step 6/6: Checking Nuclei vulnerability engine...[/bold white]")
         nuclei_bin = shutil.which("nuclei")
         if nuclei_bin:
             try:
                 self.console.print("  [cyan]Updating Nuclei community vulnerability templates...[/cyan]")
                 subprocess.run([nuclei_bin, "-update-templates", "-silent"], check=False, timeout=15)
-                self.console.print("  [green]✔ Nuclei templates checked & updated.[/green]")
+                self.console.print("  [green][+] Nuclei templates checked & updated.[/green]")
             except Exception:
-                self.console.print("  [green]✔ Nuclei engine is active.[/green]")
+                self.console.print("  [green][+] Nuclei engine is active.[/green]")
         else:
             self.console.print("  [dim]Nuclei is optional and not currently installed.[/dim]")
 
 
-        self.console.print("\n[bold green]✅ DetecTI-CLI setup routine completed![/bold green]\n")
+        self.console.print("\n[bold green][+] DetecTI-CLI setup routine completed![/bold green]\n")
         return all_success

@@ -165,7 +165,7 @@ class CensysModule(BaseModule):
         **kwargs: Any,
     ):
         super().__init__(client=client, progress_callback=progress_callback)
-        from config import is_placeholder_key
+        from detecti.config import is_placeholder_key
         raw_pat = pat_token or settings.censys_pat_token or os.getenv("CENSYS_PAT_TOKEN")
         self.pat_token = None if is_placeholder_key(raw_pat) else raw_pat
         raw_org = org_id or settings.censys_org_id or os.getenv("CENSYS_ORG_ID")
@@ -178,7 +178,7 @@ class CensysModule(BaseModule):
         """Check if valid Censys API credentials (PAT token or legacy ID/Secret) are set."""
         if self._auth_failed:
             return False
-        from config import is_placeholder_key
+        from detecti.config import is_placeholder_key
         has_pat = bool(self.pat_token and not is_placeholder_key(self.pat_token))
         has_legacy = bool(
             settings.censys_api_id
@@ -298,22 +298,22 @@ class CensysModule(BaseModule):
             return await self.search_query(query)
             
         except CensysQuotaExhaustedError as e:
-            print(f"⚠️  Censys API quota/balance exhausted. Skipping further Censys queries.")
+            print(f"[!]  Censys API quota/balance exhausted. Skipping further Censys queries.")
             self._quota_exhausted = True  # Set flag to skip future calls
             return []
         except CensysRateLimitError as e:
             logger.warning(f"Censys API rate limit exceeded for target {target}")
-            print(f"⚠️  Censys API rate limit exceeded. Please wait before making more requests or upgrade your plan.")
+            print(f"[!]  Censys API rate limit exceeded. Please wait before making more requests or upgrade your plan.")
             return []
         except CensysAuthError as e:
             logger.error(f"Censys authentication error for target {target}")
-            print(f"❌ Censys authentication failed. Please check your API credentials.")
+            print(f"[-] Censys authentication failed. Please check your API credentials.")
             return []
         except CensysAPIError as e:
             # Don't log/print if it's actually a quota exhaustion that wasn't caught properly
             if "insufficient balance" not in str(e).lower():
                 logger.error(f"Censys API error for target {target}: {e}")
-                print(f"⚠️  Censys API error: {e}")
+                print(f"[!]  Censys API error: {e}")
             return []
         except Exception as e:
             logger.error(f"Censys module error for target {target}: {e}")

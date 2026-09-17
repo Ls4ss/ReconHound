@@ -190,10 +190,7 @@ class ThreatTrackEngine:
             return {"type": "query", "clean_target": query_val, "root_domain": None, "subdomain": None, "port": None}
 
         # If it is not an IP, CIDR, Domain with valid TLD, CVE, Email, existing File, or valid Query Dork -> Invalid Target
-        raise ValueError(
-            f"Invalid target or file not found: '{raw}'. "
-            f"Target must be a valid IP, CIDR, Domain, URL, CVE, existing File, or Shodan Query filter (e.g., org:'Target', port:443)."
-        )
+        raise ValueError(f"Invalid target or file not found: '{raw}'.")
 
     def classify_target(self, target: str) -> str:
         """Identify target classification (ip, cidr, domain, cve, query, file, email, invalid)."""
@@ -317,7 +314,7 @@ class ThreatTrackEngine:
 
         # 6. ExploitDB / GitHub Token
         if "exploitdb" in active_mod_names:
-            from config import is_placeholder_key
+            from detecti.config import is_placeholder_key
             has_gh = bool(settings.github_token and not is_placeholder_key(settings.github_token))
             status_report["exploitdb"] = {
                 "name": "ExploitDB / GitHub PoCs",
@@ -333,7 +330,6 @@ class ThreatTrackEngine:
         self,
         target: str,
         enabled_modules: Optional[List[str]] = None,
-        cvss_filter: Optional[str] = None,
         skip_preflight: bool = False,
     ) -> ScanResult:
         self.current_input_target = target
@@ -346,7 +342,7 @@ class ThreatTrackEngine:
 
         # Handle file input containing multiple targets
         if target_type == "file":
-            return await self._scan_file(target, enabled_modules, cvss_filter)
+            return await self._scan_file(target, enabled_modules)
 
         active_mod_names = (
             [m for m in enabled_modules if m in self.modules]
@@ -884,10 +880,7 @@ class ThreatTrackEngine:
             for cve in sorted(cves_for_this_host):
                 if cve in enriched_vulns:
                     vdata = enriched_vulns[cve]
-                    # Apply CVSS filter if requested
-                    if cvss_filter:
-                        if vdata.cvss_severity != cvss_filter.upper():
-                            continue
+                    # No CVSS filtering at ingestion stage
                     host_vulns.append(vdata)
 
             # Sort host vulns by CVSS score descending
@@ -972,8 +965,6 @@ class ThreatTrackEngine:
         # Standalone CVE scan without hosts
         if not hosts_map and target_type == "cve":
             for cve, vdata in enriched_vulns.items():
-                if cvss_filter and vdata.cvss_severity != cvss_filter.upper():
-                    continue
                 final_findings.append(
                     Finding(
                         type=FindingType.VULNERABILITY,
@@ -1008,7 +999,6 @@ class ThreatTrackEngine:
         self,
         file_path: str,
         enabled_modules: Optional[List[str]],
-        cvss_filter: Optional[str],
     ) -> ScanResult:
         """Process file containing targets line-by-line with pre-flight check executed once and live progress."""
         path = Path(file_path)
@@ -1048,7 +1038,6 @@ class ThreatTrackEngine:
             sub_res = await self.scan(
                 line,
                 enabled_modules=enabled_modules,
-                cvss_filter=cvss_filter,
                 skip_preflight=True,
             )
             all_findings.extend(sub_res.findings)

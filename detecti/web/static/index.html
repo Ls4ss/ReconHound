@@ -33,7 +33,7 @@
                     <a href="https://detecti.com.br" target="_blank" rel="noopener noreferrer" class="header-brand" title="Visit DetecTI Security Official Website (detecti.com.br)">
                         <img src="/static/img/DetecTI_Security_Logo.png" alt="DetecTI Security Logo" class="brand-logo">
                         <div class="brand-text">
-                            <h1 class="brand-title" style="display: flex; align-items: center; gap: 8px;">
+                            <h1 class="brand-title" style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
                                 <span>Detec<span class="ti-highlight">TI</span><span style="font-size: 0.75em; font-weight: 500;">CLI</span></span>
                                 <span style="font-size: 0.5em; background: rgba(0, 240, 255, 0.1); color: var(--cyan-accent); border: 1px solid rgba(0, 240, 255, 0.3); padding: 1px 6px; border-radius: 4px; font-weight: bold; font-family: var(--font-mono); letter-spacing: 0.5px;">v2.2.3</span>
                             </h1>
@@ -167,7 +167,7 @@
 
             <!-- Graph Container -->
             <main class="graph-container">
-                <div class="canvas-toolbar" id="canvas-toolbar" style="position: absolute; top: 20px; left: 20px; z-index: 100; display: flex; flex-direction: column; gap: 8px;">
+                <div class="canvas-toolbar" id="canvas-toolbar" style="position: absolute; top: 20px; left: 20px; z-index: 100; display: flex; flex-direction: column; gap: 8px; flex-wrap: wrap;">
                     <style>
                         .segmented-toolbar button:hover { background: rgba(255, 255, 255, 0.08) !important; }
                         .segmented-toolbar button.active { background: rgba(0, 240, 255, 0.15) !important; color: #00f0ff !important; }
@@ -445,7 +445,7 @@
                         <div class="form-group">
                             <label for="input-custom-ports" class="form-label">Custom Ports Specification:</label>
                             <input type="text" id="input-custom-ports" class="drawer-text-input" placeholder="e.g. -p21-25,80,443,3306,8080 or --top-ports 50" value="--top-ports 100">
-                            <div class="preset-buttons" style="margin-top: 8px; display: flex; gap: 8px;">
+                            <div class="preset-buttons" style="margin-top: 8px; display: flex; gap: 8px; flex-wrap: wrap;">
                                 <button type="button" class="drawer-btn preset-btn active" data-preset="top100" data-value="--top-ports 100" style="padding: 4px 8px; font-size: 0.8em; flex: 1;">Top 100</button>
                                 <button type="button" class="drawer-btn preset-btn" data-preset="web" data-value="-p80,443,8080,8443,8000,8888,9000,9443" style="padding: 4px 8px; font-size: 0.8em; flex: 1;">Top Web</button>
                                 <button type="button" class="drawer-btn preset-btn" data-preset="all" data-value="-p0-65535" style="padding: 4px 8px; font-size: 0.8em; flex: 1;">All Ports (65535)</button>
@@ -724,7 +724,7 @@
     <!-- Floating Leads Modal -->
     <div id="floating-leads-modal" class="modal" style="display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 450px; max-width: 90vw; max-height: 85vh; background: #1e1e2d; border: 1px solid #333; border-radius: 8px; z-index: 10000; box-shadow: 0 10px 30px rgba(0,0,0,0.5); flex-direction: column;">
         <div style="padding: 15px; border-bottom: 1px solid #333; display: flex; justify-content: space-between; align-items: center; background: #252536; border-radius: 8px 8px 0 0;">
-            <h3 style="margin: 0; color: #fff; font-size: 1.1rem; display: flex; align-items: center; gap: 8px;">
+            <h3 style="margin: 0; color: #fff; font-size: 1.1rem; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
                 <i data-lucide="compass" style="width: 18px; height: 18px; color: #00f0ff;"></i> Explore Leads
             </h3>
             <button id="close-floating-leads" style="background: none; border: none; color: #999; cursor: pointer; font-size: 1.5rem; line-height: 1;">&times;</button>
@@ -919,7 +919,7 @@
                             const targetTitle = isTarget ? 'Remove from Targets' : 'Add to Targets';
                             
                             let targetBadge = `
-                                <div style="display: flex; align-items: center; gap: 8px;">
+                                <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
                                     <button onclick="window.toggleInventoryTarget('${label}', this)" class="inventory-target-btn" title="${targetTitle}" style="background: transparent; border: none; cursor: pointer; display: flex; align-items: center; justify-content: flex-start; color: ${targetColor}; transition: color 0.2s;">
                                         <i data-lucide="${targetIcon}" style="width: 18px; height: 18px;"></i>
                                     </button>

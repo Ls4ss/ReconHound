@@ -173,6 +173,12 @@ def recon_command(
         "--create-db",
         help="Custom name for SQLite database in ./data/dbs/ (optional, defaults to target root)",
     ),
+    modules: str = typer.Option(
+        "all",
+        "-m",
+        "--modules",
+        help="Comma-separated list of recon modules to run (e.g. shodan,crtsh,axfr,sectrails,whois) or 'all'",
+    ),
 ) -> None:
     """Execute passive attack surface mapping and reconnaissance.
     
@@ -188,7 +194,7 @@ def recon_command(
         print_info(f"Usage: {cli_name} recon <target>")
         raise typer.Exit(1)
         
-    _execute_scan(target, output_format, output_file, output_dir, create_db, cli_name, is_intel=False)
+    _execute_scan(target, output_format, output_file, output_dir, create_db, cli_name, is_intel=False, modules_str=modules)
 
 
 @app.command(name="intel")
@@ -239,7 +245,8 @@ def _execute_scan(
     output_dir: Optional[Path],
     create_db: Optional[str],
     cli_name: str,
-    is_intel: bool = False
+    is_intel: bool = False,
+    modules_str: str = "all",
 ) -> None:
     # Pre-validate target before starting scan progress
     try:
@@ -295,10 +302,11 @@ def _execute_scan(
             progress.update(task_id, description=f"[bold cyan][{module_name}][/bold cyan] {message}")
 
         engine = ThreatTrackEngine(progress_callback=progress_cb, db_manager=db_manager)
+        module_list = [m.strip().lower() for m in modules_str.split(",")] if modules_str else ["all"]
         result = asyncio.run(
             engine.scan(
                 target=target,
-                enabled_modules=["all"],
+                enabled_modules=module_list,
             )
         )
 

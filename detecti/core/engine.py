@@ -61,11 +61,11 @@ class ThreatTrackEngine:
         "shodan": ShodanModule,
         "censys": CensysModule,
         "crtsh": CrtshModule,
-        "reverse_whois": ReverseWhoisModule,
-        "securitytrails": SecurityTrailsModule,
+        "whois": ReverseWhoisModule,
+        "sectrails": SecurityTrailsModule,
         "nvd": NVDModule,
         "exploitdb": ExploitDBModule,
-        "zonetransfer": ZoneTransferModule,
+        "axfr": ZoneTransferModule,
     }
 
     def __init__(
@@ -275,10 +275,10 @@ class ThreatTrackEngine:
                 }
 
         # 4. WhoisFreaks / Reverse WHOIS
-        if "reverse_whois" in active_mod_names:
-            whois_mod: ReverseWhoisModule = self.modules["reverse_whois"]  # type: ignore
+        if "whois" in active_mod_names:
+            whois_mod: ReverseWhoisModule = self.modules["whois"]  # type: ignore
             if whois_mod.is_configured():
-                status_report["reverse_whois"] = {
+                status_report["whois"] = {
                     "name": "WhoisFreaks",
                     "configured": True,
                     "valid": True,
@@ -286,7 +286,7 @@ class ThreatTrackEngine:
                     "tier": "Paid API",
                 }
             else:
-                status_report["reverse_whois"] = {
+                status_report["whois"] = {
                     "name": "WhoisFreaks",
                     "configured": False,
                     "valid": True,
@@ -295,10 +295,10 @@ class ThreatTrackEngine:
                 }
 
         # 5. SecurityTrails
-        if "securitytrails" in active_mod_names:
-            st_mod = self.modules["securitytrails"]
+        if "sectrails" in active_mod_names:
+            st_mod = self.modules["sectrails"]
             if st_mod.is_configured():
-                status_report["securitytrails"] = {
+                status_report["sectrails"] = {
                     "name": "SecurityTrails",
                     "configured": True,
                     "valid": True,
@@ -306,7 +306,7 @@ class ThreatTrackEngine:
                     "tier": "Standard API",
                 }
             else:
-                status_report["securitytrails"] = {
+                status_report["sectrails"] = {
                     "name": "SecurityTrails",
                     "configured": False,
                     "valid": False,
@@ -351,6 +351,12 @@ class ThreatTrackEngine:
             if enabled_modules and "all" not in enabled_modules
             else list(self.modules.keys())
         )
+        
+        # Force-add intel modules if not present
+        if enabled_modules and "all" not in enabled_modules:
+            for im in ["nvd", "exploitdb"]:
+                if im not in active_mod_names and im in self.modules:
+                    active_mod_names.append(im)
 
         # Pre-flight API verification layer: validate all APIs present in environment/config (if not skipped)
         if not skip_preflight:
@@ -429,22 +435,22 @@ class ThreatTrackEngine:
                 recon_tasks.append(self.modules["crtsh"].run(query_dom, context))
 
             # 4. Reverse WHOIS
-            if target_type in ("domain", "ip", "email") and "reverse_whois" in active_mod_names:
+            if target_type in ("domain", "ip", "email") and "whois" in active_mod_names:
                 query_whois = root_domain or clean_target
-                self._notify("reverse_whois", f"Performing Reverse WHOIS lookup for {query_whois}...")
-                recon_tasks.append(self.modules["reverse_whois"].run(query_whois, context))
+                self._notify("whois", f"Performing Reverse WHOIS lookup for {query_whois}...")
+                recon_tasks.append(self.modules["whois"].run(query_whois, context))
 
             # 5. SecurityTrails
-            if target_type in ("domain", "ip") and "securitytrails" in active_mod_names:
+            if target_type in ("domain", "ip") and "sectrails" in active_mod_names:
                 st_target = root_domain or clean_target if target_type == "domain" else clean_target
-                self._notify("securitytrails", f"Querying SecurityTrails for {st_target}...")
-                recon_tasks.append(self.modules["securitytrails"].run(st_target, context))
+                self._notify("sectrails", f"Querying SecurityTrails for {st_target}...")
+                recon_tasks.append(self.modules["sectrails"].run(st_target, context))
 
             # 6. Zone Transfer (AXFR)
-            if target_type == "domain" and "zonetransfer" in active_mod_names:
+            if target_type == "domain" and "axfr" in active_mod_names:
                 query_zt = root_domain or clean_target
-                self._notify("zonetransfer", f"Attempting Zone Transfer (AXFR) for {query_zt}...")
-                recon_tasks.append(self.modules["zonetransfer"].run(clean_target, context))
+                self._notify("axfr", f"Attempting Zone Transfer (AXFR) for {query_zt}...")
+                recon_tasks.append(self.modules["axfr"].run(clean_target, context))
 
         if recon_tasks:
             recon_results = await asyncio.gather(*recon_tasks, return_exceptions=True)
@@ -1022,6 +1028,10 @@ class ThreatTrackEngine:
             if enabled_modules and "all" not in enabled_modules
             else list(self.modules.keys())
         )
+        if enabled_modules and "all" not in enabled_modules:
+            for im in ["nvd", "exploitdb"]:
+                if im not in active_mod_names and im in self.modules:
+                    active_mod_names.append(im)
 
         # Pre-flight API verification layer: validate all APIs once for the batch
         self._notify("engine", "Verifying environment API credentials and endpoints...")

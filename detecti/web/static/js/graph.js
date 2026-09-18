@@ -7175,14 +7175,13 @@ class EASMDashboard {
 
         // Preset buttons for Masscan
         const presetBtns = document.querySelectorAll('.preset-btn');
-        const customPortsGroup = document.getElementById('custom-ports-group');
+        const customPortsInput = document.getElementById('input-custom-ports');
         presetBtns.forEach(btn => {
             btn.addEventListener('click', () => {
                 presetBtns.forEach(b => b.classList.remove('active'));
                 btn.classList.add('active');
-                this.currentPortPreset = btn.getAttribute('data-preset') || 'top100';
-                if (customPortsGroup) {
-                    customPortsGroup.style.display = this.currentPortPreset === 'custom' ? 'flex' : 'none';
+                if (customPortsInput) {
+                    customPortsInput.value = btn.getAttribute('data-value');
                 }
             });
         });
@@ -7224,14 +7223,7 @@ class EASMDashboard {
         const bannersCheckbox = document.getElementById('chk-scan-banners');
         const extraFlagsInput = document.getElementById('input-extra-flags');
 
-        let portsValue = '--top-ports 100';
-        if (this.currentPortPreset === 'custom' && customPortsInput) {
-            portsValue = customPortsInput.value || '--top-ports 100';
-        } else if (this.currentPortPreset === 'all') {
-            portsValue = '-p0-65535';
-        } else if (this.currentPortPreset === 'web') {
-            portsValue = '-p80,443,8080,8443,8000,8888,9000,9443';
-        }
+        let portsValue = customPortsInput && customPortsInput.value ? customPortsInput.value : '--top-ports 100';
 
         const config = {
             targets: targets,

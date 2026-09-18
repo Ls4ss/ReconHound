@@ -445,6 +445,11 @@
                         <div class="form-group">
                             <label for="input-custom-ports" class="form-label">Custom Ports Specification:</label>
                             <input type="text" id="input-custom-ports" class="drawer-text-input" placeholder="e.g. -p21-25,80,443,3306,8080 or --top-ports 50" value="--top-ports 100">
+                            <div class="preset-buttons" style="margin-top: 8px; display: flex; gap: 8px;">
+                                <button type="button" class="drawer-btn preset-btn active" data-preset="top100" data-value="--top-ports 100" style="padding: 4px 8px; font-size: 0.8em; flex: 1;">Top 100</button>
+                                <button type="button" class="drawer-btn preset-btn" data-preset="web" data-value="-p80,443,8080,8443,8000,8888,9000,9443" style="padding: 4px 8px; font-size: 0.8em; flex: 1;">Top Web</button>
+                                <button type="button" class="drawer-btn preset-btn" data-preset="all" data-value="-p0-65535" style="padding: 4px 8px; font-size: 0.8em; flex: 1;">All Ports (65535)</button>
+                            </div>
                         </div>
 
                         <!-- Performance / Rate Slider -->

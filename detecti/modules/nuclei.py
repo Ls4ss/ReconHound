@@ -7,6 +7,7 @@ import json
 import logging
 import os
 import shutil
+import subprocess
 import tempfile
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional
@@ -31,17 +32,55 @@ class NucleiRunner:
         return p.exists() and os.access(str(p), os.X_OK)
 
     def check_permissions(self) -> Dict[str, Any]:
-        """Verify binary availability."""
+        """Verify binary availability and functional execution."""
         available = self.is_available()
+        if not available:
+            return {
+                "available": False,
+                "binary_path": None,
+                "can_run": False,
+                "version": None,
+                "message": "Nuclei binary not found on system (install with: go install -v github.com/projectdiscovery/nuclei/v3/cmd/nuclei@latest or download from GitHub releases)",
+            }
+
+        # Functional dry-run check: verify binary can execute and return version
+        version_str = "Unknown"
+        is_functional = True
+        err_detail = None
+
+        try:
+            res = subprocess.run(
+                [self.binary_path, "-version"],
+                capture_output=True,
+                text=True,
+                timeout=4,
+                check=False,
+            )
+            combined = res.stdout + res.stderr
+            if res.returncode == 0 or "nuclei" in combined.lower() or "projectdiscovery" in combined.lower():
+                for line in combined.splitlines():
+                    clean = line.strip()
+                    if "nuclei" in clean.lower() and ("v" in clean.lower() or "version" in clean.lower()):
+                        version_str = clean
+                        break
+            else:
+                is_functional = False
+                err_detail = f"Nuclei exited with code {res.returncode}: {combined.strip()[:120]}"
+        except subprocess.TimeoutExpired:
+            is_functional = False
+            err_detail = "Nuclei execution test timed out after 4 seconds."
+        except Exception as e:
+            is_functional = False
+            err_detail = f"Nuclei execution test failed: {e}"
+            logger.error(f"Nuclei check_permissions exception: {e}", exc_info=True)
+
+        can_run = available and is_functional
         return {
-            "available": available,
-            "binary_path": self.binary_path if available else None,
-            "can_run": available,
-            "message": (
-                "Nuclei engine ready"
-                if available
-                else "Nuclei binary not found on system (install with: go install -v github.com/projectdiscovery/nuclei/v3/cmd/nuclei@latest or download from GitHub releases)"
-            ),
+            "available": can_run,
+            "binary_path": self.binary_path,
+            "can_run": can_run,
+            "version": version_str if is_functional else None,
+            "message": f"Nuclei engine ready ({version_str})" if can_run else (err_detail or "Nuclei binary found but failed execution test."),
         }
 
     async def update_templates(

@@ -7210,7 +7210,8 @@ class EASMDashboard {
         try {
             const perm = await window.api.checkScanPermissions();
             if (perm.masscan && !perm.masscan.available) {
-                this.addScanLog('error', 'Masscan executable not found on system. Please install masscan.');
+                const errorMsg = perm.masscan.message || 'Masscan executable not found on system. Please install masscan.';
+                this.addScanLog('error', `[Masscan Check Failed] ${errorMsg}`);
                 return;
             }
         } catch (e) {
@@ -7279,11 +7280,12 @@ class EASMDashboard {
         try {
             const perm = await window.api.checkScanPermissions();
             if (perm.nuclei && !perm.nuclei.available) {
-                this.addScanLog('error', 'Nuclei binary not found on system. Please install Nuclei.');
+                const errorMsg = perm.nuclei.message || 'Nuclei binary not found on system. Please install Nuclei.';
+                this.addScanLog('error', `[Nuclei Check Failed] ${errorMsg}`);
                 return;
             }
         } catch (e) {
-            console.warn('Could not verify Nuclei permissions:', e);
+            console.warn('Could not verify scan permissions:', e);
         }
 
         // Collect selected severities

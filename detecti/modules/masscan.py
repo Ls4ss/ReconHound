@@ -7,6 +7,7 @@ import json
 import logging
 import os
 import shutil
+import subprocess
 import tempfile
 from pathlib import Path
 from typing import Any, Dict, List, Optional
@@ -228,25 +229,43 @@ class MasscanRunner:
 
         if available and self.binary_path:
             try:
-                res = subprocess.run([self.binary_path, "--echo"], capture_output=True, text=True, timeout=3, check=False)
-                if "failed to load libpcap" in (res.stdout + res.stderr).lower():
+                res = subprocess.run(
+                    [self.binary_path, "--echo"],
+                    capture_output=True,
+                    text=True,
+                    timeout=3,
+                    check=False,
+                )
+                combined_output = (res.stdout + res.stderr).lower()
+                if "failed to load libpcap" in combined_output or "libpcap not loaded" in combined_output:
                     pcap_ok = False
                     err_detail = "Missing libpcap shared library (run: sudo apt install -y libpcap0.8)"
+                elif "can't open adapter" in combined_output and "libpcap" in combined_output:
+                    pcap_ok = False
+                    err_detail = "Network adapter initialization failed: libpcap shared library not found."
             except Exception as e:
                 pcap_ok = False
-                err_detail = str(e)
+                err_detail = f"Masscan execution test failed: {e}"
+                logger.error(f"Masscan check_permissions exception: {e}", exc_info=True)
 
         can_run = available and pcap_ok
+        
+        # Determine human-readable status message
+        if not available:
+            message = "Masscan binary not found on system (install with: apt-get install -y masscan)"
+        elif not pcap_ok:
+            message = err_detail or "Masscan binary found, but libpcap shared library is missing."
+        elif not is_root:
+            message = "Masscan installed, but requires root or CAP_NET_RAW capabilities."
+        else:
+            message = "Masscan ready"
+
         return {
             "available": can_run,
             "binary_path": self.binary_path if available else None,
             "is_root": is_root,
             "can_run": can_run,
-            "message": (
-                "Masscan ready"
-                if can_run
-                else (err_detail or "Masscan binary not found on system (install with: apt-get install masscan)")
-            ),
+            "message": message,
         }
 
     async def scan_target(

@@ -107,7 +107,7 @@ class SetupManager:
         }
 
     def check_masscan(self) -> Dict[str, Any]:
-        """Check Masscan binary installation and Linux raw socket capabilities."""
+        """Check Masscan binary installation, shared libraries (libpcap), and Linux raw socket capabilities."""
         masscan_path = shutil.which("masscan")
         if not masscan_path:
             return {
@@ -119,7 +119,39 @@ class SetupManager:
                 "message": "Binary 'masscan' not found in PATH. Required for active port scanning in WebGUI.",
             }
 
-        # Check raw socket capabilities or root execution
+        # 1. Functional dry-run check: verify dynamic linking (libpcap) and executable integrity
+        has_pcap = True
+        pcap_error = None
+        try:
+            res = subprocess.run(
+                [masscan_path, "--echo"],
+                capture_output=True,
+                text=True,
+                timeout=3,
+                check=False,
+            )
+            combined_err = (res.stdout + res.stderr).lower()
+            if "failed to load libpcap" in combined_err or "libpcap not loaded" in combined_err:
+                has_pcap = False
+                pcap_error = "Missing shared library: libpcap. Install with: sudo apt install -y libpcap0.8"
+            elif "can't open adapter" in combined_err and "libpcap" in combined_err:
+                has_pcap = False
+                pcap_error = "Adapter initialization failed: libpcap shared library not found."
+        except Exception as exc:
+            has_pcap = False
+            pcap_error = f"Masscan execution test failed: {exc}"
+
+        if not has_pcap:
+            return {
+                "name": "Masscan Active Port Scanner",
+                "status": "Missing Dependency (libpcap)",
+                "ok": False,
+                "path": masscan_path,
+                "has_caps": False,
+                "message": pcap_error or "Masscan binary found, but libpcap shared library is missing.",
+            }
+
+        # 2. Check raw socket capabilities or root execution
         has_caps = False
         is_root = hasattr(os, "geteuid") and os.geteuid() == 0
         if is_root:
@@ -138,13 +170,14 @@ class SetupManager:
         if is_root:
             status_text = "Ready (Running as root)"
 
+        is_operational = has_pcap and (is_root or has_caps)
         return {
             "name": "Masscan Active Port Scanner",
             "status": status_text,
-            "ok": masscan_path is not None,
+            "ok": is_operational,
             "path": masscan_path,
             "has_caps": has_caps,
-            "message": "Masscan is fully configured and ready for non-root execution." if has_caps else f"Masscan found at {masscan_path}, but raw socket capabilities should be set: sudo setcap cap_net_raw,cap_net_admin,cap_net_bind_service+eip {masscan_path}",
+            "message": "Masscan is fully configured and ready for execution." if is_operational else f"Masscan found at {masscan_path}, but raw socket capabilities should be set: sudo setcap cap_net_raw,cap_net_admin,cap_net_bind_service+eip {masscan_path}",
         }
 
     def check_nuclei(self) -> Dict[str, Any]:
@@ -350,13 +383,35 @@ class SetupManager:
         else:
             self.console.print("  [green][+] All Python core dependencies are satisfied.[/green]")
 
-        # Step 4: Masscan capabilities configuration
-        self.console.print("\n[+] [bold white]Step 4/6: Configuring Masscan network capabilities...[/bold white]")
+        # Step 4: Masscan capabilities & dependency configuration
+        self.console.print("\n⚡ [bold white]Step 4/6: Configuring Masscan network capabilities...[/bold white]")
         masscan_bin = shutil.which("masscan")
         if masscan_bin:
+            # Check libpcap library integrity
+            try:
+                res = subprocess.run([masscan_bin, "--echo"], capture_output=True, text=True, timeout=3, check=False)
+                if "failed to load libpcap" in (res.stdout + res.stderr).lower():
+                    self.console.print("  [yellow]⚠ Masscan found, but required library 'libpcap' is missing.[/yellow]")
+                    is_root = hasattr(os, "geteuid") and os.geteuid() == 0
+                    if is_root and shutil.which("apt-get"):
+                        self.console.print("  [cyan]Attempting automatic installation of libpcap0.8...[/cyan]")
+                        try:
+                            subprocess.run(["apt-get", "update", "-qq"], check=False)
+                            install_res = subprocess.run(["apt-get", "install", "-y", "-qq", "libpcap0.8"], check=False)
+                            if install_res.returncode == 0:
+                                self.console.print("  [green]✔ Successfully installed libpcap0.8.[/green]")
+                            else:
+                                self.console.print("  [yellow]⚠ Please install manually: sudo apt install -y libpcap0.8[/yellow]")
+                        except Exception:
+                            self.console.print("  [yellow]⚠ Please install manually: sudo apt install -y libpcap0.8[/yellow]")
+                    else:
+                        self.console.print("  [yellow]Run manually: sudo apt install -y libpcap0.8 (or pacman/dnf equivalent)[/yellow]")
+            except Exception:
+                pass
+
             is_root = hasattr(os, "geteuid") and os.geteuid() == 0
             if is_root:
-                self.console.print("  [green][+] Running as root: raw packet sockets are natively authorized.[/green]")
+                self.console.print("  [green]✔ Running as root: raw packet sockets are natively authorized.[/green]")
             else:
                 setcap_bin = shutil.which("setcap")
                 if setcap_bin:

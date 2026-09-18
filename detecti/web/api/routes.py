@@ -1227,7 +1227,10 @@ async def start_active_scan(
                 v_ports, _ = _get_target_ports_partition(ip_to_scan, active_db)
                 total_verified_count = len(v_ports) if v_ports else len(open_ports)
 
-                if scan_res.get("success") or open_ports:
+                # Evaluate success: requires explicit success flag and no fatal error unless valid open ports exist
+                scan_success = scan_res.get("success", False) and not scan_res.get("error")
+
+                if scan_success or open_ports:
                     _target_registry[ip_to_scan]["status"] = "completed"
                     _target_registry[ip_to_scan]["ports_count"] = total_verified_count
                     _target_registry[ip_to_scan]["ports"] = open_ports
@@ -1238,14 +1241,14 @@ async def start_active_scan(
                         target=ip_to_scan
                     )
                 else:
-                    err_msg = scan_res.get("error", "Unknown scan error")
+                    err_msg = scan_res.get("error", "Masscan scan failed")
                     _target_registry[ip_to_scan]["status"] = "failed"
                     _target_registry[ip_to_scan]["ports_count"] = total_verified_count
                     _target_registry[ip_to_scan]["ports"] = open_ports
                     _target_registry[ip_to_scan]["error"] = err_msg
                     _append_scan_log(
-                        "warning" if open_ports else "error",
-                        f"Scan on {ip_to_scan} ended with warning/timeout: {err_msg} ({total_verified_count} ports preserved).",
+                        "error",
+                        f"[Masscan Failed] Scan on {ip_to_scan} failed: {err_msg}",
                         target=ip_to_scan
                     )
 
@@ -1508,12 +1511,21 @@ async def start_nuclei_scan(
                                 f"[Nuclei Pre-Scan] Masscan verified {len(open_ports)} of {len(unverified_passive_ports)} passive port(s) as Confirmed Active on {target_to_scan}. Proceeding with Nuclei vulnerability scan.",
                                 target=target_to_scan
                             )
-                        else:
-                            if target_to_scan in _target_registry:
-                                _target_registry[target_to_scan]["status"] = "completed"
+                        elif not m_res.get("success", False) and m_res.get("error"):
+                            # Log explicit error rather than pretending ports were tested and silent
                             _append_scan_log(
-                                "warning",
-                                f"[Nuclei Pre-Scan] Masscan verification returned 0 open ports for passive ports [{ports_to_verify}] on {target_to_scan}.",
+                                "error",
+                                f"[Nuclei Pre-Scan Error] Masscan verification crashed on {target_to_scan}: {m_res.get('error')}. Skipping Nuclei scan.",
+                                target=target_to_scan
+                            )
+                            if target_to_scan in _target_registry:
+                                _target_registry[target_to_scan]["status"] = "failed"
+                                _target_registry[target_to_scan]["error"] = m_res.get("error")
+                        else:
+                            # Genuine 0 ports response (scan succeeded with 0 open ports)
+                            _append_scan_log(
+                                "info",
+                                f"[Nuclei Pre-Scan Skip] 0 of {len(unverified_passive_ports)} passive port(s) responded as active on {target_to_scan}. Skipping Nuclei scan.",
                                 target=target_to_scan
                             )
                     else:

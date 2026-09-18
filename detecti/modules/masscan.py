@@ -220,18 +220,32 @@ class MasscanRunner:
         return p.exists() and os.access(str(p), os.X_OK)
 
     def check_permissions(self) -> Dict[str, Any]:
-        """Verify binary availability and execution permissions."""
+        """Verify binary availability, execution permissions, and library linking."""
         available = self.is_available()
         is_root = os.geteuid() == 0 if hasattr(os, "geteuid") else False
+        pcap_ok = True
+        err_detail = None
+
+        if available and self.binary_path:
+            try:
+                res = subprocess.run([self.binary_path, "--echo"], capture_output=True, text=True, timeout=3, check=False)
+                if "failed to load libpcap" in (res.stdout + res.stderr).lower():
+                    pcap_ok = False
+                    err_detail = "Missing libpcap shared library (run: sudo apt install -y libpcap0.8)"
+            except Exception as e:
+                pcap_ok = False
+                err_detail = str(e)
+
+        can_run = available and pcap_ok
         return {
-            "available": available,
+            "available": can_run,
             "binary_path": self.binary_path if available else None,
             "is_root": is_root,
-            "can_run": available,
+            "can_run": can_run,
             "message": (
                 "Masscan ready"
-                if available
-                else "Masscan binary not found on system (install with: apt-get install masscan)"
+                if can_run
+                else (err_detail or "Masscan binary not found on system (install with: apt-get install masscan)")
             ),
         }
 
@@ -359,20 +373,51 @@ class MasscanRunner:
                 }
 
             stderr_text = stderr_bytes.decode("utf-8", errors="replace")
+            exit_code = proc.returncode if proc.returncode is not None else 0
             
-            # Check exit code and parse findings
+            # Parse findings from temporary JSON output
             open_ports = self._parse_json_file(temp_out_path, target_ip)
 
-            # Check if there was a permission error
-            if "requires root privileges" in stderr_text or "permission denied" in stderr_text.lower():
+            # Detect permission errors
+            is_permission_error = "requires root privileges" in stderr_text or "permission denied" in stderr_text.lower()
+            
+            # Detect fatal execution / environment errors
+            is_fatal_error = (
+                exit_code != 0
+                or "fail:" in stderr_text.lower()
+                or "error:" in stderr_text.lower()
+                or "can't open adapter" in stderr_text.lower()
+                or "failed to load libpcap" in stderr_text.lower()
+            )
+
+            # If an error occurred and no open ports were discovered
+            if (is_permission_error or is_fatal_error) and not open_ports:
+                if is_permission_error:
+                    error_msg = "Masscan requires root or CAP_NET_RAW privileges to run raw packet scans"
+                else:
+                    # Extract the most meaningful error line from stderr
+                    error_msg = f"Masscan failed with exit code {exit_code}"
+                    for line in stderr_text.splitlines():
+                        line_clean = line.strip()
+                        if any(token in line_clean.lower() for token in ["fail:", "can't open", "error:", "failed to load"]):
+                            error_msg = line_clean
+                            break
+
+                logger.error(f"Masscan scan error on {target_ip} (exit {exit_code}): {error_msg}")
                 return {
                     "success": False,
                     "target": target_ip,
-                    "error": "Masscan requires root or CAP_NET_RAW privileges to run raw packet scans",
+                    "error": error_msg,
+                    "raw_error": stderr_text.strip(),
+                    "exit_code": exit_code,
                     "ports": [],
                     "open_ports": [],
+                    "count": 0,
+                    "command": " ".join(cmd),
+                    "timeout_seconds": effective_timeout,
                 }
 
+            # Normal completion (exit_code == 0 or ports discovered)
             return {
                 "success": True,
                 "target": target_ip,

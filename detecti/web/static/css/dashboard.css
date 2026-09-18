@@ -3872,3 +3872,19 @@ html, body {
     display: flex;
     flex-direction: column;
 }
+
+/* Targets Drawer Responsive Split Layout */
+@media (max-width: 992px) {
+    #tab-pane-targets > div {
+        flex-direction: column !important;
+        overflow-y: auto !important;
+    }
+    #tab-pane-targets > div > div:first-child {
+        flex: 0 0 auto !important;
+        min-height: 300px;
+    }
+    #tab-pane-targets > div > div:last-child {
+        flex: 1 1 auto !important;
+        overflow: visible !important;
+    }
+}

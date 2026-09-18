@@ -7180,11 +7180,18 @@ class EASMDashboard {
             btn.addEventListener('click', () => {
                 presetBtns.forEach(b => b.classList.remove('active'));
                 btn.classList.add('active');
+                this.currentPortPreset = btn.getAttribute('data-preset') || 'custom';
                 if (customPortsInput) {
                     customPortsInput.value = btn.getAttribute('data-value');
                 }
             });
         });
+        if (customPortsInput) {
+            customPortsInput.addEventListener('input', () => {
+                presetBtns.forEach(b => b.classList.remove('active'));
+                this.currentPortPreset = 'custom';
+            });
+        }
 
         // Rate slider for Masscan
         const rateSlider = document.getElementById('input-scan-rate');

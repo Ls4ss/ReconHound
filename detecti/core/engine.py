@@ -32,6 +32,7 @@ from detecti.modules.nvd import NVDModule
 from detecti.modules.reverse_whois import ReverseWhoisModule
 from detecti.modules.securitytrails import SecurityTrailsModule
 from detecti.modules.shodan import ShodanModule
+from detecti.modules.zone_transfer import ZoneTransferModule
 from detecti.utils.http import AsyncHTTPClient, http_client
 
 logger = logging.getLogger("detecti.engine")
@@ -64,6 +65,7 @@ class ThreatTrackEngine:
         "securitytrails": SecurityTrailsModule,
         "nvd": NVDModule,
         "exploitdb": ExploitDBModule,
+        "zonetransfer": ZoneTransferModule,
     }
 
     def __init__(
@@ -437,6 +439,12 @@ class ThreatTrackEngine:
                 st_target = root_domain or clean_target if target_type == "domain" else clean_target
                 self._notify("securitytrails", f"Querying SecurityTrails for {st_target}...")
                 recon_tasks.append(self.modules["securitytrails"].run(st_target, context))
+
+            # 6. Zone Transfer (AXFR)
+            if target_type == "domain" and "zonetransfer" in active_mod_names:
+                query_zt = root_domain or clean_target
+                self._notify("zonetransfer", f"Attempting Zone Transfer (AXFR) for {query_zt}...")
+                recon_tasks.append(self.modules["zonetransfer"].run(clean_target, context))
 
         if recon_tasks:
             recon_results = await asyncio.gather(*recon_tasks, return_exceptions=True)

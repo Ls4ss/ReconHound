@@ -7252,7 +7252,8 @@ class EASMDashboard {
         this.updateTargetBadgeCount();
         this.renderTargetsList();
 
-        this.addScanLog('info', `Dispatching Masscan active port scan for ${targets.length} target(s) [${config.preset}]...`);
+        const logPreset = config.preset === 'custom' ? `custom: ${config.ports}` : config.preset;
+        this.addScanLog('info', `Dispatching Masscan active port scan for ${targets.length} target(s) [${logPreset}]...`);
 
         try {
             const res = await window.api.startActiveScan(config);

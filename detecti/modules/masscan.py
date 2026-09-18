@@ -344,6 +344,10 @@ class MasscanRunner:
             except Exception as e:
                 logger.warning(f"Error parsing custom masscan flags: {e}")
 
+        # Reduce default 10s wait time to 3s to speed up small scans, unless overridden
+        if "--wait" not in cmd:
+            cmd.extend(["--wait", "3"])
+
         # JSON output to temp file
         cmd.extend(["-oJ", temp_out_path])
 

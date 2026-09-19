@@ -91,6 +91,15 @@ hound_app = typer.Typer(
     rich_markup_mode="rich",
 )
 app.add_typer(hound_app, name="hound", rich_help_panel="Interactive Dashboard")
+# Create config subcommand group (System & Configuration)
+config_app = typer.Typer(
+    name="config",
+    help="Manage configuration, setup, and system updates",
+    add_completion=False,
+    rich_markup_mode="rich",
+)
+app.add_typer(config_app, name="config", rich_help_panel="System & Configuration")
+
 
 @app.callback()
 def global_callback():
@@ -415,10 +424,23 @@ def _execute_scan(
         print_success(f"HTML executive report saved to: [bold underline]{html_path.resolve()}[/bold underline]")
 
 
-@app.command(name="update-xdb", rich_help_panel="Utility & Intelligence")
-def update_xdb_command() -> None:
-    """Update the local ExploitDB / searchsploit vulnerability mapping database."""
-    print_info("Refreshing ExploitDB database...")
+@config_app.command(name="update")
+def update_command() -> None:
+    """Check for core engine updates and refresh local intelligence databases."""
+    from reconexec.utils.updater import check_for_updates
+    
+    print_section_header("Engine & Package Updates")
+    print_info("Checking for ReconExec engine updates from PyPI...")
+    newer_version = check_for_updates(__version__, force=True)
+    
+    if newer_version:
+        console.print(f" [bold yellow]Notice:[/bold yellow] A new release of [bold cyan]ReconExec[/bold cyan] is available ([dim]{__version__}[/dim] -> [bold green]{newer_version}[/bold green])")
+        console.print(" Run [bold white]pip install --break-system-packages --upgrade reconexec[/bold white] to update.\n")
+    else:
+        print_success("ReconExec engine is up to date!\n")
+        
+    print_section_header("Intelligence Databases Update")
+    print_info("Refreshing ExploitDB/SearchSploit mapping database...")
     try:
         ExploitDBModule.update_database()
         print_success("ExploitDB database successfully updated!")
@@ -426,7 +448,7 @@ def update_xdb_command() -> None:
         print_error(f"Error updating ExploitDB: {exc}")
 
 
-@app.command(name="config-check", rich_help_panel="System & Configuration")
+@config_app.command(name="check")
 def config_check_command(
     setup: bool = typer.Option(
         False,

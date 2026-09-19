@@ -51,6 +51,17 @@ def _read_banner_file() -> str:
     return "ReconExec v2.0 - Attack Surface Management Engine\nExternal Attack Surface Management & Threat Intelligence CLI\nPowered by ReconExec Security"
 
 
+
+def print_section_header(title: str) -> None:
+    """Print a clean section divider."""
+    console.print(f"\n[bold cyan]━━━ [white]{title}[/white] ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[/bold cyan]")
+
+
+def print_info(message: str) -> None:
+    """Print standard informational message."""
+    console.print(f" [info][*][/info] {message}")
+
+
 def print_success(message: str) -> None:
     """Print success message."""
     console.print(f" [success][+][/success] {message}")

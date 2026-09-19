@@ -363,12 +363,12 @@ def render_executive_summary(result: ScanResult, is_cve_flag: bool = False) -> N
                 summary_parts.append(f"[bold blue]{len(assoc_domains)} Associated Domains[/bold blue] (via Reverse WHOIS)")
             console.print(f"\n [+] [bold]Perimeter Intelligence:[/bold] {' • '.join(summary_parts)}")
 
-        # 4. ReconExecHound Web Dashboard Quick Access Callout (Only for asset/perimeter scans)
+        # 4. ReconHound Web Dashboard Quick Access Callout (Only for asset/perimeter scans)
         real_ip = get_real_ip()
         port = 8000
         console.print("")
         dashboard_box = [
-            "[bold cyan]ReconExecHound — Interactive Attack Surface Graph[/bold cyan]",
+            "[bold cyan]ReconHound — Interactive Attack Surface Graph[/bold cyan]",
             "Explore full relational topology, technical banners, and active scans:",
             f"  -> [bold white]Local Access:[/bold white]   [bold underline cyan]http://localhost:{port}[/bold underline cyan]",
             f"  -> [bold white]Network Access:[/bold white] [bold underline cyan]http://{real_ip}:{port}[/bold underline cyan]",

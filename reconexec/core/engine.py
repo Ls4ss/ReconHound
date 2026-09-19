@@ -763,7 +763,7 @@ class ThreatTrackEngine:
 
         # ----------------------------------------------------
         # Ensure Target Anchor in Hosts Map & Domain Discoveries
-        # (Guarantees target nodes exist on ReconExecHound graph for active recon staging)
+        # (Guarantees target nodes exist on ReconHound graph for active recon staging)
         # ----------------------------------------------------
         clean_target = target
         if clean_target.startswith("host:"):

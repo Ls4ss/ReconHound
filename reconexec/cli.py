@@ -144,7 +144,7 @@ def target_to_db_name(target: str) -> str:
     return cleaned_name
 
 
-from reconexec.modules import MODULE_REGISTRY
+from reconexec.core.engine import ThreatTrackEngine
 
 def generate_module_command(mod_name: str):
     def _cmd(
@@ -190,7 +190,7 @@ def generate_module_command(mod_name: str):
 app.command(name="all", help="Execute passive attack surface mapping using ALL modules.")(generate_module_command("all"))
 
 RESERVED_WORDS = {"intel", "hound", "update-xdb", "config-check", "version", "setup"}
-for m_name in MODULE_REGISTRY.keys():
+for m_name in ThreatTrackEngine.MODULE_REGISTRY.keys():
     if m_name not in RESERVED_WORDS:
         app.command(name=m_name, help=f"Execute passive attack surface mapping using only the '{m_name}' module.")(generate_module_command(m_name))
 

@@ -4655,6 +4655,41 @@ class EASMDashboard {
             const data = (typeof node.data === 'function') ? node.data() : (node.data || node);
             if (!data) return;
 
+            const renderSourceTags = (sourcesList) => {
+                if (!sourcesList || !Array.isArray(sourcesList) || sourcesList.length === 0) return '';
+                
+                const uniqueSources = new Set();
+                sourcesList.forEach(s => {
+                    if (typeof s === 'string') {
+                        s.split(',').forEach(part => {
+                            const cleaned = part.trim();
+                            if (cleaned) uniqueSources.add(cleaned);
+                        });
+                    }
+                });
+                
+                const tagsArray = Array.from(uniqueSources);
+                if (tagsArray.length === 0) return '';
+
+                const tagsHtml = tagsArray.map(src => {
+                    const lowerSrc = src.toLowerCase();
+                    let color = '#2b2b2b'; // default dark gray
+                    let textCol = '#b9bbbe'; // default light text
+                    if (lowerSrc.includes('shodan')) { color = '#f32a2f'; textCol = '#ffffff'; }
+                    else if (lowerSrc.includes('crt.sh')) { color = '#1a5f7a'; textCol = '#ffffff'; }
+                    else if (lowerSrc.includes('securitytrails')) { color = '#202124'; textCol = '#00f0ff'; }
+                    else if (lowerSrc.includes('zonetransfer') || lowerSrc.includes('zone transfer')) { color = '#005f00'; textCol = '#4ade80'; }
+                    else if (lowerSrc.includes('masscan')) { color = '#8b5cf6'; textCol = '#ffffff'; }
+                    else if (lowerSrc.includes('nuclei')) { color = '#00f0ff'; textCol = '#000000'; }
+                    else if (lowerSrc.includes('dns resolution')) { color = '#1e3a8a'; textCol = '#bfdbfe'; }
+                    else if (lowerSrc.includes('bgp/rdap') || lowerSrc.includes('bgp')) { color = '#854d0e'; textCol = '#fef08a'; }
+                    
+                    return `<span class="metric-pill" title="Data Source: ${src}" style="background: ${color}; color: ${textCol}; font-weight: bold; padding: 1px 6px; margin-right: 4px; margin-bottom: 2px; font-size: 0.65rem; border-radius: 4px; display: inline-block;">${src}</span>`;
+                }).join('');
+                
+                return `<div style="margin-top: 4px; display: flex; flex-wrap: wrap; gap: 2px;">${tagsHtml}</div>`;
+            };
+
             const drawer = document.getElementById('inspector-drawer');
             const content = document.getElementById('inspector-content');
             const title = document.getElementById('inspector-title');
@@ -4901,33 +4936,7 @@ class EASMDashboard {
                     `;
                 }
 
-                // CLI Execution Logs & Audit Trail Accordion for Root Target
-                rootScanLogsAccordionHtml = `
-                    <div class="risk-accordion-group" style="margin-top: 0.75rem; margin-bottom: 0.5rem;">
-                        <div class="risk-accordion-header" onclick="window.dashboard.toggleRiskAccordion(this); window.dashboard.loadRootAuditLogs()">
-                            <div class="risk-accordion-title">
-                                <i data-lucide="terminal" class="accordion-icon ui-icon" style="color: #8C52FF;"></i>
-                                <span style="color: #e9d5ff;">CLI Execution &amp; Audit Logs</span>
-                            </div>
-                            <div class="risk-accordion-status" style="display: flex; flex-wrap: wrap; align-items: center; gap: 6px; justify-content: flex-end;">
-                                <button type="button" class="risk-focus-btn" style="margin: 0; padding: 2px 7px; font-size: 0.75rem; background: rgba(140, 82, 255, 0.2); color: #e9d5ff; border-color: rgba(140, 82, 255, 0.4);" onclick="event.stopPropagation(); window.dashboard.copyRootAuditLogs(this)"><i data-lucide="copy" class="badge-icon"></i></button>
-                                <span id="root-audit-logs-count" class="risk-pill-counter" style="color: #8C52FF; background: rgba(140, 82, 255, 0.15); border-color: rgba(140, 82, 255, 0.4);">...</span>
-                                <i data-lucide="chevron-down" class="accordion-chevron ui-icon"></i>
-                            </div>
-                        </div>
-                        <div class="risk-accordion-body" style="display: none; max-height: 320px; overflow-y: auto; padding: 8px 6px; background: #0c0a14; border-top: 1px solid rgba(140, 82, 255, 0.2);">
-                            <div style="margin-bottom: 6px; display: flex; gap: 6px;">
-                                <input type="text" id="root-audit-logs-filter" placeholder="Filter CLI logs (e.g. shodan, masscan, nuclei)..." oninput="window.dashboard.filterRootAuditLogs(this.value)" style="flex: 1; box-sizing: border-box; padding: 4px 8px; font-size: 0.78rem; background: #171425; border: 1px solid rgba(140, 82, 255, 0.3); border-radius: 4px; color: #f8fafc; font-family: monospace;">
-                                <button type="button" class="btn btn-secondary btn-sm" style="padding: 2px 8px; font-size: 0.72rem; background: rgba(140, 82, 255, 0.15); color: #00f0ff; border: 1px solid rgba(0, 240, 255, 0.3); border-radius: 4px;" onclick="window.dashboard.loadRootAuditLogs('', true)">
-                                    <i data-lucide="refresh-cw" style="width: 11px; height: 11px;"></i>
-                                </button>
-                            </div>
-                            <div id="root-audit-logs-container" style="font-family: 'JetBrains Mono', monospace, Consolas; font-size: 0.75rem; line-height: 1.45; color: #cbd5e1; background: #090710; border: 1px solid rgba(255,255,255,0.06); border-radius: 4px; padding: 8px; max-height: 240px; overflow-y: auto; white-space: pre-wrap; word-break: break-all;">
-                                <div style="color: #64748b; font-style: italic;">Loading execution audit trail...</div>
-                            </div>
-                        </div>
-                    </div>
-                `;
+                // CLI Execution Logs & Audit Trail Accordion for Root Target (REMOVED)
             }
 
             let subdomainsAccordionHtml = '';
@@ -5027,9 +5036,12 @@ class EASMDashboard {
             let mainPropertiesHtml = '';
             if (rawType === 'network') {
                 mainPropertiesHtml = `
-                <div class="property">
+                <div class="property" style="flex-direction: column; align-items: flex-start;">
                     <span class="key">Organization:</span>
-                    <span class="value">${data.org || data.name || data.label}</span>
+                    <div>
+                        <span class="value">${data.org || data.name || data.label}</span>
+                        ${renderSourceTags(data.sources)}
+                    </div>
                 </div>
                 ${data.asn ? `
                 <div class="property">
@@ -5042,9 +5054,12 @@ class EASMDashboard {
                 </div>`;
             } else {
                 mainPropertiesHtml = `
-                <div class="property">
+                <div class="property" style="flex-direction: column; align-items: flex-start;">
                     <span class="key">${(rawType === 'target' || rawType === 'target_root') ? 'Target Query:' : 'Domain / Host:'}</span>
-                    <span class="value">${data.name || data.label}</span>
+                    <div>
+                        <span class="value">${data.name || data.label}</span>
+                        ${renderSourceTags(data.sources)}
+                    </div>
                 </div>
                 ${resolvedIpsHtml}
                 <div class="property">
@@ -5201,23 +5216,37 @@ class EASMDashboard {
                 `}).join('');
 
                 resolvingDomainsHtml = `
-                <div class="property" style="flex-direction: column; align-items: flex-start; gap: 4px; margin-top: 0.5rem; margin-bottom: 0.5rem; background: rgba(0,0,0,0.2); padding: 8px; border-radius: 6px; border: 1px solid rgba(78, 205, 196, 0.2);">
-                    <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; margin-bottom: 4px;">
-                        <span class="key" style="color: #4ecdc4; font-weight: 600;">🌐 Associated FQDNs &amp; VHosts (${totalFqdns})</span>
+                <div class="risk-accordion-group" style="margin-top: 0.75rem; margin-bottom: 0.5rem;">
+                    <div class="risk-accordion-header" onclick="window.dashboard.toggleRiskAccordion(this)">
+                        <div class="risk-accordion-title">
+                            <i data-lucide="globe" class="accordion-icon ui-icon" style="color: #4ecdc4;"></i>
+                            <span style="color: #4ecdc4;">Associated FQDNs &amp; VHosts</span>
+                        </div>
+                        <div class="risk-accordion-status" style="display: flex; flex-wrap: wrap; align-items: center; gap: 6px; justify-content: flex-end;">
+                            <span class="risk-pill-counter" style="color: #4ecdc4; background: rgba(78, 205, 196, 0.15); border-color: rgba(78, 205, 196, 0.4);">${totalFqdns}</span>
+                            <i data-lucide="chevron-down" class="accordion-chevron ui-icon"></i>
+                        </div>
                     </div>
-                    ${actionToolbar}
-                    ${searchHtml}
-                    <div id="ip-fqdn-list-container" style="width: 100%; max-height: 200px; overflow-y: auto; padding-right: 2px;">
-                        ${domBadges}
+                    <div class="risk-accordion-body" style="display: none; max-height: 280px; overflow-y: auto; padding: 8px 6px;">
+                        <div style="margin-bottom: 8px; display: flex; flex-direction: column; gap: 6px;">
+                            ${actionToolbar}
+                            ${searchHtml}
+                        </div>
+                        <div id="ip-fqdn-list-container">
+                            ${domBadges}
+                        </div>
                     </div>
                 </div>`;
             }
 
             html = `
                 <h4>IP Address Information</h4>
-                <div class="property">
+                <div class="property" style="flex-direction: column; align-items: flex-start;">
                     <span class="key">IP Address:</span>
-                    <span class="value">${data.ip || ipVal}</span>
+                    <div>
+                        <span class="value">${data.ip || ipVal}</span>
+                        ${renderSourceTags(data.sources)}
+                    </div>
                 </div>
                 ${resolvingDomainsHtml}
                 <div class="property">

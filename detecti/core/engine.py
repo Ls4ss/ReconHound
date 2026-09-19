@@ -682,8 +682,12 @@ class ThreatTrackEngine:
                     host_cves_map[host_ip] = set()
 
                 host_obj = hosts_map[host_ip]
-                if clean_src and clean_src not in host_obj.sources:
-                    host_obj.sources.append(clean_src)
+                # Only attach the source to the IP if the finding is directly IP-related.
+                # Do not attach "Zone Transfer" or "crt.sh" just because a subdomain resolved to this IP.
+                self._notify("debug", f"DEBUG: host_ip={host_ip}, finding_type={f.type}, finding_source={clean_src}")
+                if f.type in (FindingType.HOST_INFO, FindingType.OPEN_PORT, FindingType.VULNERABILITY):
+                    if clean_src and clean_src not in host_obj.sources:
+                        host_obj.sources.append(clean_src)
 
                 if f.type == FindingType.HOST_INFO and f.host_info:
                     hi = f.host_info

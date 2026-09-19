@@ -19,7 +19,7 @@ if not SECRET_KEY:
     # Emite um aviso ou falha se não houver chave (força rodar o setup)
     raise ValueError("JWT_SECRET_KEY is missing from environment/ .env file. Please run the setup command.")
 ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 30  # 30 minutos
+ACCESS_TOKEN_EXPIRE_MINUTES = 60  # 60 minutos
 
 router = APIRouter(tags=["Auth"])
 

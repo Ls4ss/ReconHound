@@ -10,12 +10,12 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 try:
     import importlib.machinery
-    cli_path = (Path(__file__).parent.parent / "detecti-cli").resolve()
-    loader = importlib.machinery.SourceFileLoader("detecti_cli", str(cli_path))
-    detecti_cli = loader.load_module()
-    app = detecti_cli.app
+    cli_path = (Path(__file__).parent.parent / "reconexec-cli").resolve()
+    loader = importlib.machinery.SourceFileLoader("reconexec_cli", str(cli_path))
+    reconexec_cli = loader.load_module()
+    app = reconexec_cli.app
 except Exception as e:
-    detecti_cli = None
+    reconexec_cli = None
     app = None
 
 from core.engine import ThreatTrackEngine, DetectIEngine
@@ -56,7 +56,7 @@ def test_cli_version():
         pytest.skip("CLI app not available")
     res = runner.invoke(app, ["version"])
     assert res.exit_code == 0
-    assert "DetecTI-CLI" in res.stdout
+    assert "ReconExec-CLI" in res.stdout
 
 
 def test_cli_config_check():
@@ -128,9 +128,9 @@ def test_target_parsing_and_normalization():
 
 def test_target_to_db_name_url():
     """Test database name generation from URL and subdomain targets."""
-    if detecti_cli is None:
+    if reconexec_cli is None:
         pytest.skip("CLI not imported")
-    target_to_db_name = detecti_cli.target_to_db_name
+    target_to_db_name = reconexec_cli.target_to_db_name
     assert target_to_db_name("https://api.spacex.com/v1") == "api.spacex.com.sqlite"
     assert target_to_db_name("http://sub.domain.com.br:8080/") == "sub.domain.com.br.sqlite"
     assert target_to_db_name("https://192.168.1.1:8443") == "192.168.1.1.sqlite"

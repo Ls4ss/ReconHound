@@ -1,1 +1,1 @@
-"""Test suite for DetecTI-CLI."""
+"""Test suite for ReconExec-CLI."""

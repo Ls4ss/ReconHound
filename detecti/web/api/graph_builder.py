@@ -1,7 +1,9 @@
 """Graph data builder for Cytoscape.js visualization."""
 
 import sqlite3
-from typing import Dict, List, Optional, Set
+import json
+from pathlib import Path
+from typing import Dict, List, Optional, Set, Any
 from detecti.core.database.storage import DatabaseManager
 
 
@@ -166,11 +168,11 @@ class GraphBuilder:
         root_target_node = None
         
         # Get all domains
-        cursor = conn.execute("SELECT id, name FROM domains ORDER BY name")
+        cursor = conn.execute("SELECT id, name, sources FROM domains ORDER BY name")
         domains_list = cursor.fetchall()
         
         # Get all subdomains
-        cursor_s = conn.execute("SELECT id, name FROM subdomains ORDER BY name")
+        cursor_s = conn.execute("SELECT id, name, sources FROM subdomains ORDER BY name")
         all_subs_raw = cursor_s.fetchall()
         
         targets_list = []
@@ -265,8 +267,15 @@ class GraphBuilder:
 
         meta_select = "s.metadata" if has_metadata else "NULL as metadata"
 
+        has_sources = False
+        try:
+            has_sources = "sources" in sub_cols
+        except Exception:
+            pass
+        sources_select = "s.sources" if has_sources else "NULL as sources"
+
         cursor_subs = conn.execute(f"""
-            SELECT s.id, s.name, s.domain_id, d.name as domain_name, si.ip_id, ip.ip, {meta_select}
+            SELECT s.id, s.name, s.domain_id, d.name as domain_name, si.ip_id, ip.ip, {meta_select}, {sources_select}
             FROM subdomains s
             JOIN domains d ON s.domain_id = d.id
             LEFT JOIN subdomain_ips si ON s.id = si.subdomain_id
@@ -281,7 +290,7 @@ class GraphBuilder:
         domain_waf_map: Dict[str, bool] = {}
         
         import json
-        for sub_id, sub_name, domain_id, domain_name, ip_id, ip_addr, metadata_raw in cursor_subs.fetchall():
+        for sub_id, sub_name, domain_id, domain_name, ip_id, ip_addr, metadata_raw, sub_sources_raw in cursor_subs.fetchall():
             is_waf = False
             if metadata_raw:
                 try:
@@ -291,6 +300,14 @@ class GraphBuilder:
                     pass
 
             is_apex = (sub_name.strip().lower() == domain_name.strip().lower())
+            
+            sub_sources = []
+            if sub_sources_raw:
+                try:
+                    sub_sources = json.loads(sub_sources_raw)
+                except:
+                    pass
+
             if ip_id:
                 subdomain_to_ips.setdefault(sub_id, set()).add(ip_id)
                 if is_apex:
@@ -310,17 +327,33 @@ class GraphBuilder:
                         "domain_id": domain_id,
                         "domain_name": domain_name,
                         "is_waf_bypass": is_waf,
+                        "sources": sub_sources,
                         "ips": [],
                         "resolved_ips": []
                     }
                 elif is_waf:
                     subdomain_info_map[sub_id]["is_waf_bypass"] = True
+                
+                if sub_sources:
+                    curr_srcs = subdomain_info_map[sub_id].get("sources", [])
+                    subdomain_info_map[sub_id]["sources"] = list(set(curr_srcs + sub_sources))
 
                 if ip_addr and ip_addr not in subdomain_info_map[sub_id]["ips"]:
                     subdomain_info_map[sub_id]["ips"].append(ip_addr)
                     subdomain_info_map[sub_id]["resolved_ips"].append({"id": f"ip_{ip_id}", "ip": ip_addr})
 
-        all_domains = [{"id": d[0], "name": d[1]} for d in domains_list]
+        all_domains = []
+        for row in domains_list:
+            d_id = row[0]
+            d_name = row[1]
+            d_srcs = []
+            if len(row) > 2 and row[2]:
+                try:
+                    d_srcs = json.loads(row[2])
+                except:
+                    pass
+            all_domains.append({"id": d_id, "name": d_name, "sources": d_srcs})
+        
         all_subdomains = list(subdomain_info_map.values())
 
         # Embed complete DNS inventory inside target_root for instant Asset Inspector access
@@ -338,7 +371,8 @@ class GraphBuilder:
 
         # Determine which domains are explicit targets (or parents of explicit targets) to receive CONTAINS_TARGET
         explicit_domains = set()
-        for domain_id, domain_name in domains_list:
+        for row in domains_list:
+            domain_id, domain_name = row[0], row[1]
             if domain_name.lower() in explicit_targets or str(domain_id).lower() in explicit_targets:
                 domains_to_spawn.add(domain_id)
                 explicit_domains.add(domain_id)
@@ -361,7 +395,17 @@ class GraphBuilder:
                     domains_to_spawn.add(domain_id)
                     explicit_domains.add(domain_id)
 
-        for domain_id, domain_name in domains_list:
+        for row in domains_list:
+            domain_id = row[0]
+            domain_name = row[1]
+            domain_sources_raw = row[2] if len(row) > 2 else None
+            domain_sources = []
+            if domain_sources_raw:
+                try:
+                    domain_sources = json.loads(domain_sources_raw)
+                except:
+                    pass
+
             if domain_id in domains_to_spawn:
                 dname_lower = domain_name.lower()
                 domain_subs = [s for s in all_subdomains if s.get("domain_id") == domain_id or s.get("domain_name", "").lower() == dname_lower]
@@ -371,6 +415,7 @@ class GraphBuilder:
                     "label": f"[+] [Origin] {domain_name}" if is_waf else domain_name,
                     "type": "domain",
                     "name": domain_name,
+                    "sources": domain_sources,
                     "related_subdomains": domain_subs,
                     "subdomain_count": len(domain_subs),
                     "resolved_ips": domain_resolved_ips_map.get(domain_id, []),
@@ -400,6 +445,7 @@ class GraphBuilder:
                     "label": f"[+] [Origin] {sub_info['name']}" if is_waf else sub_info["name"],
                     "type": "subdomain",
                     "name": sub_info["name"],
+                    "sources": sub_info.get("sources", []),
                     "domain_id": parent_dom_id,
                     "domain_name": sub_info["domain_name"],
                     "resolved_ips": sub_info.get("resolved_ips", []),
@@ -496,7 +542,8 @@ class GraphBuilder:
                     **s_stats_final
                 })
 
-            for domain_id, domain_name in domains_list:
+            for row in domains_list:
+                domain_id, domain_name = row[0], row[1]
                 d_stats = {"service_count": 0, "verified_service_count": 0, "vuln_count": 0, "has_kev": False, "kev_count": 0, "critical_count": 0, "high_count": 0, "max_epss": 0.0, "high_epss_count": 0, "poc_count": 0, "service_ids": set(), "vuln_ids": set()}
                 for ip_id in domain_to_ips.get(domain_id, set()):
                     if ip_id in ip_stats:
@@ -552,8 +599,9 @@ class GraphBuilder:
         select_post = ", postal_code" if "postal_code" in cols else ", '' as postal_code"
         select_geo = ", latitude, longitude" if ("latitude" in cols and "longitude" in cols) else ", NULL as latitude, NULL as longitude"
 
+        select_sources = ", sources" if "sources" in cols else ", NULL as sources"
         cursor = conn.execute(f"""
-            SELECT id, ip, org, country, city, region_code, asn {select_post} {select_geo}
+            SELECT id, ip, org, country, city, region_code, asn {select_post} {select_geo} {select_sources}
             FROM ip_addresses
         """)
         ip_rows = cursor.fetchall()
@@ -619,7 +667,26 @@ class GraphBuilder:
         # Check if scan mode is Threat Intel Query / Shodan Discovery Mode
         is_query_discovery = (target_type in ("query", "shodan", "asn", "org", "network"))
 
-        for ip_id, ip, org, country, city, region_code, asn, postal_code, latitude, longitude in ip_rows:
+        for row in ip_rows:
+            ip_id = row[0]
+            ip = row[1]
+            org = row[2]
+            country = row[3]
+            city = row[4]
+            region_code = row[5]
+            asn = row[6]
+            postal_code = row[7]
+            latitude = row[8]
+            longitude = row[9]
+            ip_sources_raw = row[10] if len(row) > 10 else None
+            
+            ip_sources = []
+            if ip_sources_raw:
+                try:
+                    ip_sources = json.loads(ip_sources_raw)
+                except Exception:
+                    pass
+
             fqdns = ip_to_fqdns.get(str(ip_id), [])
             is_explicit_ip_tgt = bool((ip and ip.strip().lower() in targets_set) or str(ip_id) in targets_set)
             extra = ip_extra_stats.get(ip_id, {"service_ids": [], "vuln_ids": []})
@@ -637,6 +704,7 @@ class GraphBuilder:
                     "latitude": latitude,
                     "longitude": longitude,
                     "asn": asn or "Unknown",
+                    "sources": ip_sources,
                     "fqdns": fqdns,
                     "fqdn_count": len(fqdns),
                     "service_ids": extra["service_ids"],
@@ -709,7 +777,8 @@ class GraphBuilder:
                     "city": n["data"]["city"],
                     "asn": n["data"]["asn"],
                     "fqdns": n["data"]["fqdns"],
-                    "fqdn_count": n["data"]["fqdn_count"]
+                    "fqdn_count": n["data"]["fqdn_count"],
+                    "sources": n["data"].get("sources", [])
                 }
                 for n in nodes
             ]

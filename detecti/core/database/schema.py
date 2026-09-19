@@ -5,6 +5,7 @@ SCHEMA_SQL = """
 CREATE TABLE IF NOT EXISTS domains (
     id TEXT PRIMARY KEY,
     name TEXT UNIQUE NOT NULL,
+    sources TEXT DEFAULT '[]',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -15,6 +16,7 @@ CREATE TABLE IF NOT EXISTS subdomains (
     name TEXT NOT NULL,
     status_code INTEGER,
     cname TEXT,
+    sources TEXT DEFAULT '[]',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (domain_id) REFERENCES domains(id)
 );
@@ -31,6 +33,7 @@ CREATE TABLE IF NOT EXISTS ip_addresses (
     postal_code TEXT,
     latitude REAL,
     longitude REAL,
+    sources TEXT DEFAULT '[]',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 

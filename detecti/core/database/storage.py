@@ -113,6 +113,15 @@ class DatabaseManager:
             except Exception:
                 pass
 
+            # Auto-migrate: ensure sources column exists in domains, subdomains, and ip_addresses
+            for table in ["domains", "subdomains", "ip_addresses"]:
+                try:
+                    cols = [row[1] for row in conn.execute(f"PRAGMA table_info({table})").fetchall()]
+                    if "sources" not in cols:
+                        conn.execute(f"ALTER TABLE {table} ADD COLUMN sources TEXT DEFAULT '[]'")
+                except Exception:
+                    pass
+
 
             # Auto-clean: deduplicate any existing redundant services per (ip_id, port, protocol)
             self._deduplicate_services(conn)
@@ -197,26 +206,63 @@ class DatabaseManager:
         except Exception:
             pass
 
-    def _get_or_create_domain(self, conn: sqlite3.Connection, domain_name: str) -> str:
-        """Get existing domain ID or create new domain record."""
-        cursor = conn.execute("SELECT id FROM domains WHERE name = ?", (domain_name,))
+    def _get_or_create_domain(self, conn: sqlite3.Connection, domain_name: str, sources: Optional[List[str]] = None) -> str:
+        """Get existing domain ID or create new domain record with sources tracking."""
+        cursor = conn.execute("SELECT id, sources FROM domains WHERE name = ?", (domain_name,))
         row = cursor.fetchone()
+        
+        sources_list = []
+        if sources:
+            sources_list = [s for s in sources if s]
+
         if row:
-            return row[0]
+            domain_id = row[0]
+            existing_sources_raw = row[1]
+            if sources_list:
+                existing_sources = []
+                if existing_sources_raw:
+                    try:
+                        existing_sources = json.loads(existing_sources_raw)
+                    except json.JSONDecodeError:
+                        pass
+                
+                merged = list(set(existing_sources + sources_list))
+                if set(merged) != set(existing_sources):
+                    conn.execute("UPDATE domains SET sources = ? WHERE id = ?", (json.dumps(merged), domain_id))
+            return domain_id
         
         domain_id = str(uuid.uuid4())
+        sources_json = json.dumps(list(set(sources_list))) if sources_list else '[]'
         conn.execute(
-            "INSERT INTO domains (id, name) VALUES (?, ?)",
-            (domain_id, domain_name)
+            "INSERT INTO domains (id, name, sources) VALUES (?, ?, ?)",
+            (domain_id, domain_name, sources_json)
         )
         return domain_id
 
     def _get_or_create_ip(self, conn: sqlite3.Connection, host: HostResult) -> str:
-        """Get existing IP ID or create new IP record."""
-        cursor = conn.execute("SELECT id FROM ip_addresses WHERE ip = ?", (host.ip,))
+        """Get existing IP ID or create new IP record with sources tracking."""
+        cursor = conn.execute("SELECT id, sources FROM ip_addresses WHERE ip = ?", (host.ip,))
         row = cursor.fetchone()
+        
+        sources_list = [s for s in getattr(host, "sources", []) if s]
+        
         if row:
-            # Update existing record with new metadata
+            ip_id = row[0]
+            existing_sources_raw = row[1]
+            merged_json = existing_sources_raw
+            if sources_list:
+                existing_sources = []
+                if existing_sources_raw:
+                    try:
+                        existing_sources = json.loads(existing_sources_raw)
+                    except json.JSONDecodeError:
+                        pass
+                
+                merged = list(set(existing_sources + sources_list))
+                if set(merged) != set(existing_sources):
+                    merged_json = json.dumps(merged)
+
+            # Update existing record with new metadata and sources
             conn.execute("""
                 UPDATE ip_addresses 
                 SET asn = COALESCE(?, asn), 
@@ -226,16 +272,18 @@ class DatabaseManager:
                     region_code = COALESCE(?, region_code),
                     postal_code = COALESCE(?, postal_code),
                     latitude = COALESCE(?, latitude),
-                    longitude = COALESCE(?, longitude)
-                WHERE ip = ?
-            """, (host.asn, host.org, host.country_name, host.city, host.region_code, host.postal_code, host.latitude, host.longitude, host.ip))
-            return row[0]
+                    longitude = COALESCE(?, longitude),
+                    sources = ?
+                WHERE id = ?
+            """, (host.asn, host.org, host.country_name, host.city, host.region_code, host.postal_code, host.latitude, host.longitude, merged_json, ip_id))
+            return ip_id
         
         ip_id = str(uuid.uuid4())
+        sources_json = json.dumps(list(set(sources_list))) if sources_list else '[]'
         conn.execute("""
-            INSERT INTO ip_addresses (id, ip, asn, org, country, city, region_code, postal_code, latitude, longitude)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        """, (ip_id, host.ip, host.asn, host.org, host.country_name, host.city, host.region_code, host.postal_code, host.latitude, host.longitude))
+            INSERT INTO ip_addresses (id, ip, asn, org, country, city, region_code, postal_code, latitude, longitude, sources)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """, (ip_id, host.ip, host.asn, host.org, host.country_name, host.city, host.region_code, host.postal_code, host.latitude, host.longitude, sources_json))
         return ip_id
 
     def _store_subdomains(
@@ -249,7 +297,7 @@ class DatabaseManager:
         subdomain_map = {}
         
         # Helper to register any candidate subdomain
-        def _register_subdomain_candidate(raw_name: str, meta: Optional[Dict] = None) -> None:
+        def _register_subdomain_candidate(raw_name: str, meta: Optional[Dict] = None, source: Optional[str] = None) -> None:
             if not raw_name:
                 return
             cand = raw_name.strip().lower()
@@ -286,21 +334,35 @@ class DatabaseManager:
                     if target_scopes and not _is_in_scope(domain, target_scopes):
                         return
 
-                    domain_id = self._get_or_create_domain(conn, domain)
+                    domain_id = self._get_or_create_domain(conn, domain, sources=[source] if source else None)
                     
                     cursor = conn.execute(
-                        "SELECT id FROM subdomains WHERE domain_id = ? AND name = ?",
+                        "SELECT id, sources FROM subdomains WHERE domain_id = ? AND name = ?",
                         (domain_id, cand)
                     )
                     row = cursor.fetchone()
+                    
+                    subdomain_id = None
                     if row:
                         subdomain_id = row[0]
+                        existing_sources_raw = row[1]
+                        if source:
+                            existing_sources = []
+                            if existing_sources_raw:
+                                try:
+                                    existing_sources = json.loads(existing_sources_raw)
+                                except json.JSONDecodeError:
+                                    pass
+                            if source not in existing_sources:
+                                existing_sources.append(source)
+                                conn.execute("UPDATE subdomains SET sources = ? WHERE id = ?", (json.dumps(existing_sources), subdomain_id))
                     else:
                         subdomain_id = str(uuid.uuid4())
+                        sources_json = json.dumps([source]) if source else '[]'
                         conn.execute("""
-                            INSERT INTO subdomains (id, domain_id, name)
-                            VALUES (?, ?, ?)
-                        """, (subdomain_id, domain_id, cand))
+                            INSERT INTO subdomains (id, domain_id, name, sources)
+                            VALUES (?, ?, ?, ?)
+                        """, (subdomain_id, domain_id, cand, sources_json))
                     
                     if meta:
                         try:
@@ -314,14 +376,15 @@ class DatabaseManager:
         # 1. Register subdomains from FindingType.SUBDOMAIN, ASSOCIATED_DOMAIN and targets
         for finding in findings:
             if finding.type in (FindingType.SUBDOMAIN, FindingType.ASSOCIATED_DOMAIN) and finding.value:
-                _register_subdomain_candidate(finding.value, finding.metadata)
+                _register_subdomain_candidate(finding.value, finding.metadata, finding.source)
             if finding.target:
-                _register_subdomain_candidate(finding.target)
+                src = finding.source if finding.type in (FindingType.SUBDOMAIN, FindingType.ASSOCIATED_DOMAIN) else None
+                _register_subdomain_candidate(finding.target, None, src)
             if finding.type == FindingType.HOST_INFO and finding.host_info:
                 for hname in finding.host_info.hostnames:
-                    _register_subdomain_candidate(hname)
+                    _register_subdomain_candidate(hname, None, None)
                 for dname in finding.host_info.domains:
-                    _register_subdomain_candidate(dname)
+                    _register_subdomain_candidate(dname, None, None)
 
         # 2. Register subdomains from hosts.hostnames and hosts.domains
         if hosts:

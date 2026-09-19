@@ -69,14 +69,14 @@ async def list_databases(request: Request) -> Dict:
             
             is_curr = (db_file.name == current_db_name)
             if is_curr:
-                current_target_name = target or clean_name
+                current_target_name = f"{clean_name} ({target})" if target and target != clean_name else clean_name
             
             databases.append({
                 "filename": db_file.name,
                 "name": clean_name,
                 "clean_name": clean_name,
                 "target": target,
-                "display_name": target or clean_name,
+                "display_name": f"{clean_name} ({target})" if target and target != clean_name else clean_name,
                 "size_mb": round(size_mb, 2),
                 "modified": mod_time,
                 "is_current": is_curr

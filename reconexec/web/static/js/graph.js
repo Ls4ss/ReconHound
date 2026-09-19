@@ -1,5 +1,5 @@
 /**
- * DetecTI-CLI EASM Dashboard - Cytoscape.js Graph Implementation
+ * ReconHound EASM Dashboard - Cytoscape.js Graph Implementation
  */
 
 class EASMDashboard {

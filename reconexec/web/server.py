@@ -1,4 +1,4 @@
-"""FastAPI web server for ReconExec-CLI EASM dashboard."""
+"""FastAPI web server for ReconExec EASM dashboard."""
 
 import argparse
 import sys
@@ -38,7 +38,7 @@ def create_app(db_path: str = None) -> FastAPI:
     
     from fastapi import FastAPI
     app = FastAPI(
-        title="ReconExec-CLI EASM Dashboard",
+        title="ReconExec EASM Dashboard",
         description="Interactive External Attack Surface Management Dashboard",
         version="2.0.0"
     )
@@ -133,7 +133,7 @@ def create_app(db_path: str = None) -> FastAPI:
         if index_file.exists():
             return FileResponse(index_file)
         else:
-            return {"message": "ReconExec-CLI EASM Dashboard", "status": "Dashboard files not found"}
+            return {"message": "ReconExec EASM Dashboard", "status": "Dashboard files not found"}
     
     @app.get("/health")
     async def health_check():
@@ -154,7 +154,7 @@ def main():
         print("Install with: pip install fastapi uvicorn", file=sys.stderr)
         sys.exit(1)
     
-    parser = argparse.ArgumentParser(description="ReconExec-CLI Web Server")
+    parser = argparse.ArgumentParser(description="ReconExec Web Server")
     parser.add_argument("--db-path", default=None, help="Path to SQLite database (optional)")
     parser.add_argument("--host", default="0.0.0.0", help="Host to bind to")
     parser.add_argument("--port", type=int, default=8000, help="Port to bind to")

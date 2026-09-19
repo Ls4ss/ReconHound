@@ -1,1 +1,1 @@
-# Static JavaScript files for ReconExec-CLI dashboard
+# Static JavaScript files for ReconExec dashboard

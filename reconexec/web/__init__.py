@@ -1,4 +1,4 @@
-"""ReconExec-CLI Web Server and Dashboard."""
+"""ReconExec Web Server and Dashboard."""
 
 from .server import create_app
 from .process_manager import WebServerManager

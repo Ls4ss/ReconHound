@@ -1,4 +1,4 @@
-"""Background process management for ReconExec-CLI web server."""
+"""Background process management for ReconExec web server."""
 
 import json
 import os

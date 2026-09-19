@@ -1,1 +1,1 @@
-"""API routes for ReconExec-CLI web dashboard."""
+"""API routes for ReconExec web dashboard."""

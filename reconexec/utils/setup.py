@@ -1,4 +1,4 @@
-"""Automated Environment Setup, Prerequisite Diagnostics & Auto-Configuration for ReconExec-CLI."""
+"""Automated Environment Setup, Prerequisite Diagnostics & Auto-Configuration for ReconExec."""
 
 from __future__ import annotations
 
@@ -15,7 +15,7 @@ from rich.table import Table
 from reconexec.config import DETECTI_HOME
 
 class SetupManager:
-    """Manages prerequisite diagnostics and automated system setup for ReconExec-CLI."""
+    """Manages prerequisite diagnostics and automated system setup for ReconExec."""
 
     REQUIRED_PYTHON_MODULES = [
         ("httpx", "httpx"),
@@ -247,7 +247,7 @@ class SetupManager:
 
     def render_diagnostics_table(self, checks: Dict[str, Any]) -> None:
         """Render a formatted, high-contrast Rich diagnostics table."""
-        table = Table(title="ReconExec-CLI System & Environment Diagnostics", show_header=True, header_style="bold cyan")
+        table = Table(title="ReconExec System & Environment Diagnostics", show_header=True, header_style="bold cyan")
         table.add_column("Component / Subsystem", style="bold white", min_width=28)
         table.add_column("Status", style="bold", min_width=24)
         table.add_column("Diagnostic Details", style="dim")
@@ -273,7 +273,7 @@ class SetupManager:
 
     def run_automated_setup(self) -> bool:
         """Run automated setup: creates directories, .env file, configures capabilities, and updates databases."""
-        self.console.print("\n[bold cyan]Starting ReconExec-CLI Automated Environment Setup...[/bold cyan]\n")
+        self.console.print("\n[bold cyan]Starting ReconExec Automated Environment Setup...[/bold cyan]\n")
 
         all_success = True
 
@@ -364,7 +364,7 @@ class SetupManager:
         if env_file.exists():
             self.console.print(f"  [green][+] Existing .env file detected at {env_file} and preserved.[/green]")
         else:
-            env_content = "# ReconExec-CLI Configuration\n# Add your API Keys here for enhanced intelligence\nSHODAN_API_KEY=\nCENSYS_API_ID=\nCENSYS_API_SECRET=\nGITHUB_TOKEN=\n"
+            env_content = "# ReconExec Configuration\n# Add your API Keys here for enhanced intelligence\nSHODAN_API_KEY=\nCENSYS_API_ID=\nCENSYS_API_SECRET=\nGITHUB_TOKEN=\n"
             env_file.write_text(env_content)
             self.console.print(f"  [green][+] Created default .env file at {env_file}.[/green]")
 
@@ -454,5 +454,5 @@ class SetupManager:
             self.console.print("  [dim]Nuclei is optional and not currently installed.[/dim]")
 
 
-        self.console.print("\n[bold green][+] ReconExec-CLI setup routine completed![/bold green]\n")
+        self.console.print("\n[bold green][+] ReconExec setup routine completed![/bold green]\n")
         return all_success

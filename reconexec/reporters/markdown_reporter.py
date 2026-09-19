@@ -188,7 +188,7 @@ class MarkdownReporter:
                 lines.append("")
 
         lines.append("---")
-        lines.append("*Generated automatically by ReconExec-CLI v2.0 — Modern EASM & Threat Intelligence Engine.*  ")
+        lines.append("*Generated automatically by ReconExec v2.0 — Modern EASM & Threat Intelligence Engine.*  ")
         lines.append("*Powered by [ReconExec Security](https://reconexec.com.br)*")
 
         return "\n".join(lines)

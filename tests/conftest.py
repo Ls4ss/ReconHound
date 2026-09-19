@@ -4,9 +4,9 @@ import os
 import sys
 from pathlib import Path
 
-# Add project root and reconexec-cli to sys.path
+# Add project root and reconexec to sys.path
 _root = Path(__file__).resolve().parent.parent
-_reconexec_cli = _root / "reconexec-cli"
+_reconexec_cli = _root / "reconexec"
 
 for path in [_reconexec_cli, _root]:
     p_str = str(path)

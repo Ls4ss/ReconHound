@@ -1,4 +1,4 @@
-"""SQLite storage manager for ReconExec-CLI EASM data persistence."""
+"""SQLite storage manager for ReconExec EASM data persistence."""
 
 import json
 import sqlite3

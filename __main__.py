@@ -1,4 +1,4 @@
-"""Entry point for executing reconexec-cli directly via `python -m reconexec-cli` or `python /path/to/reconexec-cli`."""
+"""Entry point for executing reconexec directly via `python -m reconexec` or `python /path/to/reconexec`."""
 
 from __future__ import annotations
 

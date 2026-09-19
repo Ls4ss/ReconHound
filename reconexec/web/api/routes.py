@@ -1,4 +1,4 @@
-"""REST API routes for ReconExec-CLI EASM dashboard."""
+"""REST API routes for ReconExec EASM dashboard."""
 
 import asyncio
 import ipaddress

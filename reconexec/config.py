@@ -1,4 +1,4 @@
-"""Configuration settings for ReconExec-CLI using Pydantic Settings."""
+"""Configuration settings for ReconExec using Pydantic Settings."""
 
 from __future__ import annotations
 
@@ -9,7 +9,7 @@ from pydantic import Field, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
-# Define the global base directory for ReconExec-CLI data
+# Define the global base directory for ReconExec data
 custom_path = os.getenv("DETECTI_HOME", str(Path.home() / ".reconexec"))
 DETECTI_HOME = Path(custom_path)
 DETECTI_HOME.mkdir(parents=True, exist_ok=True)
@@ -77,7 +77,7 @@ class Settings(BaseSettings):
     """ReconExec Application Settings."""
 
     model_config = SettingsConfigDict(
-        env_file=(str(DETECTI_HOME / ".env"), ".env", "reconexec-cli/.env", "threattrack/.env"),
+        env_file=(str(DETECTI_HOME / ".env"), ".env", "reconexec/.env", "threattrack/.env"),
         env_file_encoding="utf-8",
         extra="ignore",
         env_prefix="DETECTI_",
@@ -136,7 +136,7 @@ class Settings(BaseSettings):
     http_backoff_factor: float = Field(default=0.5, description="Exponential backoff factor")
     http_concurrency_limit: int = Field(default=10, description="Max concurrent async requests")
     user_agent: str = Field(
-        default="ReconExec-CLI/2.0 (+https://github.com/reconexecsec/ReconExec-CLI)",
+        default="ReconExec/2.0 (+https://github.com/reconexecsec/ReconExec)",
         description="HTTP User-Agent header",
     )
 

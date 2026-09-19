@@ -1,4 +1,4 @@
-"""ReconExec-CLI intelligence and data collection modules package."""
+"""ReconExec intelligence and data collection modules package."""
 
 from reconexec.modules.base import BaseModule
 from reconexec.modules.censys import (

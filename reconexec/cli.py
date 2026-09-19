@@ -33,7 +33,7 @@ click.Option.make_metavar = _compat_make_metavar
 
 import importlib.metadata
 try:
-    __version__ = importlib.metadata.version("reconexec-cli")
+    __version__ = importlib.metadata.version("reconexec")
 except importlib.metadata.PackageNotFoundError:
     __version__ = "dev"
 
@@ -81,11 +81,11 @@ if hasattr(typer.core, "TyperOption"):
     typer.core.TyperOption.make_metavar = _patched_option_make_metavar
 
 # Hardcode cli_name for global wrapper execution
-cli_name = "reconexec-cli"
+cli_name = "reconexec"
 
 app = typer.Typer(
     name=cli_name,
-    help="ReconExec-CLI: External Attack Surface Mapping & Threat Intelligence Engine",
+    help="ReconExec: External Attack Surface Mapping & Threat Intelligence Engine",
     add_completion=False,
     no_args_is_help=True,
     rich_markup_mode=None,
@@ -223,8 +223,8 @@ def intel_command(
     """Execute threat intelligence lookup for specific vulnerabilities.
     
     Examples:
-      reconexec-cli intel CVE-2021-44228
-      reconexec-cli intel CVE-2023-22527 --format json
+      reconexec intel CVE-2021-44228
+      reconexec intel CVE-2023-22527 --format json
     """
     
     if not cve_id:
@@ -294,7 +294,7 @@ def _execute_scan(
         console=console,
         transient=True,
     ) as progress:
-        task_id = progress.add_task("[bold cyan]Initializing ReconExec-CLI Intelligence Engine...", total=None)
+        task_id = progress.add_task("[bold cyan]Initializing ReconExec Intelligence Engine...", total=None)
 
         def progress_cb(module_name: str, message: str) -> None:
             progress.update(task_id, description=f"[bold cyan][{module_name}][/bold cyan] {message}")
@@ -488,7 +488,7 @@ def config_check_command(
     needs_setup = not all(c.get("ok", False) for k, c in checks.items() if k != "nuclei")
     if needs_setup and not setup:
         console.print(
-            "\n[bold yellow]Note:[/bold yellow] Run [bold cyan]./reconexec-cli setup[/bold cyan] or [bold cyan]./reconexec-cli config-check --setup[/bold cyan] to automatically configure missing prerequisites.\n"
+            "\n[bold yellow]Note:[/bold yellow] Run [bold cyan]./reconexec setup[/bold cyan] or [bold cyan]./reconexec config-check --setup[/bold cyan] to automatically configure missing prerequisites.\n"
         )
 
 
@@ -541,7 +541,7 @@ def start_server(
                 print_info(f"PID: {status['pid']}")
                 return
         
-        print_info(f"Starting ReconExec-CLI web server on {host}:{port}...")
+        print_info(f"Starting ReconExec web server on {host}:{port}...")
         if db:
             print_info(f"Database: {db}")
         else:
@@ -710,14 +710,14 @@ def list_databases() -> None:
 
 @app.command(name="version")
 def version_command() -> None:
-    """Show ReconExec-CLI version and maintainer information."""
-    console.print(f"[bold cyan]ReconExec-CLI[/bold cyan] version [bold white]{__version__}[/bold white] - Cyber Lead Intelligence Engine")
+    """Show ReconExec version and maintainer information."""
+    console.print(f"[bold cyan]ReconExec[/bold cyan] version [bold white]{__version__}[/bold white] - Cyber Lead Intelligence Engine")
     console.print("[dim]Developed by Lucas S. (Ls4ss) - https://lucassouza.io[/dim]")
 
 
 def main() -> None:
     """Main CLI entry point."""
-    app(prog_name="reconexec-cli")
+    app(prog_name="reconexec")
 
 
 if __name__ == "__main__":

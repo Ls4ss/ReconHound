@@ -34,7 +34,7 @@ def _read_banner_file() -> str:
     """Read the banner from the 'banner' file in the current directory or package."""
     candidate_paths = [
         Path.cwd() / "banner",
-        Path.cwd() / "reconexec-cli" / "banner",
+        Path.cwd() / "reconexec" / "banner",
         Path.cwd() / "threattrack" / "banner",
         Path(__file__).resolve().parent / "banner",
         Path(__file__).resolve().parent.parent / "banner",
@@ -48,11 +48,11 @@ def _read_banner_file() -> str:
                     return content
             except Exception:
                 pass
-    return "ReconExec-CLI v2.0 - Cyber Lead Intelligence Engine\nExternal Attack Surface Management & Threat Intelligence CLI\nPowered by ReconExec Security"
+    return "ReconExec v2.0 - Cyber Lead Intelligence Engine\nExternal Attack Surface Management & Threat Intelligence CLI\nPowered by ReconExec Security"
 
 
 def print_banner() -> None:
-    """Print the ReconExec-CLI ASCII logo banner directly from the 'banner' file."""
+    """Print the ReconExec ASCII logo banner directly from the 'banner' file."""
     banner_content = _read_banner_file()
     console.print(f"[bold cyan]{banner_content}[/bold cyan]\n", highlight=False)
 

@@ -721,6 +721,8 @@ def main() -> None:
     """Main CLI entry point."""
     if len(sys.argv) == 1:
         sys.argv.append("--help")
+    elif len(sys.argv) == 2 and sys.argv[1] in ["config", "hound"]:
+        sys.argv.append("--help")
     app(prog_name="reconexec")
 
 if __name__ == "__main__":

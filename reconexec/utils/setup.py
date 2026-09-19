@@ -242,7 +242,7 @@ class SetupManager:
             "name": "Default Demo Graph Dataset",
             "status": "Ready (example.com.sqlite)" if exists else "Missing",
             "ok": exists,
-            "message": "Pre-packaged demo dataset available for instant ReconExecHound visualization." if exists else "Demo dataset missing.",
+            "message": "Pre-packaged demo dataset available for instant ReconHound visualization." if exists else "Demo dataset missing.",
         }
 
     def render_diagnostics_table(self, checks: Dict[str, Any]) -> None:
@@ -278,7 +278,7 @@ class SetupManager:
         all_success = True
 
         # Step 0: Dashboard Admin Password Setup
-        self.console.print("[+] [bold white]Step 0/6: Configuring ReconExecHound Dashboard Admin...[/bold white]")
+        self.console.print("[+] [bold white]Step 0/6: Configuring ReconHound Dashboard Admin...[/bold white]")
         try:
             import getpass
             import sys

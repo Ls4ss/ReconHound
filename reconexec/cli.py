@@ -94,7 +94,7 @@ app = typer.Typer(
 # Create hound subcommand group (Interactive EASM Attack Surface Graph Dashboard)
 hound_app = typer.Typer(
     name="hound",
-    help="ReconExecHound - Interactive EASM Attack Surface Graph Dashboard management",
+    help="ReconHound - Interactive EASM Attack Surface Graph Dashboard management",
     add_completion=False,
 )
 app.add_typer(hound_app, name="hound")
@@ -336,7 +336,7 @@ def _execute_scan(
             except Exception as e:
                 print_error(f"Failed to store results in database: {e}")
 
-            # Automatically launch ReconExecHound WebGUI (only if not already running)
+            # Automatically launch ReconHound WebGUI (only if not already running)
             try:
                 from reconexec.web.process_manager import WebServerManager
                 
@@ -348,7 +348,7 @@ def _execute_scan(
                 if ws_manager.is_running():
                     status = ws_manager.get_status() or {}
                     srv_port = status.get("port", port)
-                    print_info(f"ReconExecHound WebGUI is already active (PID: {status.get('pid', 'N/A')}).")
+                    print_info(f"ReconHound WebGUI is already active (PID: {status.get('pid', 'N/A')}).")
                     real_ip = get_real_ip()
                     console.print(f" [+] [bold cyan]Local URL:[/bold cyan]   [bold underline cyan]http://localhost:{srv_port}[/bold underline cyan] (Select [bold cyan]{final_db_name or db_name}[/bold cyan] in database dropdown)")
                     if real_ip != "127.0.0.1":
@@ -356,7 +356,7 @@ def _execute_scan(
                 else:
                     started = ws_manager.start_server(final_db_name or db_name, host, port)
                     if started:
-                        print_success(f"ReconExecHound WebGUI started automatically with database: [bold cyan]{final_db_name or db_name}[/bold cyan]")
+                        print_success(f"ReconHound WebGUI started automatically with database: [bold cyan]{final_db_name or db_name}[/bold cyan]")
                         
                         # Fix network IP reconexecon
                         real_ip = get_real_ip()
@@ -364,9 +364,9 @@ def _execute_scan(
                         if real_ip != "127.0.0.1":
                             console.print(f" [+] [bold cyan]Network URL:[/bold cyan] [bold underline cyan]http://{real_ip}:{port}[/bold underline cyan]")
                     else:
-                        print_info(f"Open ReconExecHound: [bold cyan]{cli_name} hound start --db {final_db_name or db_name}[/bold cyan]")
+                        print_info(f"Open ReconHound: [bold cyan]{cli_name} hound start --db {final_db_name or db_name}[/bold cyan]")
             except Exception as e:
-                print_warning(f"Could not automatically launch ReconExecHound WebGUI: {e}")
+                print_warning(f"Could not automatically launch ReconHound WebGUI: {e}")
         elif not is_cve and not has_results:
             print_warning(f"No intelligence assets or findings discovered for target '{target}'. SQLite database was not created.")
 
@@ -552,7 +552,7 @@ def start_server(
         
         if success:
             real_ip = get_real_ip()
-            print_success(f"[+] ReconExecHound web server started successfully!")
+            print_success(f"[+] ReconHound web server started successfully!")
             console.print(f"  -> [bold cyan]Local Access:[/bold cyan]   [bold underline cyan]http://localhost:{port}[/bold underline cyan]")
             console.print(f"  -> [bold cyan]Network Access:[/bold cyan] [bold underline cyan]http://{real_ip}:{port}[/bold underline cyan]")
             if db:

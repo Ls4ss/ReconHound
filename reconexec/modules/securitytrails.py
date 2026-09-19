@@ -113,6 +113,7 @@ class SecurityTrailsModule(BaseModule):
                         if ip:
                             ips.add(ip)
         except Exception as e:
+            self.notify(f"Historical DNS error for {domain}: {e}")
             logger.debug(f"Historical DNS error for {domain}: {e}")
             
         return list(ips)
@@ -139,6 +140,7 @@ class SecurityTrailsModule(BaseModule):
             for sub in subdomains:
                 subs.append(f"{sub}.{domain}")
         except Exception as e:
+            self.notify(f"Subdomain fetch error for {domain}: {e}")
             logger.debug(f"Subdomain fetch error for {domain}: {e}")
             
         return subs

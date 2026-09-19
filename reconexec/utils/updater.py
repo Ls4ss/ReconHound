@@ -1,14 +1,14 @@
 import json
 import time
+from typing import Optional
 from pathlib import Path
 from reconexec.config import DETECTI_HOME
 
-def check_for_updates(current_version: str) -> None:
+def check_for_updates(current_version: str, force: bool = False) -> Optional[str]:
     """Check PyPI for a newer version of reconexec, caching the result to avoid spamming."""
     cache_file = DETECTI_HOME / "last_update_check.json"
     
-    # Check if we should skip network request (e.g., checked within last 12 hours)
-    if cache_file.exists():
+    if cache_file.exists() and not force:
         try:
             data = json.loads(cache_file.read_text())
             if time.time() - data.get("last_check", 0) < 43200: # 12 hours
@@ -17,14 +17,15 @@ def check_for_updates(current_version: str) -> None:
                     from packaging.version import parse, InvalidVersion
                     try:
                         if parse(cached_newer) > parse(current_version):
-                            _print_update_warning(current_version, cached_newer)
+                            if not force:
+                                _print_update_warning(current_version, cached_newer)
+                            return cached_newer
                     except InvalidVersion:
                         pass
-                return
+                return None
         except Exception:
             pass
 
-    # Perform request
     try:
         import requests
         resp = requests.get("https://pypi.org/pypi/reconexec/json", timeout=2.0)
@@ -39,7 +40,6 @@ def check_for_updates(current_version: str) -> None:
             except InvalidVersion:
                 is_newer = False
             
-            # Save to cache
             cache_file.parent.mkdir(parents=True, exist_ok=True)
             cache_file.write_text(json.dumps({
                 "last_check": time.time(),
@@ -48,10 +48,14 @@ def check_for_updates(current_version: str) -> None:
             }))
             
             if is_newer:
-                _print_update_warning(current_version, latest_version)
+                if not force:
+                    _print_update_warning(current_version, latest_version)
+                return latest_version
+            return None
     except Exception:
-        # Silently fail on network/timeout errors to not disrupt CLI workflow
         pass
+    
+    return None
 
 def _print_update_warning(current: str, latest: str) -> None:
     from reconexec.utils.logger import console

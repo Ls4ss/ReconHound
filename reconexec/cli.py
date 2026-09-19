@@ -494,11 +494,18 @@ def config_check_command(
     needs_setup = not all(c.get("ok", False) for k, c in checks.items() if k != "nuclei")
     if needs_setup and not setup:
         console.print(
-            "\n[bold yellow]Note:[/bold yellow] Run [bold cyan]./reconexec setup[/bold cyan] or [bold cyan]./reconexec config-check --setup[/bold cyan] to automatically configure missing prerequisites.\n"
+            "\n[bold yellow]Note:[/bold yellow] Run [bold cyan]reconx config setup[/bold cyan] to automatically configure missing prerequisites.\n"
         )
 
 
 
+
+
+
+@config_app.command(name="setup")
+def config_setup_command() -> None:
+    """Automatically configure prerequisites, install missing dependencies, and update databases."""
+    config_check_command(setup=True)
 
 
 @hound_app.command("start", rich_help_panel="Server Operations")

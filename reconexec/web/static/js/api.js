@@ -1,5 +1,5 @@
 /**
- * API client for DetecTI-CLI EASM Dashboard
+ * API client for ReconHound EASM Dashboard
  */
 
 class APIClient {

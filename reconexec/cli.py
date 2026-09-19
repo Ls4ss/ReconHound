@@ -77,7 +77,13 @@ cli_name = "reconexec"
 
 app = typer.Typer(
     name=cli_name,
-    help="ReconExec: External Attack Surface Mapping & Threat Intelligence Engine",
+    help="""ReconExec: External Attack Surface Mapping & Threat Intelligence Engine
+
+ ┌─────────────┐   ┌────────────────┐   ┌────────────────┐   ┌─────────────┐
+ │  ReconExec  │──▶│ Asset Mapping  │──▶│ Threat Intel   │──▶│ ReconHound  │
+ │ (Discovery) │   │ (FQDNs/IPs/DB) │   │ (CVE/EPSS/PoC) │   │ (Web Graph) │
+ └─────────────┘   └────────────────┘   └────────────────┘   └─────────────┘
+""",
     add_completion=False,
     rich_markup_mode="rich",
     pretty_exceptions_enable=False,
@@ -189,9 +195,19 @@ def generate_module_command(mod_name: str):
 app.command(name="all", help="Execute passive attack surface mapping using ALL modules.", rich_help_panel="Global Recon Scans")(generate_module_command("all"))
 
 RESERVED_WORDS = {"intel", "hound", "update-xdb", "config-check", "version", "setup"}
+module_display_names = {
+    'shodan': 'Shodan',
+    'censys': 'Censys',
+    'crtsh': 'crt.sh',
+    'whois': 'Reverse WHOIS',
+    'sectrails': 'SecurityTrails',
+    'axfr': 'Zone Transfer'
+}
+
 for m_name in ThreatTrackEngine.MODULE_REGISTRY.keys():
-    if m_name not in RESERVED_WORDS:
-        app.command(name=m_name, help=f"Execute passive attack surface mapping using only the '{m_name}' module.", rich_help_panel="Targeted Recon Modules")(generate_module_command(m_name))
+    if m_name not in RESERVED_WORDS and m_name not in ['nvd', 'exploitdb']:
+        display_name = module_display_names.get(m_name, m_name.capitalize())
+        app.command(name=m_name, help=f"Execute passive attack surface mapping using only the '{display_name}' module.", rich_help_panel="Targeted Recon Modules")(generate_module_command(m_name))
 
 
 @app.command(name="intel", rich_help_panel="Utility & Intelligence")

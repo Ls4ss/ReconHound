@@ -499,33 +499,6 @@ class EASMDashboard {
             
             if (rootData && rootData.explore_assets && Array.isArray(rootData.explore_assets)) {
                 console.log(`Using pre-calculated explore_assets from backend: ${rootData.explore_assets.length} assets`);
-                this.assets = rootData.explore_assets.map(asset => ({
-                    id: asset.id,
-                    label: asset.label,
-                    display_name: asset.display_name || asset.label,
-                    type: asset.type,
-                    vuln_count: asset.vuln_count || 0,
-                    service_count: asset.service_count || 0,
-                    verified_service_count: asset.verified_service_count || 0,
-                    kev_count: asset.kev_count || 0,
-                    has_kev: asset.has_kev || false,
-                    critical_count: asset.critical_count || 0,
-                    has_critical: (asset.critical_count || 0) > 0,
-                    high_count: asset.high_count || 0,
-                    poc_count: asset.poc_count || 0,
-                    max_epss: asset.max_epss || 0,
-                    high_epss_count: asset.high_epss_count || 0,
-                    three_d_score: asset.three_d_score || 0,
-                    is_target: false // Explicit target state handled separately
-                }));
-            } else {
-
-            // 1. Look for pre-calculated explore_assets data from the backend
-            const rootNode = elements.nodes.find(n => (n.data || n).id === 'target_root');
-            const rootData = rootNode ? (rootNode.data || rootNode) : null;
-            
-            if (rootData && rootData.explore_assets && Array.isArray(rootData.explore_assets)) {
-                console.log(`Using pre-calculated explore_assets from backend: ${rootData.explore_assets.length} assets`);
                 this.assets = rootData.explore_assets.map(asset => {
                     const matchedNode = elements.nodes.find(n => (n.data || n).id === asset.id);
                     const isTarget = matchedNode ? ((matchedNode.data || matchedNode).is_target === true || (matchedNode.data || matchedNode).is_target === 'true') : false;
@@ -618,8 +591,9 @@ class EASMDashboard {
                         console.error('Error processing asset node:', node, err);
                     }
                 });
+
             }
-            }
+
             
             // FINAL FALLBACK: If still no assets after processing, force create from raw data
             if (this.assets.length === 0 && elements.nodes.length > 0) {

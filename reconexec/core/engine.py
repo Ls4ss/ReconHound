@@ -78,6 +78,7 @@ class ThreatTrackEngine:
         self.progress_callback = progress_callback
         self.db_manager = db_manager
         self.current_input_target: Optional[str] = None
+        self.run_warnings = []
         self.modules: Dict[str, BaseModule] = {
             name: cls(client=self.http_client, progress_callback=self._notify)
             for name, cls in self.MODULE_REGISTRY.items()
@@ -88,8 +89,10 @@ class ThreatTrackEngine:
             self.progress_callback(module_name, message)
         logger.info(f"[{module_name}] {message}")
         if self.db_manager:
-            level = "error" if "error" in message.lower() or "fail" in message.lower() else "info"
+            level = "error" if "error" in message.lower() or "fail" in message.lower() or "timeout" in message.lower() or "429" in message.lower() else "info"
             self.db_manager.add_scan_log(level=level, message=f"[{module_name}] {message}", input_target=self.current_input_target)
+            if level == "error":
+                self.run_warnings.append(f"[{module_name}] {message}")
 
     def parse_target_metadata(self, target: str) -> Dict[str, Any]:
         """Extract canonical target type, cleaned host/domain, port, and root domain supporting full URLs and subdomains."""
@@ -1004,6 +1007,7 @@ class ThreatTrackEngine:
 
         result.hosts = list(hosts_map.values())
         result.findings = final_findings
+        context["warnings"] = context.get("warnings", []) + self.run_warnings
         result.warnings = list(dict.fromkeys(context.get("warnings", [])))
         result.completed_at = datetime.now(timezone.utc)
         result.elapsed_seconds = time.monotonic() - start_time

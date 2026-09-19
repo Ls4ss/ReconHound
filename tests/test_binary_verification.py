@@ -1,6 +1,6 @@
 import pytest
-from detecti.modules.masscan import MasscanRunner
-from detecti.modules.nuclei import NucleiRunner
+from reconexec.modules.masscan import MasscanRunner
+from reconexec.modules.nuclei import NucleiRunner
 
 def test_masscan_check_permissions_no_name_error():
     """Verify check_permissions never raises NameError (e.g. missing subprocess)."""
@@ -24,9 +24,9 @@ def test_ast_no_undefined_globals():
     """Scan all module files to verify no undefined global references exist."""
     import ast
     from pathlib import Path
-    import detecti
+    import reconexec
 
-    pkg_root = Path(detecti.__file__).parent
+    pkg_root = Path(reconexec.__file__).parent
     py_files = list(pkg_root.rglob("*.py"))
     
     for py_file in py_files:

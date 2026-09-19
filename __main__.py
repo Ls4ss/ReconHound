@@ -1,4 +1,4 @@
-"""Entry point for executing detecti-cli directly via `python -m detecti-cli` or `python /path/to/detecti-cli`."""
+"""Entry point for executing reconexec-cli directly via `python -m reconexec-cli` or `python /path/to/reconexec-cli`."""
 
 from __future__ import annotations
 

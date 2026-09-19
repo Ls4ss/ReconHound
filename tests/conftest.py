@@ -4,11 +4,11 @@ import os
 import sys
 from pathlib import Path
 
-# Add project root and detecti-cli to sys.path
+# Add project root and reconexec-cli to sys.path
 _root = Path(__file__).resolve().parent.parent
-_detecti_cli = _root / "detecti-cli"
+_reconexec_cli = _root / "reconexec-cli"
 
-for path in [_detecti_cli, _root]:
+for path in [_reconexec_cli, _root]:
     p_str = str(path)
     if p_str not in sys.path:
         sys.path.insert(0, p_str)

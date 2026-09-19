@@ -71,13 +71,13 @@ def test_markdown_reporter(tmp_path: Path):
     result = create_sample_scan_result()
     md_content = MarkdownReporter.generate(result)
 
-    assert "# DetecTI Cyber Lead Intelligence Report: `192.168.1.50`" in md_content
+    assert "# ReconExec Cyber Lead Intelligence Report: `192.168.1.50`" in md_content
     assert "CVE-2021-41773" in md_content
     assert "CWE Name" in md_content
     assert "CISA Known Exploited" in md_content
     assert "50383" in md_content
     assert "Host: `192.168.1.50`" in md_content
-    assert "https://detecti.com.br" in md_content
+    assert "https://reconexec.com.br" in md_content
 
     file_path = tmp_path / "report.md"
     MarkdownReporter.save(result, file_path)
@@ -92,8 +92,8 @@ def test_html_reporter(tmp_path: Path):
     assert "<!DOCTYPE html>" in html_content
     assert "192.168.1.50" in html_content
     assert "CVE-2021-41773" in html_content
-    assert "DetecTI-CLI Intelligence Report" in html_content
-    assert "https://detecti.com.br" in html_content
+    assert "ReconExec-CLI Intelligence Report" in html_content
+    assert "https://reconexec.com.br" in html_content
 
     file_path = tmp_path / "report.html"
     HTMLReporter.save(result, file_path)

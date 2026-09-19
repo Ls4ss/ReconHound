@@ -1,0 +1,488 @@
+"""Nuclei vulnerability scanner runner module."""
+
+from __future__ import annotations
+
+import asyncio
+import json
+import logging
+import os
+import shutil
+import subprocess
+import tempfile
+from pathlib import Path
+from typing import Any, Callable, Dict, List, Optional
+
+logger = logging.getLogger("reconexec.nuclei")
+
+
+class NucleiRunner:
+    """Async Nuclei execution engine for vulnerability scanning."""
+
+    _update_lock: asyncio.Lock = asyncio.Lock()
+    _last_templates_update: float = 0.0
+
+    def __init__(self, binary_path: Optional[str] = None):
+        self.binary_path = binary_path or shutil.which("nuclei") or "/usr/bin/nuclei"
+
+    def is_available(self) -> bool:
+        """Check if nuclei binary exists and is executable."""
+        if not self.binary_path:
+            return False
+        p = Path(self.binary_path)
+        return p.exists() and os.access(str(p), os.X_OK)
+
+    def check_permissions(self) -> Dict[str, Any]:
+        """Verify binary availability and functional execution."""
+        available = self.is_available()
+        if not available:
+            return {
+                "available": False,
+                "binary_path": None,
+                "can_run": False,
+                "version": None,
+                "message": "Nuclei binary not found on system (install with: go install -v github.com/projectdiscovery/nuclei/v3/cmd/nuclei@latest or download from GitHub releases)",
+            }
+
+        # Functional dry-run check: verify binary can execute and return version
+        version_str = "Unknown"
+        is_functional = True
+        err_detail = None
+
+        try:
+            res = subprocess.run(
+                [self.binary_path, "-version"],
+                capture_output=True,
+                text=True,
+                timeout=4,
+                check=False,
+            )
+            combined = res.stdout + res.stderr
+            if res.returncode == 0 or "nuclei" in combined.lower() or "projectdiscovery" in combined.lower():
+                for line in combined.splitlines():
+                    clean = line.strip()
+                    if "nuclei" in clean.lower() and ("v" in clean.lower() or "version" in clean.lower()):
+                        version_str = clean
+                        break
+            else:
+                is_functional = False
+                err_detail = f"Nuclei exited with code {res.returncode}: {combined.strip()[:120]}"
+        except subprocess.TimeoutExpired:
+            is_functional = False
+            err_detail = "Nuclei execution test timed out after 4 seconds."
+        except Exception as e:
+            is_functional = False
+            err_detail = f"Nuclei execution test failed: {e}"
+            logger.error(f"Nuclei check_permissions exception: {e}", exc_info=True)
+
+        can_run = available and is_functional
+        return {
+            "available": can_run,
+            "binary_path": self.binary_path,
+            "can_run": can_run,
+            "version": version_str if is_functional else None,
+            "message": f"Nuclei engine ready ({version_str})" if can_run else (err_detail or "Nuclei binary found but failed execution test."),
+        }
+
+    async def update_templates(
+        self,
+        force: bool = False,
+        cooldown_seconds: float = 3600.0,
+        log_callback: Optional[Callable[[str, str], Any]] = None,
+    ) -> Dict[str, Any]:
+        """Update nuclei-templates to the latest release safely with lock and cooldown."""
+        if not self.is_available():
+            return {"success": False, "error": "Nuclei binary not found"}
+
+        import time
+        now = time.time()
+        
+        async with NucleiRunner._update_lock:
+            # Check if updated recently unless forced
+            if not force and (now - NucleiRunner._last_templates_update) < cooldown_seconds:
+                msg = "Nuclei templates are already up to date (cached within cooldown)."
+                logger.info(msg)
+                if log_callback:
+                    log_callback("info", msg)
+                return {"success": True, "updated": False, "message": msg}
+
+            logger.info("Executing Nuclei templates update (-update-templates)...")
+            if log_callback:
+                log_callback("info", "Checking and updating Nuclei community templates...")
+
+            try:
+                cmd = [self.binary_path, "-update-templates", "-duc"]
+                proc = await asyncio.create_subprocess_exec(
+                    *cmd,
+                    stdout=asyncio.subprocess.PIPE,
+                    stderr=asyncio.subprocess.PIPE,
+                )
+                stdout_bytes, stderr_bytes = await asyncio.wait_for(proc.communicate(), timeout=60.0)
+                out_str = stdout_bytes.decode("utf-8", errors="replace") + stderr_bytes.decode("utf-8", errors="replace")
+                
+                NucleiRunner._last_templates_update = time.time()
+                success = (proc.returncode == 0)
+                
+                log_msg = f"Nuclei templates update finished: {out_str.strip().splitlines()[-1] if out_str.strip() else 'OK'}"
+                logger.info(log_msg)
+                if log_callback:
+                    log_callback("success" if success else "warning", log_msg)
+
+                return {
+                    "success": success,
+                    "updated": True,
+                    "output": out_str.strip(),
+                }
+            except asyncio.TimeoutError:
+                msg = "Nuclei templates update timed out after 60s (proceeding with existing templates)."
+                logger.warning(msg)
+                if log_callback:
+                    log_callback("warning", msg)
+                return {"success": False, "error": msg}
+            except Exception as e:
+                msg = f"Error updating Nuclei templates: {e}"
+                logger.warning(msg)
+                if log_callback:
+                    log_callback("warning", msg)
+                return {"success": False, "error": msg}
+
+    async def scan_targets(
+        self,
+        targets: List[str],
+        severities: Optional[List[str]] = None,
+        tags: Optional[List[str]] = None,
+        custom_tags: Optional[str] = None,
+        rate_limit: int = 150,
+        concurrency: int = 25,
+        custom_flags: Optional[str] = None,
+        timeout: Optional[float] = None,
+        idle_timeout: float = 90.0,
+        max_timeout: Optional[float] = 3600.0,
+        log_callback: Optional[Callable[[str, str], Any]] = None,
+    ) -> Dict[str, Any]:
+        """Execute nuclei against a list of formatted targets with real-time JSONL parsing,
+        anti-hang flags, an adaptive idle watchdog, and graceful SIGINT termination.
+        """
+        if not self.is_available():
+            return {
+                "success": False,
+                "targets": targets,
+                "findings": [],
+                "error": "Nuclei binary is not available on this system.",
+            }
+
+        if not targets:
+            return {
+                "success": True,
+                "targets": [],
+                "findings": [],
+                "error": None,
+                "total_findings": 0,
+            }
+
+        import time
+
+        # Normalize severities
+        sev_list = [s.strip().lower() for s in (severities or ["critical", "high"]) if s.strip()]
+        if not sev_list:
+            sev_list = ["critical", "high"]
+
+        # Normalize tags
+        all_tags: List[str] = []
+        if tags:
+            all_tags.extend([t.strip().lower() for t in tags if t.strip()])
+        if custom_tags:
+            all_tags.extend([t.strip().lower() for t in custom_tags.split(",") if t.strip()])
+        # Deduplicate tags preserving order
+        unique_tags = list(dict.fromkeys(all_tags))
+
+        # Write targets to a temporary file
+        with tempfile.NamedTemporaryFile("w+", delete=False, suffix="_nuclei_targets.txt") as tf:
+            target_file_path = tf.name
+            for t in targets:
+                tf.write(f"{t.strip()}\n")
+
+        # Core Command with Anti-Hang & Stats Heartbeat Flags:
+        # -timeout 5: Prevents hung sockets from stalling concurrency workers
+        # -retries 1: Avoids retry storms on dropped packets / unresponsive ports
+        # -mhe 3: Skips host after 3 consecutive failures to prevent scanning dead targets
+        # -stats -si 15: Emits progress heartbeat every 15s to keep idle watchdog active
+        cmd: List[str] = [
+            self.binary_path,
+            "-list", target_file_path,
+            "-jsonl",
+            "-severity", ",".join(sev_list),
+            "-rl", str(max(10, rate_limit)),
+            "-c", str(max(1, concurrency)),
+            "-timeout", "5",
+            "-retries", "1",
+            "-mhe", "3",
+            "-stats",
+            "-si", "15",
+        ]
+
+        if unique_tags:
+            cmd.extend(["-tags", ",".join(unique_tags)])
+
+        if custom_flags:
+            import shlex
+            try:
+                cmd.extend(shlex.split(custom_flags))
+            except Exception as e:
+                logger.warning(f"Error parsing custom flags '{custom_flags}': {e}")
+
+        findings: List[Dict[str, Any]] = []
+        raw_errors: List[str] = []
+        last_activity = [time.time()]
+
+        if log_callback:
+            log_callback("info", f"Starting Nuclei scan on {len(targets)} target(s) [Severities: {','.join(sev_list)}] (Rate: {rate_limit} req/s, Concurrency: {concurrency}, Stats Heartbeat: 15s)")
+
+        proc = None
+
+        async def _graceful_terminate(p):
+            """Send SIGINT to allow Nuclei to flush findings and close sockets cleanly."""
+            if p and p.returncode is None:
+                try:
+                    import signal
+                    p.send_signal(signal.SIGINT)
+                    try:
+                        await asyncio.wait_for(p.wait(), timeout=3.5)
+                    except (asyncio.TimeoutError, Exception):
+                        p.kill()
+                except Exception:
+                    try:
+                        p.kill()
+                    except Exception:
+                        pass
+
+        try:
+            logger.info(f"Executing Nuclei: {' '.join(cmd)}")
+            proc = await asyncio.create_subprocess_exec(
+                *cmd,
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE,
+            )
+
+            async def read_stdout():
+                assert proc.stdout is not None
+                while True:
+                    line = await proc.stdout.readline()
+                    if not line:
+                        break
+                    last_activity[0] = time.time()
+                    line_str = line.decode("utf-8", errors="replace").strip()
+                    if not line_str:
+                        continue
+                    try:
+                        data = json.loads(line_str)
+                        parsed_finding = self._normalize_finding(data)
+                        if parsed_finding:
+                            findings.append(parsed_finding)
+                            if log_callback:
+                                sev = parsed_finding.get("severity", "info").upper()
+                                name = parsed_finding.get("name") or parsed_finding.get("template_id")
+                                matched = parsed_finding.get("matched_at") or parsed_finding.get("host")
+                                log_callback("warn" if sev in ["CRITICAL", "HIGH"] else "info", f"[{sev}] {name} on {matched}")
+                    except json.JSONDecodeError:
+                        if log_callback and ("[" in line_str or "ERR" in line_str or "Templates:" in line_str):
+                            log_callback("info", line_str)
+
+            async def read_stderr():
+                assert proc.stderr is not None
+                while True:
+                    line = await proc.stderr.readline()
+                    if not line:
+                        break
+                    last_activity[0] = time.time()
+                    err_str = line.decode("utf-8", errors="replace").strip()
+                    if err_str:
+                        # If it's a stats heartbeat line (e.g. [0:00:15] | Templates: ...), log as info/debug heartbeat
+                        if "Templates:" in err_str or "Requests:" in err_str or "[stats]" in err_str.lower():
+                            logger.debug(f"Nuclei stats heartbeat: {err_str}")
+                        else:
+                            raw_errors.append(err_str)
+                            logger.debug(f"Nuclei stderr: {err_str}")
+
+            async def watchdog():
+                """Monitor stream activity and trigger graceful exit if idle or max timeout reached."""
+                start_t = time.time()
+                while proc.returncode is None:
+                    await asyncio.sleep(2.0)
+                    now_t = time.time()
+                    # 1. Check Idle Watchdog (no response or activity on sockets for > idle_timeout)
+                    if idle_timeout and (now_t - last_activity[0]) > idle_timeout:
+                        logger.warning(f"Nuclei idle watchdog triggered: zero activity/heartbeat for >{idle_timeout}s.")
+                        raise asyncio.TimeoutError(f"Nuclei scan idle for >{idle_timeout}s without response")
+                    # 2. Check Absolute Max Timeout (safety cap)
+                    if max_timeout and (now_t - start_t) > max_timeout:
+                        logger.warning(f"Nuclei reached absolute max execution ceiling of {max_timeout}s.")
+                        raise asyncio.TimeoutError(f"Nuclei scan reached max execution ceiling of {max_timeout}s")
+                    # 3. Check legacy custom timeout if explicitly passed
+                    if timeout and (now_t - start_t) > timeout:
+                        logger.warning(f"Nuclei reached custom timeout of {timeout}s.")
+                        raise asyncio.TimeoutError(f"Nuclei scan timed out after {timeout}s")
+
+            # Run streams, process wait, and watchdog concurrently
+            await asyncio.gather(
+                read_stdout(),
+                read_stderr(),
+                proc.wait(),
+                watchdog(),
+            )
+
+            if log_callback:
+                log_callback("success", f"Nuclei scan completed. Found {len(findings)} vulnerability issue(s).")
+
+            return {
+                "success": True,
+                "targets": targets,
+                "severities": sev_list,
+                "tags": unique_tags,
+                "findings": findings,
+                "total_findings": len(findings),
+                "error": None if not raw_errors else "\n".join(raw_errors[:5]),
+            }
+
+        except asyncio.TimeoutError as te:
+            await _graceful_terminate(proc)
+            msg = str(te) if str(te) else f"Nuclei scan timed out"
+            logger.warning(f"{msg}. Preserving {len(findings)} accumulated findings.")
+            if log_callback:
+                log_callback("warn" if findings else "error", f"{msg} ({len(findings)} findings preserved).")
+            return {
+                "success": len(findings) > 0,
+                "targets": targets,
+                "severities": sev_list,
+                "tags": unique_tags,
+                "findings": findings,
+                "total_findings": len(findings),
+                "error": msg if not findings else None,
+                "partial": True,
+            }
+        except asyncio.CancelledError:
+            await _graceful_terminate(proc)
+            logger.info(f"Nuclei scan cancelled by user. Preserving {len(findings)} accumulated findings.")
+            if log_callback:
+                log_callback("warn" if findings else "info", f"Nuclei scan cancelled by user ({len(findings)} findings preserved).")
+            return {
+                "success": len(findings) > 0,
+                "targets": targets,
+                "severities": sev_list,
+                "tags": unique_tags,
+                "findings": findings,
+                "total_findings": len(findings),
+                "error": "Scan cancelled by user",
+                "partial": True,
+            }
+        except Exception as e:
+            await _graceful_terminate(proc)
+            msg = f"Nuclei execution error: {str(e)}"
+            logger.error(msg, exc_info=True)
+            if log_callback:
+                log_callback("error", msg)
+            return {
+                "success": len(findings) > 0,
+                "targets": targets,
+                "severities": sev_list,
+                "tags": unique_tags,
+                "findings": findings,
+                "total_findings": len(findings),
+                "error": msg if not findings else None,
+                "partial": True,
+            }
+        finally:
+            if os.path.exists(target_file_path):
+                try:
+                    os.remove(target_file_path)
+                except Exception:
+                    pass
+
+    def _normalize_finding(self, record: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+        """Normalize a Nuclei JSONL record into standard vulnerability dict."""
+        if not isinstance(record, dict):
+            return None
+
+        template_id = record.get("template-id") or record.get("templateID") or "unknown-template"
+        info = record.get("info") or {}
+        
+        name = info.get("name") or template_id
+        severity = str(info.get("severity") or "info").upper()
+        description = info.get("description") or ""
+        
+        # Classification
+        classification = info.get("classification") or {}
+        cve_id = None
+        cve_ids = classification.get("cve-id")
+        if isinstance(cve_ids, list) and cve_ids:
+            cve_id = str(cve_ids[0]).upper()
+        elif isinstance(cve_ids, str) and cve_ids.strip():
+            cve_id = cve_ids.strip().upper()
+        elif template_id.lower().startswith("cve-"):
+            cve_id = template_id.upper()
+
+        cwe_id = None
+        cwe_ids = classification.get("cwe-id")
+        if isinstance(cwe_ids, list) and cwe_ids:
+            cwe_id = str(cwe_ids[0]).upper()
+        elif isinstance(cwe_ids, str) and cwe_ids.strip():
+            cwe_id = cwe_ids.strip().upper()
+
+        cvss_score = classification.get("cvss-score")
+        if cvss_score is not None:
+            try:
+                cvss_score = float(cvss_score)
+            except (ValueError, TypeError):
+                cvss_score = None
+
+        epss_score = classification.get("epss-score")
+        if epss_score is not None:
+            try:
+                epss_score = float(epss_score)
+            except (ValueError, TypeError):
+                epss_score = None
+
+        matched_at = record.get("matched-at") or record.get("matched") or record.get("host") or ""
+        host = record.get("host") or ""
+        ip = record.get("ip") or ""
+        port = record.get("port")
+        if port is not None:
+            try:
+                port = int(port)
+            except (ValueError, TypeError):
+                port = None
+
+        # Extract PoC / Reference URLs
+        reference = info.get("reference") or []
+        references = []
+        if isinstance(reference, list):
+            references = [str(r) for r in reference if r]
+        elif isinstance(reference, str) and reference.strip():
+            references = [reference.strip()]
+
+        tags = info.get("tags") or []
+        if isinstance(tags, str):
+            tags = [t.strip() for t in tags.split(",") if t.strip()]
+
+        curl_command = record.get("curl-command") or ""
+
+        return {
+            "template_id": template_id,
+            "name": name,
+            "severity": severity,
+            "cve_id": cve_id or template_id,
+            "description": description,
+            "cwe_id": cwe_id,
+            "cwe_name": ", ".join(tags[:4]) if tags else None,
+            "cvss_score": cvss_score,
+            "epss_score": epss_score,
+            "host": host,
+            "ip": ip,
+            "port": port,
+            "matched_at": matched_at,
+            "references": references,
+            "tags": tags,
+            "curl_command": curl_command,
+            "timestamp": record.get("timestamp"),
+            "matcher_name": record.get("matcher-name"),
+            "extracted_results": record.get("extracted-results"),
+        }

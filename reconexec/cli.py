@@ -59,15 +59,8 @@ from reconexec.utils.logger import (
 )
 
 # Print banner on --help as well
-_orig_format_help = click.Command.format_help
 
 
-def _banner_format_help(self, ctx, formatter):
-    print_banner()
-    return _orig_format_help(self, ctx, formatter)
-
-
-click.Command.format_help = _banner_format_help
 
 import typer.core
 if hasattr(typer.core, "TyperArgument"):
@@ -88,7 +81,7 @@ app = typer.Typer(
     help="ReconExec: External Attack Surface Mapping & Threat Intelligence Engine",
     add_completion=False,
     no_args_is_help=True,
-    rich_markup_mode=None,
+    rich_markup_mode="rich",
 )
 
 # Create hound subcommand group (Interactive EASM Attack Surface Graph Dashboard)
@@ -97,7 +90,7 @@ hound_app = typer.Typer(
     help="ReconHound - Interactive EASM Attack Surface Graph Dashboard management",
     add_completion=False,
 )
-app.add_typer(hound_app, name="hound")
+app.add_typer(hound_app, name="hound", rich_help_panel="Interactive Dashboard")
 
 @app.callback(invoke_without_command=True)
 def global_callback(ctx: typer.Context):
@@ -187,15 +180,15 @@ def generate_module_command(mod_name: str):
     _cmd.__name__ = f"cmd_{mod_name}"
     return _cmd
 
-app.command(name="all", help="Execute passive attack surface mapping using ALL modules.")(generate_module_command("all"))
+app.command(name="all", help="Execute passive attack surface mapping using ALL modules.", rich_help_panel="Global Recon Scans")(generate_module_command("all"))
 
 RESERVED_WORDS = {"intel", "hound", "update-xdb", "config-check", "version", "setup"}
 for m_name in ThreatTrackEngine.MODULE_REGISTRY.keys():
     if m_name not in RESERVED_WORDS:
-        app.command(name=m_name, help=f"Execute passive attack surface mapping using only the '{m_name}' module.")(generate_module_command(m_name))
+        app.command(name=m_name, help=f"Execute passive attack surface mapping using only the '{m_name}' module.", rich_help_panel="Targeted Recon Modules")(generate_module_command(m_name))
 
 
-@app.command(name="intel")
+@app.command(name="intel", rich_help_panel="Utility & Intelligence")
 def intel_command(
     cve_id: str = typer.Argument(
         ...,
@@ -429,7 +422,7 @@ def _execute_scan(
         print_success(f"HTML executive report saved to: [bold underline]{html_path.resolve()}[/bold underline]")
 
 
-@app.command(name="update-xdb")
+@app.command(name="update-xdb", rich_help_panel="Utility & Intelligence")
 def update_xdb_command() -> None:
     """Update the local ExploitDB / searchsploit vulnerability mapping database."""
     print_banner()
@@ -441,7 +434,7 @@ def update_xdb_command() -> None:
         print_error(f"Error updating ExploitDB: {exc}")
 
 
-@app.command(name="config-check")
+@app.command(name="config-check", rich_help_panel="System & Configuration")
 def config_check_command(
     setup: bool = typer.Option(
         False,
@@ -708,7 +701,7 @@ def list_databases() -> None:
     print_info(f"Use '{cli_name} hound start' to start the web dashboard (select database in UI)")
 
 
-@app.command(name="version")
+@app.command(name="version", rich_help_panel="System & Configuration")
 def version_command() -> None:
     """Show ReconExec version and maintainer information."""
     console.print(f"[bold cyan]ReconExec[/bold cyan] version [bold white]{__version__}[/bold white] - Attack Surface Management Engine")

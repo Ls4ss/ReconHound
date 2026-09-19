@@ -462,7 +462,7 @@ class GraphBuilder:
                 edges.append({"data": {"id": f"e_dom_sub_{sub_id}", "source": f"dom_{parent_dom_id}", "target": f"sub_{sub_id}", "label": "HAS_SUBDOMAIN"}})
 
         if root_target_node:
-            explore_leads = []
+            explore_assets = []
             ip_stats = {}
             cursor_ips = conn.execute("""
                 SELECT ip.id, ip.ip,
@@ -507,7 +507,7 @@ class GraphBuilder:
                 }
                 ip_stats[ip_id] = stats
                 score = (k_cnt * 1000000) + (poc_cnt * 200000) + (h_epss_cnt * 100000) + (max_epss * 50000) + (c_cnt * 50000) + (h_cnt * 20000) + (vs_cnt * 5000) + (v_cnt * 1000) + (s_cnt * 100)
-                explore_leads.append({
+                explore_assets.append({
                     "id": f"ip_{ip_id}",
                     "label": ip,
                     "display_name": ip,
@@ -533,7 +533,7 @@ class GraphBuilder:
                 s_stats_final = {**s_stats, "service_ids": list(s_stats["service_ids"]), "vuln_ids": list(s_stats["vuln_ids"])}
                 subdomain_stats[sub_id] = s_stats_final
                 score = (s_stats["kev_count"] * 1000000) + (s_stats["poc_count"] * 200000) + (s_stats["high_epss_count"] * 100000) + (s_stats["max_epss"] * 50000) + (s_stats["critical_count"] * 50000) + (s_stats["high_count"] * 20000) + (s_stats["verified_service_count"] * 5000) + (s_stats["vuln_count"] * 1000) + (s_stats["service_count"] * 100)
-                explore_leads.append({
+                explore_assets.append({
                     "id": f"sub_{sub_id}",
                     "label": sub_info["name"],
                     "display_name": sub_info["name"],
@@ -567,7 +567,7 @@ class GraphBuilder:
                 
                 d_stats_final = {**d_stats, "service_ids": list(d_stats["service_ids"]), "vuln_ids": list(d_stats["vuln_ids"])}
                 score = (d_stats["kev_count"] * 1000000) + (d_stats["poc_count"] * 200000) + (d_stats["high_epss_count"] * 100000) + (d_stats["max_epss"] * 50000) + (d_stats["critical_count"] * 50000) + (d_stats["high_count"] * 20000) + (d_stats["verified_service_count"] * 5000) + (d_stats["vuln_count"] * 1000) + (d_stats["service_count"] * 100)
-                explore_leads.append({
+                explore_assets.append({
                     "id": f"dom_{domain_id}",
                     "label": domain_name,
                     "display_name": domain_name,
@@ -576,7 +576,7 @@ class GraphBuilder:
                     **d_stats_final
                 })
             
-            root_target_node["data"]["explore_leads"] = explore_leads
+            root_target_node["data"]["explore_assets"] = explore_assets
 
 
         return nodes, edges, root_target_node, subdomain_to_ips, domain_to_ips, explicit_targets

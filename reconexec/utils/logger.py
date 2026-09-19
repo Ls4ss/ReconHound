@@ -48,7 +48,7 @@ def _read_banner_file() -> str:
                     return content
             except Exception:
                 pass
-    return "ReconExec v2.0 - Cyber Lead Intelligence Engine\nExternal Attack Surface Management & Threat Intelligence CLI\nPowered by ReconExec Security"
+    return "ReconExec v2.0 - Attack Surface Management Engine\nExternal Attack Surface Management & Threat Intelligence CLI\nPowered by ReconExec Security"
 
 
 def print_banner() -> None:

@@ -6,7 +6,7 @@ class EASMDashboard {
     constructor() {
         this.cy = null;
         this.graphData = null;
-        this.leads = [];
+        this.assets = [];
         this.selectedLeads = new Set();
         this.filters = {
             matrix3d: false,
@@ -409,7 +409,7 @@ class EASMDashboard {
             console.error('Failed to initialize dashboard:', error);
             this.showError(`Failed to load dashboard data: ${error.message}`);
             
-            // Emergency fallback: Show basic lead selector even if API fails
+            // Emergency fallback: Show basic asset selector even if API fails
             this.showEmergencyLeadSelector();
         }
     }
@@ -456,17 +456,17 @@ class EASMDashboard {
     populateLeadSelector(elements, preserveSelection = false) {
         try {
             console.log('=== LEAD SELECTOR DEBUG START ===');
-            console.log('Populating lead selector from graph data...');
-            this.leads = [];
+            console.log('Populating asset selector from graph data...');
+            this.assets = [];
             
-            const leadList = document.getElementById('lead-list');
+            const leadList = document.getElementById('asset-list');
             if (!leadList) {
-                console.error('Lead list element not found');
+                console.error('Asset list element not found');
                 return;
             }
             
             // Clear loading message immediately
-            leadList.innerHTML = '<div class="lead-loading">Processing targets...</div>';
+            leadList.innerHTML = '<div class="asset-loading">Processing targets...</div>';
             
             // Try to get elements from Cytoscape if not provided
             if (!elements && this.cy) {
@@ -481,8 +481,8 @@ class EASMDashboard {
             }
             
             if (!elements || !elements.nodes || !Array.isArray(elements.nodes)) {
-                console.warn('No valid graph elements available for lead selector');
-                leadList.innerHTML = '<div class="lead-loading">No graph data available</div>';
+                console.warn('No valid graph elements available for asset selector');
+                leadList.innerHTML = '<div class="asset-loading">No graph data available</div>';
                 return;
             }
             
@@ -493,69 +493,69 @@ class EASMDashboard {
             console.log('First 3 nodes structure:', elements.nodes.slice(0, 3));
             
 
-            // 1. Look for pre-calculated explore_leads data from the backend
+            // 1. Look for pre-calculated explore_assets data from the backend
             const rootNode = elements.nodes.find(n => (n.data || n).id === 'target_root');
             const rootData = rootNode ? (rootNode.data || rootNode) : null;
             
-            if (rootData && rootData.explore_leads && Array.isArray(rootData.explore_leads)) {
-                console.log(`Using pre-calculated explore_leads from backend: ${rootData.explore_leads.length} leads`);
-                this.leads = rootData.explore_leads.map(lead => ({
-                    id: lead.id,
-                    label: lead.label,
-                    display_name: lead.display_name || lead.label,
-                    type: lead.type,
-                    vuln_count: lead.vuln_count || 0,
-                    service_count: lead.service_count || 0,
-                    verified_service_count: lead.verified_service_count || 0,
-                    kev_count: lead.kev_count || 0,
-                    has_kev: lead.has_kev || false,
-                    critical_count: lead.critical_count || 0,
-                    has_critical: (lead.critical_count || 0) > 0,
-                    high_count: lead.high_count || 0,
-                    poc_count: lead.poc_count || 0,
-                    max_epss: lead.max_epss || 0,
-                    high_epss_count: lead.high_epss_count || 0,
-                    three_d_score: lead.three_d_score || 0,
+            if (rootData && rootData.explore_assets && Array.isArray(rootData.explore_assets)) {
+                console.log(`Using pre-calculated explore_assets from backend: ${rootData.explore_assets.length} assets`);
+                this.assets = rootData.explore_assets.map(asset => ({
+                    id: asset.id,
+                    label: asset.label,
+                    display_name: asset.display_name || asset.label,
+                    type: asset.type,
+                    vuln_count: asset.vuln_count || 0,
+                    service_count: asset.service_count || 0,
+                    verified_service_count: asset.verified_service_count || 0,
+                    kev_count: asset.kev_count || 0,
+                    has_kev: asset.has_kev || false,
+                    critical_count: asset.critical_count || 0,
+                    has_critical: (asset.critical_count || 0) > 0,
+                    high_count: asset.high_count || 0,
+                    poc_count: asset.poc_count || 0,
+                    max_epss: asset.max_epss || 0,
+                    high_epss_count: asset.high_epss_count || 0,
+                    three_d_score: asset.three_d_score || 0,
                     is_target: false // Explicit target state handled separately
                 }));
             } else {
 
-            // 1. Look for pre-calculated explore_leads data from the backend
+            // 1. Look for pre-calculated explore_assets data from the backend
             const rootNode = elements.nodes.find(n => (n.data || n).id === 'target_root');
             const rootData = rootNode ? (rootNode.data || rootNode) : null;
             
-            if (rootData && rootData.explore_leads && Array.isArray(rootData.explore_leads)) {
-                console.log(`Using pre-calculated explore_leads from backend: ${rootData.explore_leads.length} leads`);
-                this.leads = rootData.explore_leads.map(lead => {
-                    const matchedNode = elements.nodes.find(n => (n.data || n).id === lead.id);
+            if (rootData && rootData.explore_assets && Array.isArray(rootData.explore_assets)) {
+                console.log(`Using pre-calculated explore_assets from backend: ${rootData.explore_assets.length} assets`);
+                this.assets = rootData.explore_assets.map(asset => {
+                    const matchedNode = elements.nodes.find(n => (n.data || n).id === asset.id);
                     const isTarget = matchedNode ? ((matchedNode.data || matchedNode).is_target === true || (matchedNode.data || matchedNode).is_target === 'true') : false;
                     
                     if (isTarget) {
-                        console.log(`[DEBUG] Matched Target Lead: ${lead.id} | TargetName: ${lead.display_name || lead.label}`);
+                        console.log(`[DEBUG] Matched Target Asset: ${asset.id} | TargetName: ${asset.display_name || asset.label}`);
                     }
                     
                     return {
-                        id: lead.id,
-                        label: lead.label,
-                        display_name: lead.display_name || lead.label,
-                        type: lead.type,
-                        vuln_count: lead.vuln_count || 0,
-                        service_count: lead.service_count || 0,
-                        verified_service_count: lead.verified_service_count || 0,
-                        kev_count: lead.kev_count || 0,
-                        has_kev: lead.has_kev || false,
-                        critical_count: lead.critical_count || 0,
-                        has_critical: (lead.critical_count || 0) > 0,
-                        high_count: lead.high_count || 0,
-                        poc_count: lead.poc_count || 0,
-                        max_epss: lead.max_epss || 0,
-                        high_epss_count: lead.high_epss_count || 0,
-                        three_d_score: lead.three_d_score || 0,
+                        id: asset.id,
+                        label: asset.label,
+                        display_name: asset.display_name || asset.label,
+                        type: asset.type,
+                        vuln_count: asset.vuln_count || 0,
+                        service_count: asset.service_count || 0,
+                        verified_service_count: asset.verified_service_count || 0,
+                        kev_count: asset.kev_count || 0,
+                        has_kev: asset.has_kev || false,
+                        critical_count: asset.critical_count || 0,
+                        has_critical: (asset.critical_count || 0) > 0,
+                        high_count: asset.high_count || 0,
+                        poc_count: asset.poc_count || 0,
+                        max_epss: asset.max_epss || 0,
+                        high_epss_count: asset.high_epss_count || 0,
+                        three_d_score: asset.three_d_score || 0,
                         is_target: isTarget
                     };
                 });
             } else {
-                console.warn('explore_leads data not found, falling back to graph traversal...');
+                console.warn('explore_assets data not found, falling back to graph traversal...');
                 let leadNodes = elements.nodes.filter(node => {
                     const nodeData = node.data || node;
                     const nodeType = nodeData.type;
@@ -563,7 +563,7 @@ class EASMDashboard {
                 });
                 if (leadNodes.length === 0) leadNodes = elements.nodes.slice();
                 if (leadNodes.length === 0) {
-                    leadList.innerHTML = `<div class="lead-loading" style="color: #ff4757;">No lead nodes found in database.</div>`;
+                    leadList.innerHTML = `<div class="asset-loading" style="color: #ff4757;">No asset nodes found in database.</div>`;
                     return;
                 }
                 
@@ -594,7 +594,7 @@ class EASMDashboard {
                         const threeDScore = (kevCount * 1000000) + (pocCount * 200000) + (highEpssCount * 100000) + (maxEpss * 50000) + (criticalCount * 50000) + (highCount * 20000) + (verifiedServiceCount * 5000) + (vulnCount * 1000) + (serviceCount * 100);
                         let displayName = nodeData.type === 'ip' && nodeData.ip ? nodeData.ip : (nodeData.label || nodeData.name || nodeData.ip || nodeData.id);
                         
-                        this.leads.push({
+                        this.assets.push({
                             id: nodeData.id,
                             label: nodeData.label || nodeData.id,
                             display_name: displayName,
@@ -615,19 +615,19 @@ class EASMDashboard {
                             node: nodeData
                         });
                     } catch (err) {
-                        console.error('Error processing lead node:', node, err);
+                        console.error('Error processing asset node:', node, err);
                     }
                 });
             }
             }
             
-            // FINAL FALLBACK: If still no leads after processing, force create from raw data
-            if (this.leads.length === 0 && elements.nodes.length > 0) {
-                console.warn('FINAL FALLBACK: Force creating leads from raw node data...');
+            // FINAL FALLBACK: If still no assets after processing, force create from raw data
+            if (this.assets.length === 0 && elements.nodes.length > 0) {
+                console.warn('FINAL FALLBACK: Force creating assets from raw node data...');
                 elements.nodes.forEach((node, index) => {
                     try {
                         const nodeData = node.data || node;
-                        console.log(`Force lead ${index + 1}: ${nodeData.id} (${nodeData.type})`);
+                        console.log(`Force asset ${index + 1}: ${nodeData.id} (${nodeData.type})`);
                         
                         // Create a more descriptive display name
                         let displayName = nodeData.label || nodeData.name || nodeData.ip || nodeData.id;
@@ -638,7 +638,7 @@ class EASMDashboard {
                             displayName = nodeData.label.split('\n')[0];
                         }
                         
-                        const lead = {
+                        const asset = {
                             id: nodeData.id,
                             type: nodeData.type || 'unknown',
                             name: nodeData.name || nodeData.ip || nodeData.label || nodeData.id,
@@ -653,32 +653,32 @@ class EASMDashboard {
                             ip_count: 0
                         };
                         
-                        this.leads.push(lead);
-                        console.log(`✓ Force lead created: ${lead.display_name}`);
+                        this.assets.push(asset);
+                        console.log(`✓ Force asset created: ${asset.display_name}`);
                     } catch (error) {
-                        console.error(`Error creating force lead ${index}:`, error);
+                        console.error(`Error creating force asset ${index}:`, error);
                     }
                 });
             }
             
-            // Reset lead selection on initial database load (leads come unchecked by default)
-            // But preserve active leads when refreshing after a background scan
+            // Reset asset selection on initial database load (assets come unchecked by default)
+            // But preserve active assets when refreshing after a background scan
             if (!preserveSelection) {
                 this.selectedLeads.clear();
                 
-                // Auto-select leads that are explicitly marked as targets (via CLI or backend)
+                // Auto-select assets that are explicitly marked as targets (via CLI or backend)
                 let hydratedTargets = false;
-                this.leads.forEach(lead => {
-                    if (lead.is_target) {
-                        const targetName = lead.display_name || lead.label;
+                this.assets.forEach(asset => {
+                    if (asset.is_target) {
+                        const targetName = asset.display_name || asset.label;
                         if (targetName && !this.markedTargets.has(targetName)) {
                             this.markedTargets.add(targetName);
                             hydratedTargets = true;
                         }
                     }
                     
-                    if (this.isTargetMarked(lead.display_name || lead.label)) {
-                        this.selectedLeads.add(lead.id);
+                    if (this.isTargetMarked(asset.display_name || asset.label)) {
+                        this.selectedLeads.add(asset.id);
                     }
                 });
                 
@@ -687,13 +687,13 @@ class EASMDashboard {
                 }
                 // If no targets were selected from backend, fallback to Tier 1
                 if (this.selectedLeads.size === 0) {
-                    const tier1Leads = this.leads.filter(l => l.is_tier1);
+                    const tier1Leads = this.assets.filter(l => l.is_tier1);
                     if (tier1Leads.length > 0 && tier1Leads.length <= 50) {
-                        tier1Leads.forEach(lead => this.selectedLeads.add(lead.id));
+                        tier1Leads.forEach(asset => this.selectedLeads.add(asset.id));
                     }
                 }
             } else {
-                const currentLeadIds = new Set(this.leads.map(l => l.id));
+                const currentLeadIds = new Set(this.assets.map(l => l.id));
                 Array.from(this.selectedLeads).forEach(id => {
                     if (!currentLeadIds.has(id)) {
                         this.selectedLeads.delete(id);
@@ -701,20 +701,20 @@ class EASMDashboard {
                 });
             }
 
-            console.log(`✓ Created ${this.leads.length} leads total (preserveSelection: ${preserveSelection})`);
+            console.log(`✓ Created ${this.assets.length} assets total (preserveSelection: ${preserveSelection})`);
             console.log('=== LEAD SELECTOR DEBUG END ===');
             
-            // Always try to render, even if we have 0 leads
+            // Always try to render, even if we have 0 assets
             this.renderLeadSelector();
             
         } catch (error) {
             console.error('❌ CRITICAL ERROR in populateLeadSelector:', error);
             console.error('Error stack:', error.stack);
-            const leadList = document.getElementById('lead-list');
+            const leadList = document.getElementById('asset-list');
             if (leadList) {
                 leadList.innerHTML = `
-                    <div class="lead-loading" style="color: #ff4757;">
-                        ⚠️ Error loading leads: ${error.message}
+                    <div class="asset-loading" style="color: #ff4757;">
+                        ⚠️ Error loading assets: ${error.message}
                         <br><small>Check console for details</small>
                         <br><button onclick="location.reload()" style="margin-top: 10px; padding: 5px 10px; background: #007bff; color: white; border: none; border-radius: 3px; cursor: pointer;">Reload Page</button>
                     </div>
@@ -1218,19 +1218,19 @@ class EASMDashboard {
 
     renderLeadSelector() {
         console.log('=== RENDER LEAD SELECTOR START ===');
-        const leadList = document.getElementById('lead-list');
+        const leadList = document.getElementById('asset-list');
         if (!leadList) {
-            console.error('❌ Lead list element not found in renderLeadSelector');
+            console.error('❌ Asset list element not found in renderLeadSelector');
             return;
         }
 
-        console.log(`Rendering ${this.leads.length} leads`);
+        console.log(`Rendering ${this.assets.length} assets`);
 
-        if (this.leads.length === 0) {
-            console.error('❌ CRITICAL: Still no leads to render after all fallbacks!');
+        if (this.assets.length === 0) {
+            console.error('❌ CRITICAL: Still no assets to render after all fallbacks!');
             leadList.innerHTML = `
-                <div class="lead-loading" style="color: #ff4757;">
-                    ❌ No leads found in database<br>
+                <div class="asset-loading" style="color: #ff4757;">
+                    ❌ No assets found in database<br>
                     <small>All fallback methods failed</small><br>
                     <button onclick="console.log('Graph data:', window.dashboard.graphData); window.dashboard.populateLeadSelector(window.dashboard.graphData?.elements)" 
                             style="margin-top: 10px; padding: 5px 10px; background: #007bff; color: white; border: none; border-radius: 3px; cursor: pointer;">
@@ -1245,13 +1245,13 @@ class EASMDashboard {
             return;
         }
 
-        console.log('✓ Clearing lead list and rendering leads...');
+        console.log('✓ Clearing asset list and rendering assets...');
         leadList.innerHTML = '';
         const fragment = document.createDocumentFragment();
 
-        // Sort leads strictly following the 3D Risk Matrix criteria:
+        // Sort assets strictly following the 3D Risk Matrix criteria:
         // Dim 3 (Active Threat / Weaponization) > Dim 2 (Technical Severity) > Dim 1 (Active Asset Exposure)
-        const sortedLeads = [...this.leads].sort((a, b) => {
+        const sortedLeads = [...this.assets].sort((a, b) => {
             if (b.three_d_score !== a.three_d_score) {
                 return b.three_d_score - a.three_d_score;
             }
@@ -1266,87 +1266,87 @@ class EASMDashboard {
             return (a.display_name || '').localeCompare(b.display_name || '');
         });
 
-        sortedLeads.forEach(lead => {
+        sortedLeads.forEach(asset => {
             const leadItem = document.createElement('div');
-            leadItem.className = 'lead-item';
-            leadItem.dataset.leadId = lead.id;
+            leadItem.className = 'asset-item';
+            leadItem.dataset.assetId = asset.id;
 
             // Build priority badges with proper visual indicators
             const badges = [];
             
             // CISA KEV badge (highest priority - red with pulse)
-            if (lead.has_kev) {
-                badges.push('<span class="lead-badge kev" title="CISA Known Exploited Vulnerability"><i data-lucide="shield-alert" class="badge-icon"></i> KEV</span>');
+            if (asset.has_kev) {
+                badges.push('<span class="asset-badge kev" title="CISA Known Exploited Vulnerability"><i data-lucide="shield-alert" class="badge-icon"></i> KEV</span>');
             }
             
             // Critical vulnerabilities badge
-            if (lead.has_critical) {
-                badges.push('<span class="lead-badge critical" title="Critical Severity Vulnerabilities"><i data-lucide="alert-triangle" class="badge-icon"></i> CRIT</span>');
+            if (asset.has_critical) {
+                badges.push('<span class="asset-badge critical" title="Critical Severity Vulnerabilities"><i data-lucide="alert-triangle" class="badge-icon"></i> CRIT</span>');
             }
 
             // High EPSS badge (>= 20% 3D Matrix threshold)
-            if (lead.max_epss >= 0.20) {
-                const epssPct = (lead.max_epss * 100).toFixed(0);
-                badges.push(`<span class="lead-badge epss" style="background: rgba(245, 158, 11, 0.18); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.4); font-size: 0.72rem; padding: 1px 5px; border-radius: 4px; font-weight: bold;" title="Max EPSS Probability: ${(lead.max_epss * 100).toFixed(1)}%"><i data-lucide="trending-up" class="badge-icon"></i> ${epssPct}% EPSS</span>`);
+            if (asset.max_epss >= 0.20) {
+                const epssPct = (asset.max_epss * 100).toFixed(0);
+                badges.push(`<span class="asset-badge epss" style="background: rgba(245, 158, 11, 0.18); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.4); font-size: 0.72rem; padding: 1px 5px; border-radius: 4px; font-weight: bold;" title="Max EPSS Probability: ${(asset.max_epss * 100).toFixed(1)}%"><i data-lucide="trending-up" class="badge-icon"></i> ${epssPct}% EPSS</span>`);
             }
             
             // PoC/Exploit availability badge
-            if (lead.poc_count > 0) {
-                badges.push(`<span class="lead-badge poc" title="${lead.poc_count} Proof-of-Concept(s) Available"><i data-lucide="file-code" class="badge-icon"></i> ${lead.poc_count} PoC</span>`);
+            if (asset.poc_count > 0) {
+                badges.push(`<span class="asset-badge poc" title="${asset.poc_count} Proof-of-Concept(s) Available"><i data-lucide="file-code" class="badge-icon"></i> ${asset.poc_count} PoC</span>`);
             }
             
             // CVE count badge
-            if (lead.vuln_count > 0) {
-                badges.push(`<span class="lead-badge cve" title="${lead.vuln_count} CVE(s) Found"><i data-lucide="bug" class="badge-icon"></i> ${lead.vuln_count} CVE</span>`);
+            if (asset.vuln_count > 0) {
+                badges.push(`<span class="asset-badge cve" title="${asset.vuln_count} CVE(s) Found"><i data-lucide="bug" class="badge-icon"></i> ${asset.vuln_count} CVE</span>`);
             }
 
             // Build detailed stats
             let stats = '';
-            const verifiedText = lead.verified_service_count > 0 ? ` (${lead.verified_service_count} verified)` : '';
-            if (lead.type === 'ip') {
-                const orgInfo = lead.org && lead.org !== 'Unknown' ? ` (${lead.org})` : '';
-                const countryInfo = lead.country && lead.country !== 'Unknown' ? ` [${lead.country}]` : '';
-                stats = `${lead.service_count} services${verifiedText}, ${lead.vuln_count} vulns${orgInfo}${countryInfo}`;
-            } else if (lead.type === 'domain') {
-                stats = `${lead.ip_count} IPs, ${lead.service_count} services${verifiedText}, ${lead.vuln_count} vulns`;
+            const verifiedText = asset.verified_service_count > 0 ? ` (${asset.verified_service_count} verified)` : '';
+            if (asset.type === 'ip') {
+                const orgInfo = asset.org && asset.org !== 'Unknown' ? ` (${asset.org})` : '';
+                const countryInfo = asset.country && asset.country !== 'Unknown' ? ` [${asset.country}]` : '';
+                stats = `${asset.service_count} services${verifiedText}, ${asset.vuln_count} vulns${orgInfo}${countryInfo}`;
+            } else if (asset.type === 'domain') {
+                stats = `${asset.ip_count} IPs, ${asset.service_count} services${verifiedText}, ${asset.vuln_count} vulns`;
             }
 
             // Add risk level indicator
             let riskClass = '';
-            if (lead.has_kev) {
+            if (asset.has_kev) {
                 riskClass = 'risk-critical';
-            } else if (lead.has_critical || lead.poc_count > 0 || lead.max_epss >= 0.20) {
+            } else if (asset.has_critical || asset.poc_count > 0 || asset.max_epss >= 0.20) {
                 riskClass = 'risk-high';
-            } else if (lead.vuln_count > 0 || lead.verified_service_count > 0) {
+            } else if (asset.vuln_count > 0 || asset.verified_service_count > 0) {
                 riskClass = 'risk-medium';
             } else {
                 riskClass = 'risk-low';
             }
 
-            const isSelected = this.selectedLeads.has(lead.id);
+            const isSelected = this.selectedLeads.has(asset.id);
             const iconName = isSelected ? 'check-circle' : 'crosshair';
             const iconColor = isSelected ? '#10b981' : '#64748b';
             
             leadItem.innerHTML = `
-                <div class="lead-target-btn" style="cursor: pointer; margin-right: 10px; display: flex; align-items: center; justify-content: center; color: ${iconColor};">
+                <div class="asset-target-btn" style="cursor: pointer; margin-right: 10px; display: flex; align-items: center; justify-content: center; color: ${iconColor};">
                     <i data-lucide="${iconName}" style="width: 18px; height: 18px;"></i>
                 </div>
-                <div class="lead-info" style="flex: 1;">
-                    <div class="lead-header">
-                        <span class="lead-name" style="cursor: pointer; font-weight: 500;">${lead.display_name}</span>
-                        <div class="lead-type ${lead.type}">${lead.type.toUpperCase()}</div>
+                <div class="asset-info" style="flex: 1;">
+                    <div class="asset-header">
+                        <span class="asset-name" style="cursor: pointer; font-weight: 500;">${asset.display_name}</span>
+                        <div class="asset-type ${asset.type}">${asset.type.toUpperCase()}</div>
                     </div>
-                    <div class="lead-badges">${badges.join('')}</div>
-                    <div class="lead-stats">${stats}</div>
+                    <div class="asset-badges">${badges.join('')}</div>
+                    <div class="asset-stats">${stats}</div>
                 </div>
-                <div class="lead-risk-indicator ${riskClass}"></div>
+                <div class="asset-risk-indicator ${riskClass}"></div>
             `;
 
-            const toggleBtn = leadItem.querySelector('.lead-target-btn');
+            const toggleBtn = leadItem.querySelector('.asset-target-btn');
             
             const handleToggle = (e) => {
                 e.stopPropagation();
-                const currentlySelected = this.selectedLeads.has(lead.id);
+                const currentlySelected = this.selectedLeads.has(asset.id);
                 const willBeSelected = !currentlySelected;
                 
                 // Optimistic UI update
@@ -1361,7 +1361,7 @@ class EASMDashboard {
                 }
                 if (typeof lucide !== 'undefined') lucide.createIcons({ root: toggleBtn });
                 
-                window.toggleLeadVisibility(lead.id, willBeSelected);
+                window.toggleLeadVisibility(asset.id, willBeSelected);
             };
 
             toggleBtn.addEventListener('click', handleToggle);
@@ -1372,7 +1372,7 @@ class EASMDashboard {
             });
 
             // Set initial state
-            if (this.selectedLeads.has(lead.id)) {
+            if (this.selectedLeads.has(asset.id)) {
                 leadItem.classList.add('selected');
             }
 
@@ -1381,24 +1381,24 @@ class EASMDashboard {
 
         leadList.appendChild(fragment);
 
-        // Initialize Lucide icons inside dynamically rendered leads
+        // Initialize Lucide icons inside dynamically rendered assets
         if (typeof lucide !== 'undefined') {
             lucide.createIcons();
         }
         
-        console.log(`✓ Rendered ${this.leads.length} lead items successfully`);
+        console.log(`✓ Rendered ${this.assets.length} asset items successfully`);
         console.log('=== RENDER LEAD SELECTOR END ===');
     }
 
-    toggleLead(leadId) {
-        const leadItem = document.querySelector(`[data-lead-id="${leadId}"]`);
+    toggleLead(assetId) {
+        const leadItem = document.querySelector(`[data-asset-id="${assetId}"]`);
         if (!leadItem) return;
 
-        if (this.selectedLeads.has(leadId)) {
-            this.selectedLeads.delete(leadId);
+        if (this.selectedLeads.has(assetId)) {
+            this.selectedLeads.delete(assetId);
             leadItem.classList.remove('selected');
         } else {
-            this.selectedLeads.add(leadId);
+            this.selectedLeads.add(assetId);
             leadItem.classList.add('selected');
         }
 
@@ -1407,10 +1407,10 @@ class EASMDashboard {
 
     async selectAllLeads() {
         const ids = [];
-        this.leads.forEach(lead => {
-            if (!this.selectedLeads.has(lead.id)) {
-                this.selectedLeads.add(lead.id);
-                ids.push(lead.id);
+        this.assets.forEach(asset => {
+            if (!this.selectedLeads.has(asset.id)) {
+                this.selectedLeads.add(asset.id);
+                ids.push(asset.id);
             }
         });
         await this.setTargetsBulk(ids);
@@ -1427,10 +1427,10 @@ class EASMDashboard {
     }
     filterExploreLeads(query) {
         const q = String(query || '').trim().toLowerCase();
-        const leadList = document.getElementById('lead-list');
+        const leadList = document.getElementById('asset-list');
         if (!leadList) return;
         
-        const items = leadList.querySelectorAll('.lead-item');
+        const items = leadList.querySelectorAll('.asset-item');
         items.forEach(item => {
             const textContent = item.textContent || item.innerText || '';
             if (!q || textContent.toLowerCase().includes(q)) {
@@ -1444,11 +1444,11 @@ class EASMDashboard {
     applyLeadFilter(options = {}) {
         if (!this.cy) return;
 
-        // Get selected lead IDs
+        // Get selected asset IDs
         const selectedLeadIds = Array.from(this.selectedLeads);
         const visibleNodes = new Set();
 
-        // Rule: When NO leads are selected (default upon DB load), render NOTHING except target_root!
+        // Rule: When NO assets are selected (default upon DB load), render NOTHING except target_root!
         if (selectedLeadIds.length === 0) {
             this.cy.nodes().hide();
             this.cy.edges().hide();
@@ -1469,15 +1469,15 @@ class EASMDashboard {
         this.cy.nodes().show();
         this.cy.edges().show();
 
-        // First pass: Find all selected lead nodes
-        selectedLeadIds.forEach(leadId => {
-            const node = this.cy.getElementById(leadId);
+        // First pass: Find all selected asset nodes
+        selectedLeadIds.forEach(assetId => {
+            const node = this.cy.getElementById(assetId);
             if (node.length > 0) {
-                visibleNodes.add(leadId);
+                visibleNodes.add(assetId);
             }
         });
 
-        // Second pass: For each selected lead, add ancestry towards root and downstream descendants
+        // Second pass: For each selected asset, add ancestry towards root and downstream descendants
         const addAncestors = (nodeId, visited = new Set()) => {
             if (visited.has(nodeId)) return;
             visited.add(nodeId);
@@ -1524,12 +1524,12 @@ class EASMDashboard {
             });
         };
 
-        selectedLeadIds.forEach(leadId => {
-            addAncestors(leadId);
-            addDescendants(leadId);
+        selectedLeadIds.forEach(assetId => {
+            addAncestors(assetId);
+            addDescendants(assetId);
         });
 
-        // Always ensure target_root is visible if any lead is selected
+        // Always ensure target_root is visible if any asset is selected
         const rootNode = this.cy.getElementById('target_root');
         if (rootNode.length > 0) {
             visibleNodes.add('target_root');
@@ -1872,7 +1872,7 @@ class EASMDashboard {
             clusterNodesToAdd.forEach(c => visibleNodes.add(c.data.id));
         }
 
-        // Store currently scoped visible lead nodes
+        // Store currently scoped visible asset nodes
         this.visibleLeadNodes = new Set(visibleNodes);
 
         // Fourth pass: Hide all nodes that are not in the visible set
@@ -1895,7 +1895,7 @@ class EASMDashboard {
             }
         });
 
-        // Apply other filters on top of lead filter
+        // Apply other filters on top of asset filter
         this.applyFilters();
 
         // Check if this update was triggered by an Uncollapse / Expand action on a specific cluster
@@ -2566,8 +2566,8 @@ class EASMDashboard {
                 // Build fast adjacency index in memory for O(1) lookups
                 this.buildGraphIndex(this.graphData.elements);
 
-                // Populate lead selector from graph data after elements are added
-                console.log('Populating lead selector...');
+                // Populate asset selector from graph data after elements are added
+                console.log('Populating asset selector...');
                 this.populateLeadSelector(this.graphData.elements, preserveLeadSelection);
                 this.applyLeadFilter({ relayout: true });
                 this.syncTargetNodesStyling();
@@ -2711,8 +2711,8 @@ class EASMDashboard {
         this.cy.on('tap', (event) => {
             this.hideContextMenu();
             
-            // Close the floating leads modal if clicking anywhere on the graph
-            const floatingModal = document.getElementById('floating-leads-modal');
+            // Close the floating assets modal if clicking anywhere on the graph
+            const floatingModal = document.getElementById('floating-assets-modal');
             if (floatingModal) floatingModal.style.display = 'none';
 
             if (event.target === this.cy) {
@@ -3167,7 +3167,7 @@ class EASMDashboard {
             });
         }
 
-        // Lead selector controls (using global functions as specified in HTML)
+        // Asset selector controls (using global functions as specified in HTML)
         window.selectAllLeads = (selectAll) => {
             if (selectAll) {
                 this.selectAllLeads();
@@ -3188,7 +3188,7 @@ class EASMDashboard {
             
             // UI is updated optimistically before this is called
             
-            // Apply lead filter to show/hide entire subtrees and frame active leads
+            // Apply asset filter to show/hide entire subtrees and frame active assets
             this.applyLeadFilter({ relayout: true });
         };
 
@@ -3295,10 +3295,10 @@ class EASMDashboard {
 
 
         // Inspector close button
-        const closeFloatingLeads = document.getElementById('close-floating-leads');
+        const closeFloatingLeads = document.getElementById('close-floating-assets');
         if (closeFloatingLeads) {
             closeFloatingLeads.addEventListener('click', () => {
-                document.getElementById('floating-leads-modal').style.display = 'none';
+                document.getElementById('floating-assets-modal').style.display = 'none';
             });
         }
 
@@ -3653,10 +3653,10 @@ class EASMDashboard {
                     this.syncTargetNodesStyling();
                 }
 
-                if (changed && this.leads && this.leads.length > 0) {
-                    this.leads.forEach(lead => {
-                        if (this.isTargetMarked(lead.display_name || lead.label)) {
-                            this.selectedLeads.add(lead.id);
+                if (changed && this.assets && this.assets.length > 0) {
+                    this.assets.forEach(asset => {
+                        if (this.isTargetMarked(asset.display_name || asset.label)) {
+                            this.selectedLeads.add(asset.id);
                         }
                     });
                     this.applyLeadFilter({ relayout: true });
@@ -3682,7 +3682,7 @@ class EASMDashboard {
         if (!this.cy) return;
 
         if (this.selectedLeads.size === 0) {
-            return; // Lead filter already hid everything
+            return; // Asset filter already hid everything
         }
 
         // Helper to trace full ancestor lineage up to target_root (Strict Attack Path: strictly upwards towards root)
@@ -3922,7 +3922,7 @@ class EASMDashboard {
         const nodesToKeep = new Set();
 
         if (hasVulnFilters) {
-                        // Find all matching vulnerabilities within lead scope
+                        // Find all matching vulnerabilities within asset scope
             this.cy.nodes('[type="vulnerability"]').forEach(node => {
                 if (this.visibleLeadNodes && !this.visibleLeadNodes.has(node.id())) return;
                 
@@ -4063,7 +4063,7 @@ class EASMDashboard {
                 addAllAncestors(this.cy.getElementById(parentId), nodesToKeep);
             });
         } else {
-            // No restrictive category filter active: keep all nodes that are currently within the lead scope
+            // No restrictive category filter active: keep all nodes that are currently within the asset scope
             if (this.visibleLeadNodes && this.visibleLeadNodes.size > 0) {
                 this.visibleLeadNodes.forEach(id => {
                     nodesToKeep.add(id);
@@ -4153,7 +4153,7 @@ class EASMDashboard {
             finalSearchKept.forEach(id => nodesToKeep.add(id));
         }
 
-        // Always preserve target_root if it was visible in the Lead Filter
+        // Always preserve target_root if it was visible in the Asset Filter
         const rootNode = this.cy.getElementById('target_root');
         if (rootNode.length > 0 && (!this.visibleLeadNodes || this.visibleLeadNodes.has('target_root'))) {
             nodesToKeep.add('target_root');
@@ -5723,16 +5723,16 @@ class EASMDashboard {
                 <span class="node-title" style="font-size: 0.8rem; color: #94a3b8; font-weight: 500; letter-spacing: 0.5px;">CANVAS MENU</span>
             </div>
             
-            <button type="button" class="cy-context-menu-item ctx-collapse-btn" data-action-id="ctx-action-explore-leads">
+            <button type="button" class="cy-context-menu-item ctx-collapse-btn" data-action-id="ctx-action-explore-assets">
                 <i data-lucide="compass" class="ui-icon" style="color: #60a5fa;"></i>
-                <span style="color: #f8fafc; font-weight: 500;">Explore Leads...</span>
+                <span style="color: #f8fafc; font-weight: 500;">Explore Assets...</span>
             </button>
             
             <div class="cy-context-menu-divider"></div>
 
             <button type="button" class="cy-context-menu-item ctx-collapse-btn" data-action-id="ctx-action-expand-all">
                 <i data-lucide="layers" class="ui-icon" style="color: #4ecdc4;"></i>
-                <span style="color: #f8fafc;">Target All Leads</span>
+                <span style="color: #f8fafc;">Target All Assets</span>
             </button>
 
             <button type="button" class="cy-context-menu-item ctx-collapse-btn" data-action-id="ctx-action-fit-graph">
@@ -5748,8 +5748,8 @@ class EASMDashboard {
                 this.hideContextMenu();
                 
                 const actId = btn.getAttribute('data-action-id');
-                if (actId === 'ctx-action-explore-leads') {
-                    const modal = document.getElementById('floating-leads-modal');
+                if (actId === 'ctx-action-explore-assets') {
+                    const modal = document.getElementById('floating-assets-modal');
                     if (modal) modal.style.display = 'flex';
                 } else if (actId === 'ctx-action-expand-all') {
                     this.selectAllLeads();
@@ -5797,12 +5797,12 @@ class EASMDashboard {
 
         if (nodeId === 'target_root') {
             collapseActions.push({
-                id: 'ctx-action-explore-leads',
-                label: 'Explore Leads...',
+                id: 'ctx-action-explore-assets',
+                label: 'Explore Assets...',
                 icon: 'compass',
                 disabled: false,
                 action: () => {
-                    const modal = document.getElementById('floating-leads-modal');
+                    const modal = document.getElementById('floating-assets-modal');
                     if (modal) {
                         modal.style.display = 'flex';
                         this.hideContextMenu();
@@ -5811,7 +5811,7 @@ class EASMDashboard {
             });
             collapseActions.push({
                 id: 'ctx-action-expand-all',
-                label: 'Target All Leads',
+                label: 'Target All Assets',
                 icon: 'layers',
                 disabled: false,
                 action: () => {
@@ -6204,13 +6204,13 @@ class EASMDashboard {
     }
 
     showEmergencyLeadSelector() {
-        console.log('Showing emergency lead selector fallback...');
-        const leadList = document.getElementById('lead-list');
+        console.log('Showing emergency asset selector fallback...');
+        const leadList = document.getElementById('asset-list');
         if (leadList) {
             leadList.innerHTML = `
-                <div class="lead-loading" style="color: #ff9500;">
+                <div class="asset-loading" style="color: #ff9500;">
                     <i data-lucide="alert-circle" class="ui-icon" style="width: 16px; height: 16px; vertical-align: middle;"></i> API Connection Failed<br>
-                    <small>Unable to load leads from database</small><br>
+                    <small>Unable to load assets from database</small><br>
                     <button onclick="location.reload()" 
                             style="margin-top: 10px; padding: 5px 10px; background: #007bff; color: white; border: none; border-radius: 3px; cursor: pointer;">
                         Retry Connection
@@ -6222,7 +6222,7 @@ class EASMDashboard {
     }
 
     forcePopulateFromCytoscape() {
-        console.log('🚨 FORCE POPULATE: Attempting to extract leads directly from Cytoscape...');
+        console.log('🚨 FORCE POPULATE: Attempting to extract assets directly from Cytoscape...');
         
         if (!this.cy) {
             console.error('Cytoscape not initialized, cannot force populate');
@@ -6238,7 +6238,7 @@ class EASMDashboard {
                 return;
             }
             
-            this.leads = [];
+            this.assets = [];
             
             allNodes.forEach((node, index) => {
                 try {
@@ -6252,7 +6252,7 @@ class EASMDashboard {
                         displayName = nodeData.label.split('\n')[0];
                     }
                     
-                    const lead = {
+                    const asset = {
                         id: nodeData.id,
                         type: nodeData.type || 'unknown',
                         name: nodeData.name || nodeData.ip || nodeData.label || nodeData.id,
@@ -6267,14 +6267,14 @@ class EASMDashboard {
                         ip_count: 0
                     };
                     
-                    this.leads.push(lead);
-                    console.log(`✓ Force lead created: ${lead.display_name}`);
+                    this.assets.push(asset);
+                    console.log(`✓ Force asset created: ${asset.display_name}`);
                 } catch (error) {
                     console.error(`Error force processing node ${index}:`, error);
                 }
             });
             
-            console.log(`🚨 FORCE POPULATE: Created ${this.leads.length} leads`);
+            console.log(`🚨 FORCE POPULATE: Created ${this.assets.length} assets`);
             this.renderLeadSelector();
             
         } catch (error) {
@@ -6293,8 +6293,8 @@ class EASMDashboard {
         
         // Ensure we always return the string (IP or FQDN), never the database ID.
         // The backend active scanners (masscan/nuclei) need the actual address, not an internal ID.
-        if (this.leads && Array.isArray(this.leads)) {
-            const matchingLead = this.leads.find(l => {
+        if (this.assets && Array.isArray(this.assets)) {
+            const matchingLead = this.assets.find(l => {
                 const lName = (l.name || l.display_name || l.label || '').toLowerCase();
                 const lId = (l.id || '').toLowerCase();
                 return lName === targetLower || lId === targetLower || lId === `dom_${targetLower}` || lId === `sub_${targetLower}` || lId === `ip_${targetLower}`;
@@ -6694,10 +6694,10 @@ class EASMDashboard {
             await Promise.all(cleanTargets.map(t => window.api.setTarget(t)));
             await this.loadGraph(true);
 
-            // Sync Lead Selector
+            // Sync Asset Selector
             cleanTargets.forEach(target => {
                 const targetLower = target.toLowerCase();
-                const matchingLead = this.leads.find(l => {
+                const matchingLead = this.assets.find(l => {
                     const lName = (l.name || l.display_name || '').toLowerCase();
                     const lId = (l.id || '').toLowerCase();
                     return lName === targetLower || lId === targetLower || lId === `dom_${targetLower}` || lId === `sub_${targetLower}` || lId === `ip_${targetLower}`;
@@ -6737,10 +6737,10 @@ class EASMDashboard {
             await Promise.all(cleanTargets.map(t => window.api.removeTarget(t)));
             await this.loadGraph(true);
 
-            // Sync Lead Selector
+            // Sync Asset Selector
             cleanTargets.forEach(target => {
                 const targetLower = target.toLowerCase();
-                const matchingLead = this.leads.find(l => {
+                const matchingLead = this.assets.find(l => {
                     const lName = (l.name || l.display_name || '').toLowerCase();
                     const lId = (l.id || '').toLowerCase();
                     return lName === targetLower || lId === targetLower || lId === `dom_${targetLower}` || lId === `sub_${targetLower}` || lId === `ip_${targetLower}`;
@@ -6783,7 +6783,7 @@ class EASMDashboard {
                 this.showNodeInspector(this.selectedNode);
             }
             const targetLower = target.toLowerCase();
-            const matchingLead = this.leads.find(l => {
+            const matchingLead = this.assets.find(l => {
                 const lName = (l.name || l.display_name || '').toLowerCase();
                 const lId = (l.id || '').toLowerCase();
                 return lName === targetLower || lId === targetLower || lId === `dom_${targetLower}` || lId === `sub_${targetLower}` || lId === `ip_${targetLower}`;
@@ -6796,7 +6796,7 @@ class EASMDashboard {
             await window.api.setTarget(target);
             await this.loadGraph(true);
 
-            // Automatically activate the newly set target in the Lead Selector so it immediately renders
+            // Automatically activate the newly set target in the Asset Selector so it immediately renders
             if (matchingLead) {
                 this.selectedLeads.add(matchingLead.id);
                 this.applyLeadFilter({ relayout: true });
@@ -6820,7 +6820,7 @@ class EASMDashboard {
                 this.showNodeInspector(this.selectedNode);
             }
             const targetLower = target.toLowerCase();
-            const matchingLead = this.leads.find(l => {
+            const matchingLead = this.assets.find(l => {
                 const lName = (l.name || l.display_name || '').toLowerCase();
                 const lId = (l.id || '').toLowerCase();
                 return lName === targetLower || lId === targetLower || lId === `dom_${targetLower}` || lId === `sub_${targetLower}` || lId === `ip_${targetLower}`;
@@ -6833,7 +6833,7 @@ class EASMDashboard {
             await window.api.removeTarget(target);
             await this.loadGraph(true);
 
-            // Automatically deactivate the removed target in the Lead Selector
+            // Automatically deactivate the removed target in the Asset Selector
             if (matchingLead) {
                 this.selectedLeads.delete(matchingLead.id);
                 this.applyLeadFilter({ relayout: true });
@@ -6984,9 +6984,9 @@ class EASMDashboard {
             const statusObj = this.targetStatuses[ip] || { status: 'idle', nuclei_status: 'idle', ports_count: 0 };
             
             let displayName = ip;
-            if (this.leads && Array.isArray(this.leads)) {
-                const lead = this.leads.find(l => l.display_name === ip || l.label === ip || l.name === ip);
-                if (lead) displayName = lead.display_name || lead.label || ip;
+            if (this.assets && Array.isArray(this.assets)) {
+                const asset = this.assets.find(l => l.display_name === ip || l.label === ip || l.name === ip);
+                if (asset) displayName = asset.display_name || asset.label || ip;
             } else if (this.nodeIndex) {
                 let node = null;
                 for (const [id, n] of this.nodeIndex.entries()) {

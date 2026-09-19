@@ -46,7 +46,7 @@ class APIClient {
         return this.request('/graph');
     }
 
-    // Removed getLeads() - Lead Selector is now 100% frontend-based using graph data
+    // Removed getLeads() - Asset Selector is now 100% frontend-based using graph data
 
     async getAssets() {
         return this.request('/assets');

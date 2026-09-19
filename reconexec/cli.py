@@ -80,8 +80,8 @@ app = typer.Typer(
     name=cli_name,
     help="ReconExec: External Attack Surface Mapping & Threat Intelligence Engine",
     add_completion=False,
-    no_args_is_help=True,
     rich_markup_mode="rich",
+    pretty_exceptions_enable=False,
 )
 
 # Create hound subcommand group (Interactive EASM Attack Surface Graph Dashboard)
@@ -92,16 +92,14 @@ hound_app = typer.Typer(
 )
 app.add_typer(hound_app, name="hound", rich_help_panel="Interactive Dashboard")
 
-@app.callback(invoke_without_command=True)
-def global_callback(ctx: typer.Context):
+@app.callback()
+def global_callback():
     """Global callback to execute logic before subcommands."""
-    # Check for updates only if a command is actually going to run
-    if ctx.invoked_subcommand is not None:
-        try:
-            from reconexec.utils.updater import check_for_updates
-            check_for_updates(__version__)
-        except Exception:
-            pass
+    try:
+        from reconexec.utils.updater import check_for_updates
+        check_for_updates(__version__)
+    except Exception:
+        pass
 
 
 
@@ -710,8 +708,9 @@ def version_command() -> None:
 
 def main() -> None:
     """Main CLI entry point."""
+    if len(sys.argv) == 1:
+        sys.argv.append("--help")
     app(prog_name="reconexec")
-
 
 if __name__ == "__main__":
     main()

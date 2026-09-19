@@ -1,4 +1,4 @@
-"""SQLite schema definition for ReconExec-CLI EASM database."""
+"""SQLite schema definition for ReconExec EASM database."""
 
 SCHEMA_SQL = """
 -- Target Domains

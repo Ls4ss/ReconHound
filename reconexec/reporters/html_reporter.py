@@ -290,7 +290,7 @@ class HTMLReporter:
     <div class="container">
         <div class="report-header">
             <div class="header-title-group">
-                <h1>ReconExec-CLI Intelligence Report</h1>
+                <h1>ReconExec Intelligence Report</h1>
                 <div class="subtitle">External Attack Surface Management &amp; Vulnerability Assessment &bull; <a href="https://reconexec.com.br" target="_blank" rel="noopener noreferrer">reconexec.com.br</a></div>
             </div>
             <div class="header-actions">
@@ -303,7 +303,7 @@ class HTMLReporter:
         </div>
 
         <div class="footer-note">
-            Generated automatically by <strong>ReconExec-CLI v2.0</strong> — External Attack Surface Mapping &amp; Threat Intelligence Engine.<br>
+            Generated automatically by <strong>ReconExec v2.0</strong> — External Attack Surface Mapping &amp; Threat Intelligence Engine.<br>
             Powered by <a href="https://reconexec.com.br" target="_blank" rel="noopener noreferrer"><strong>ReconExec Security</strong> (reconexec.com.br)</a>
         </div>
     </div>

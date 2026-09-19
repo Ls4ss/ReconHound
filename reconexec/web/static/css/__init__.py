@@ -1,1 +1,1 @@
-# Static CSS files for ReconExec-CLI dashboard
+# Static CSS files for ReconExec dashboard

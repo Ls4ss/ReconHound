@@ -4,7 +4,7 @@ from pathlib import Path
 from reconexec.config import DETECTI_HOME
 
 def check_for_updates(current_version: str) -> None:
-    """Check PyPI for a newer version of reconexec-cli, caching the result to avoid spamming."""
+    """Check PyPI for a newer version of reconexec, caching the result to avoid spamming."""
     cache_file = DETECTI_HOME / "last_update_check.json"
     
     # Check if we should skip network request (e.g., checked within last 12 hours)
@@ -27,7 +27,7 @@ def check_for_updates(current_version: str) -> None:
     # Perform request
     try:
         import requests
-        resp = requests.get("https://pypi.org/pypi/reconexec-cli/json", timeout=2.0)
+        resp = requests.get("https://pypi.org/pypi/reconexec/json", timeout=2.0)
         if resp.status_code == 200:
             latest_version = resp.json()["info"]["version"]
             
@@ -57,8 +57,8 @@ def _print_update_warning(current: str, latest: str) -> None:
     from reconexec.utils.logger import console
     from rich.panel import Panel
     console.print(Panel(
-        f"[bold yellow]Notice:[/bold yellow] A new release of [bold cyan]ReconExec-CLI[/bold cyan] is available ([dim]{current}[/dim] -> [bold green]{latest}[/bold green])\n"
-        f"Run [bold white]pip install --upgrade reconexec-cli[/bold white] to update.",
+        f"[bold yellow]Notice:[/bold yellow] A new release of [bold cyan]ReconExec[/bold cyan] is available ([dim]{current}[/dim] -> [bold green]{latest}[/bold green])\n"
+        f"Run [bold white]pip install --upgrade reconexec[/bold white] to update.",
         border_style="yellow",
         padding=(0, 2)
     ))

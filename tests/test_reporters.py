@@ -92,7 +92,7 @@ def test_html_reporter(tmp_path: Path):
     assert "<!DOCTYPE html>" in html_content
     assert "192.168.1.50" in html_content
     assert "CVE-2021-41773" in html_content
-    assert "ReconExec-CLI Intelligence Report" in html_content
+    assert "ReconExec Intelligence Report" in html_content
     assert "https://reconexec.com.br" in html_content
 
     file_path = tmp_path / "report.html"

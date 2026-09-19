@@ -10,7 +10,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 try:
     import importlib.machinery
-    cli_path = (Path(__file__).parent.parent / "reconexec-cli").resolve()
+    cli_path = (Path(__file__).parent.parent / "reconexec").resolve()
     loader = importlib.machinery.SourceFileLoader("reconexec_cli", str(cli_path))
     reconexec_cli = loader.load_module()
     app = reconexec_cli.app
@@ -56,7 +56,7 @@ def test_cli_version():
         pytest.skip("CLI app not available")
     res = runner.invoke(app, ["version"])
     assert res.exit_code == 0
-    assert "ReconExec-CLI" in res.stdout
+    assert "ReconExec" in res.stdout
 
 
 def test_cli_config_check():

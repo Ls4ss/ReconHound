@@ -47,7 +47,6 @@ from reconexec.reporters.csv_reporter import CSVReporter
 from reconexec.utils.logger import (
     console,
     get_real_ip,
-    print_banner,
     print_error,
     print_info,
     print_section_header,
@@ -89,6 +88,7 @@ hound_app = typer.Typer(
     name="hound",
     help="ReconHound - Interactive EASM Attack Surface Graph Dashboard management",
     add_completion=False,
+    rich_markup_mode="rich",
 )
 app.add_typer(hound_app, name="hound", rich_help_panel="Interactive Dashboard")
 
@@ -168,7 +168,6 @@ def generate_module_command(mod_name: str):
         ),
     ) -> None:
         if not target:
-            print_banner()
             print_error("Target is required.")
             print_info(f"Usage: {cli_name} {mod_name} <target>")
             raise typer.Exit(1)
@@ -219,7 +218,6 @@ def intel_command(
     """
     
     if not cve_id:
-        print_banner()
         print_error("CVE ID is required.")
         print_info(f"Usage: {cli_name} intel <cve_id>")
         raise typer.Exit(1)
@@ -242,15 +240,12 @@ def _execute_scan(
         temp_engine = ThreatTrackEngine()
         meta = temp_engine.parse_target_metadata(target)
     except (FileNotFoundError, ValueError) as exc:
-        print_banner()
         print_error(str(exc))
         if is_intel:
             print_info("Target must be a valid CVE (e.g., CVE-2021-44228) or an existing File containing CVEs.")
         else:
             print_info("Target must be a valid IP, CIDR, Domain, URL, CVE, existing File, or Shodan Query filter (e.g., org:'Target', port:443).")
         raise typer.Exit(1)
-
-    print_banner()
 
     print_section_header("Scan Configuration")
     console.print(f" [cyan]Target:[/cyan] [bold white]{target}[/bold white]")
@@ -423,7 +418,6 @@ def _execute_scan(
 @app.command(name="update-xdb", rich_help_panel="Utility & Intelligence")
 def update_xdb_command() -> None:
     """Update the local ExploitDB / searchsploit vulnerability mapping database."""
-    print_banner()
     print_info("Refreshing ExploitDB database...")
     try:
         ExploitDBModule.update_database()
@@ -443,7 +437,6 @@ def config_check_command(
     ),
 ) -> None:
     """Check prerequisites, API keys, environment health, or run automated setup."""
-    print_banner()
 
     from reconexec.utils.setup import SetupManager
     setup_mgr = SetupManager(console=console)
@@ -486,7 +479,7 @@ def config_check_command(
 
 
 
-@hound_app.command("start")
+@hound_app.command("start", rich_help_panel="Server Operations")
 def start_server(
     db: Optional[str] = typer.Option(
         None,
@@ -508,7 +501,6 @@ def start_server(
     ),
 ) -> None:
     """Start the non-blocking EASM graph webserver in the background."""
-    print_banner()
     
     try:
         import fastapi
@@ -562,10 +554,9 @@ def start_server(
         print_error(f"Failed to start server: {e}")
 
 
-@hound_app.command("status")
+@hound_app.command("status", rich_help_panel="Server Operations")
 def server_status() -> None:
     """Check the status of the background webserver."""
-    print_banner()
     
     try:
         import psutil
@@ -616,10 +607,9 @@ def server_status() -> None:
         print_error(f"Failed to check server status: {e}")
 
 
-@hound_app.command("stop")
+@hound_app.command("stop", rich_help_panel="Server Operations")
 def stop_server() -> None:
     """Stop the background webserver gracefully."""
-    print_banner()
     
     try:
         import psutil
@@ -647,10 +637,9 @@ def stop_server() -> None:
         print_error(f"Failed to stop server: {e}")
 
 
-@hound_app.command("list-dbs")
+@hound_app.command("list-dbs", rich_help_panel="Database Management")
 def list_databases() -> None:
     """List all available EASM target SQLite databases in ./data/dbs/."""
-    print_banner()
     
     data_dir = DETECTI_HOME / "data" / "dbs"
     if not data_dir.exists():

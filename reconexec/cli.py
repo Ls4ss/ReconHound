@@ -144,57 +144,55 @@ def target_to_db_name(target: str) -> str:
     return cleaned_name
 
 
-@app.command(name="recon")
-def recon_command(
-    target: str = typer.Argument(
-        ...,
-        help="Target IP, CIDR, domain, email, or targets file (e.g., targets.txt)",
-    ),
-    output_format: str = typer.Option(
-        "table",
-        "-o",
-        "--format",
-        help="Output report format: table, json, markdown, html, csv, all",
-    ),
-    output_file: Optional[Path] = typer.Option(
-        None,
-        "-f",
-        "--output-file",
-        help="Custom file path to export the report (e.g., report.json, report.md, report.html, or report.csv)",
-    ),
-    output_dir: Optional[Path] = typer.Option(
-        None,
-        "-d",
-        "--output-dir",
-        help="Directory to save generated JSON/Markdown/HTML reports",
-    ),
-    create_db: Optional[str] = typer.Option(
-        None,
-        "--create-db",
-        help="Custom name for SQLite database in ./data/dbs/ (optional, defaults to target root)",
-    ),
-    modules: str = typer.Option(
-        "all",
-        "-m",
-        "--modules",
-        help="Comma-separated list of recon modules to run (e.g. shodan,crtsh,axfr,sectrails,whois) or 'all'",
-    ),
-) -> None:
-    """Execute passive attack surface mapping and reconnaissance.
+from reconexec.modules import MODULE_REGISTRY
+
+def generate_module_command(mod_name: str):
+    def _cmd(
+        target: str = typer.Argument(
+            ...,
+            help="Target IP, CIDR, domain, email, or targets file (e.g., targets.txt)",
+        ),
+        output_format: str = typer.Option(
+            "table",
+            "-o",
+            "--format",
+            help="Output report format: table, json, markdown, html, csv, all",
+        ),
+        output_file: Optional[Path] = typer.Option(
+            None,
+            "-f",
+            "--output-file",
+            help="Custom file path to export the report",
+        ),
+        output_dir: Optional[Path] = typer.Option(
+            None,
+            "-d",
+            "--output-dir",
+            help="Directory to save generated reports",
+        ),
+        create_db: Optional[str] = typer.Option(
+            None,
+            "--create-db",
+            help="Custom name for SQLite database in ./data/dbs/ (optional)",
+        ),
+    ) -> None:
+        if not target:
+            print_banner()
+            print_error("Target is required.")
+            print_info(f"Usage: {cli_name} {mod_name} <target>")
+            raise typer.Exit(1)
+            
+        _execute_scan(target, output_format, output_file, output_dir, create_db, cli_name, is_intel=False, modules_str=mod_name)
     
-    Examples:
-      reconexec-cli recon example.com
-      reconexec-cli recon example.com --create-db custom_name
-      reconexec-cli recon 192.168.1.0/24
-    """
-    
-    if not target:
-        print_banner()
-        print_error("Target is required.")
-        print_info(f"Usage: {cli_name} recon <target>")
-        raise typer.Exit(1)
-        
-    _execute_scan(target, output_format, output_file, output_dir, create_db, cli_name, is_intel=False, modules_str=modules)
+    _cmd.__name__ = f"cmd_{mod_name}"
+    return _cmd
+
+app.command(name="all", help="Execute passive attack surface mapping using ALL modules.")(generate_module_command("all"))
+
+RESERVED_WORDS = {"intel", "hound", "update-xdb", "config-check", "version", "setup"}
+for m_name in MODULE_REGISTRY.keys():
+    if m_name not in RESERVED_WORDS:
+        app.command(name=m_name, help=f"Execute passive attack surface mapping using only the '{m_name}' module.")(generate_module_command(m_name))
 
 
 @app.command(name="intel")

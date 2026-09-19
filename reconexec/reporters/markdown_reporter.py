@@ -16,7 +16,7 @@ class MarkdownReporter:
         lines: List[str] = []
 
         # 1. Header
-        lines.append(f"# ReconExec Cyber Lead Intelligence Report: `{result.target}`")
+        lines.append(f"# ReconExec Attack Surface Management Report: `{result.target}`")
         lines.append("")
         lines.append(f"> **Scan ID:** `{result.scan_id}`  ")
         lines.append(f"> **Target Type:** `{result.target_type}`  ")

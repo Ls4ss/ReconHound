@@ -71,7 +71,7 @@ def test_markdown_reporter(tmp_path: Path):
     result = create_sample_scan_result()
     md_content = MarkdownReporter.generate(result)
 
-    assert "# ReconExec Cyber Lead Intelligence Report: `192.168.1.50`" in md_content
+    assert "# ReconExec Attack Surface Management Report: `192.168.1.50`" in md_content
     assert "CVE-2021-41773" in md_content
     assert "CWE Name" in md_content
     assert "CISA Known Exploited" in md_content

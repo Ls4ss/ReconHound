@@ -711,7 +711,7 @@ def list_databases() -> None:
 @app.command(name="version")
 def version_command() -> None:
     """Show ReconExec version and maintainer information."""
-    console.print(f"[bold cyan]ReconExec[/bold cyan] version [bold white]{__version__}[/bold white] - Cyber Lead Intelligence Engine")
+    console.print(f"[bold cyan]ReconExec[/bold cyan] version [bold white]{__version__}[/bold white] - Attack Surface Management Engine")
     console.print("[dim]Developed by Lucas S. (Ls4ss) - https://lucassouza.io[/dim]")
 
 

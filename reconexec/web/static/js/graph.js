@@ -5679,10 +5679,6 @@ class EASMDashboard {
                     </span>
                 </div>
                 <div class="property">
-                    <span class="key">Risk Level:</span>
-                    <span class="value">${data.risk_level || 'Unknown'}</span>
-                </div>
-                <div class="property">
                     <span class="key">Available PoCs:</span>
                     <span class="value">${data.exploit_count || 0}</span>
                 </div>

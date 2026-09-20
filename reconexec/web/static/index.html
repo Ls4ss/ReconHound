@@ -49,11 +49,21 @@
 
                     <!-- Database Selector (Header) -->
                     <div class="header-control-group" style="margin-right: 15px; border-right: 1px solid rgba(255,255,255,0.1); padding-right: 15px; display: flex; align-items: center;">
-                        <i data-lucide="database" class="ui-icon" style="color: var(--text-muted); margin-right: 8px;"></i>
-                        <select id="header-db-selector" style="background: rgba(0,0,0,0.2); color: var(--cyan-accent, #00f0ff); border: 1px solid rgba(0,240,255,0.3); padding: 5px 10px; border-radius: 4px; font-size: 0.85rem; cursor: pointer; outline: none; max-width: 250px; appearance: none; -webkit-appearance: none;">
-                            <option value="" disabled selected>Loading databases...</option>
-                        </select>
-                        <i data-lucide="chevron-down" class="ui-icon" style="width: 12px; height: 12px; margin-left: -20px; pointer-events: none; color: #00f0ff;"></i>
+                        <button id="btn-toggle-db-header" style="background: rgba(0,0,0,0.2); border: 1px solid rgba(0,240,255,0.3); color: var(--cyan-accent, #00f0ff); padding: 5px 10px; border-radius: 4px; font-size: 0.85rem; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: all 0.2s; position: relative;">
+                            <i data-lucide="database" class="ui-icon" style="width: 14px; height: 14px;"></i>
+                            <span id="header-active-db-label" style="max-width: 200px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 500;">Loading...</span>
+                            <i data-lucide="chevron-down" class="ui-icon" style="width: 14px; height: 14px;"></i>
+                        </button>
+                        
+                        <!-- Header DB Popover -->
+                        <div id="header-db-popover" class="toolbar-popover hidden" style="display: none; position: absolute; top: 50px; right: 140px; width: 320px; background: rgba(30, 30, 45, 0.95); border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.5); border: 1px solid #444; padding: 0; backdrop-filter: blur(5px); z-index: 9999;">
+                            <div class="db-dropdown-header" style="background: rgba(0,0,0,0.2); padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.05); display: flex; justify-content: space-between;">
+                                <span style="font-size: 0.8rem; color: #aaa;">Select Database</span>
+                            </div>
+                            <div id="header-db-dropdown-list" style="display: flex; flex-direction: column; gap: 4px; max-height: 350px; overflow-y: auto; padding: 6px;">
+                                <!-- Dynamic DB List Items -->
+                            </div>
+                        </div>
                     </div>
 
                     <!-- Target Management Drawer Trigger Button (At the far right corner) -->
@@ -1075,47 +1085,92 @@
                 });
             }
 
-            // --- HEADER NATIVE DB SELECTOR LOGIC ---
-            const headerDbSelect = document.getElementById('header-db-selector');
-            if (headerDbSelect) {
+            // --- HEADER DB POPOVER LOGIC ---
+            const btnToggleDbHeader = document.getElementById('btn-toggle-db-header');
+            const headerDbPopover = document.getElementById('header-db-popover');
+            const headerDbLabel = document.getElementById('header-active-db-label');
+            const headerDbList = document.getElementById('header-db-dropdown-list');
+
+            if (btnToggleDbHeader && headerDbPopover && headerDbList) {
+                // Toggle logic
+                btnToggleDbHeader.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const isHidden = !headerDbPopover.style.display || headerDbPopover.style.display === 'none';
+                    if (isHidden) {
+                        headerDbPopover.style.display = 'block';
+                    } else {
+                        headerDbPopover.style.display = 'none';
+                    }
+                });
+
+                // Close on click outside
+                document.addEventListener('click', (e) => {
+                    if (!headerDbPopover.contains(e.target) && e.target !== btnToggleDbHeader && !btnToggleDbHeader.contains(e.target)) {
+                        headerDbPopover.style.display = 'none';
+                    }
+                });
+
+                // Populate logic
                 fetch('/api/v1/databases')
                     .then(r => r.json())
                     .then(data => {
                         const dbs = data.databases || [];
-                        headerDbSelect.innerHTML = '';
+                        headerDbList.innerHTML = '';
+                        
+                        let currentDbName = 'No Database';
+                        if (data.current_target) {
+                            currentDbName = String(data.current_target).replace(/\.sqlite$/i, '');
+                        } else if (data.current_db) {
+                            currentDbName = String(data.current_db).replace(/\.sqlite$/i, '');
+                        }
+                        if (headerDbLabel) headerDbLabel.textContent = currentDbName;
+                        
                         if (dbs.length === 0) {
-                            headerDbSelect.innerHTML = '<option value="" disabled>No DBs found</option>';
+                            headerDbList.innerHTML = '<div style="padding: 10px; color: #888; text-align: center;">No DBs found</div>';
                             return;
                         }
-                        dbs.forEach(db => {
-                            const option = document.createElement('option');
-                            const cleanName = String(db.display_name || db.target || db.clean_name || db.name || '').replace(/\.sqlite$/i, '');
-                            option.value = db.filename || db.name;
-                            option.textContent = cleanName;
-                            option.style.background = "rgba(30,30,45,1)";
-                            option.style.color = "#00f0ff";
-                            if (db.is_current) option.selected = true;
-                            headerDbSelect.appendChild(option);
-                        });
                         
-                        headerDbSelect.addEventListener('change', async (e) => {
-                            const dbName = e.target.value;
-                            if (!dbName) return;
-                            try {
-                                await fetch('/api/v1/databases/select', {
-                                    method: 'POST',
-                                    headers: {'Content-Type': 'application/json'},
-                                    body: JSON.stringify({ name: dbName })
-                                });
-                                window.location.reload();
-                            } catch (err) {
-                                console.error('Error switching DB:', err);
-                            }
+                        dbs.forEach(db => {
+                            const cleanName = String(db.display_name || db.target || db.clean_name || db.name || '').replace(/\.sqlite$/i, '');
+                            const metaText = `${db.size_mb || 0} MB • ${db.modified || 'Recent'}`;
+                            const isCurrent = db.is_current;
+                            
+                            const itemEl = document.createElement('div');
+                            itemEl.className = `db-dropdown-item ${isCurrent ? 'is-active' : ''}`;
+                            
+                            // Emulate elegant sidebar HTML
+                            itemEl.innerHTML = `
+                                <button type="button" class="db-item-main" style="width: 100%; border: none; background: ${isCurrent ? 'rgba(0, 240, 255, 0.1)' : 'transparent'}; border-radius: 4px; padding: 8px 12px; display: flex; align-items: center; gap: 10px; cursor: pointer; text-align: left; transition: background 0.2s;" onmouseover="this.style.background='${isCurrent ? 'rgba(0, 240, 255, 0.2)' : 'rgba(255, 255, 255, 0.05)'}'" onmouseout="this.style.background='${isCurrent ? 'rgba(0, 240, 255, 0.1)' : 'transparent'}'">
+                                    <i data-lucide="database" class="ui-icon" style="color: ${isCurrent ? '#00f0ff' : '#aaa'}; width: 16px; height: 16px;"></i>
+                                    <div style="display: flex; flex-direction: column; line-height: 1.2;">
+                                        <span style="font-weight: 600; font-size: 0.85rem; color: ${isCurrent ? '#00f0ff' : '#fff'};">${cleanName}</span>
+                                        <span style="font-size: 0.7rem; color: #888;">${metaText}</span>
+                                    </div>
+                                </button>
+                            `;
+                            
+                            const mainBtn = itemEl.querySelector('.db-item-main');
+                            mainBtn.addEventListener('click', async () => {
+                                const dbName = db.filename || db.name;
+                                try {
+                                    await fetch('/api/v1/databases/select', {
+                                        method: 'POST',
+                                        headers: {'Content-Type': 'application/json'},
+                                        body: JSON.stringify({ name: dbName })
+                                    });
+                                    window.location.reload();
+                                } catch (err) {
+                                    console.error('Error switching DB:', err);
+                                }
+                            });
+                            
+                            headerDbList.appendChild(itemEl);
                         });
+                        if (window.lucide) window.lucide.createIcons();
                     })
                     .catch(e => {
                         console.error('Failed to load DBs:', e);
-                        headerDbSelect.innerHTML = '<option value="" disabled>Error loading</option>';
+                        if (headerDbLabel) headerDbLabel.textContent = "Error";
                     });
             }
         });

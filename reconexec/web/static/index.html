@@ -133,16 +133,10 @@
                             <i data-lucide="chevron-down" class="ui-icon accordion-icon"></i>
                         </summary>
                         <div class="accordion-body" style="padding: 0;">
-                            <div class="db-dropdown-header" style="background: rgba(0,0,0,0.2); padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.05); display: flex; justify-content: space-between; align-items: center;">
+                            <div class="db-dropdown-header" style="background: rgba(0,0,0,0.2); padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.05); display: flex; justify-content: space-between;">
                                 <span style="font-size: 0.8rem; color: #aaa;">Attack Surface Databases</span>
-                                <div style="display: flex; gap: 6px; align-items: center;">
-                                    <button id="btn-import-db" class="action-btn" title="Import JSON Database" style="padding: 2px 6px; font-size: 0.7rem; background: transparent; border: 1px solid rgba(0,240,255,0.3); color: #00f0ff;">
-                                        <i data-lucide="upload" style="width: 10px; height: 10px; margin-right: 4px;"></i>Import
-                                    </button>
-                                    <span class="db-count-badge" id="db-count-badge" style="background: rgba(0, 240, 255, 0.2); color: #00f0ff; padding: 2px 6px; border-radius: 10px; font-size: 0.7rem;">0</span>
-                                </div>
+                                <span class="db-count-badge" id="db-count-badge" style="background: rgba(0, 240, 255, 0.2); color: #00f0ff; padding: 2px 6px; border-radius: 10px; font-size: 0.7rem;">0</span>
                             </div>
-                            <input type="file" id="import-json-input" accept=".json" style="display: none;">
                             <div class="db-dropdown-list" id="db-dropdown-list" style="display: flex; flex-direction: column; gap: 4px; max-height: 250px; overflow-y: auto;">
                                 <!-- Dynamic DB List Items populated via JS -->
                             </div>
@@ -188,6 +182,10 @@
                         <button id="btn-toggle-export" aria-label="Toggle Export" style="background: transparent; border: none; padding: 8px 16px; color: var(--text-white); cursor: pointer; display: flex; align-items: center; gap: 6px; font-size: 0.85rem; transition: all 0.2s;">
                             <i data-lucide="download" class="ui-icon"></i> Export
                         </button>
+                        <button id="btn-import-db" aria-label="Import JSON" style="background: transparent; border: none; padding: 8px 16px; color: var(--cyan-accent, #00f0ff); cursor: pointer; display: flex; align-items: center; gap: 6px; font-size: 0.85rem; transition: all 0.2s;">
+                            <i data-lucide="upload" class="ui-icon"></i> Import
+                        </button>
+                        <input type="file" id="import-json-input" accept=".json" style="display: none;">
                     </div>
 
                     <!-- Search Popover -->
@@ -1031,7 +1029,7 @@
                     try {
                         // Change button icon to loading
                         const originalHtml = btnImportDb.innerHTML;
-                        btnImportDb.innerHTML = '<i data-lucide="loader" class="ui-icon lucide-spin" style="width:10px; height:10px; margin-right:4px;"></i>Uploading...';
+                        btnImportDb.innerHTML = '<i data-lucide="loader" class="ui-icon lucide-spin"></i> Uploading...';
                         
                         const response = await fetch('/api/v1/import', {
                             method: 'POST',
@@ -1060,7 +1058,7 @@
                         alert(`Import Error: ${err.message}`);
                     } finally {
                         fileInputImportDb.value = ''; // Reset input
-                        btnImportDb.innerHTML = '<i data-lucide="upload" style="width: 10px; height: 10px; margin-right: 4px;"></i>Import';
+                        btnImportDb.innerHTML = originalHtml;
                         if(window.lucide) window.lucide.createIcons();
                     }
                 });

@@ -226,7 +226,8 @@ class GraphBuilder:
                     t = t.split(":")[0]
             return t
 
-        explicit_targets = {_normalize_target_item(t) for t in targets_list if _normalize_target_item(t)}
+        # Removed forced database targets to allow clean BloodHound-style canvas exploration
+        explicit_targets = set()
         if active_targets:
             for at in active_targets:
                 norm = _normalize_target_item(at)

@@ -2,7 +2,23 @@
 
 <div align="center">
 
-<img width="90" src="https://avatars.githubusercontent.com/u/129181562?s=200&v=4" alt="ReconHound Logo">
+<pre style="font-family: 'JetBrains Mono', monospace; display: inline-block; text-align: left; background: transparent; border: none; font-size: 10px; line-height: 1.2; color: #00f0ff;">
+⠀⠀⠀⠀⡀⠀⠀⠀⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⣷⠀⠀⢰⣷⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⣿⣧⠀⣼⣿⣇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⢸⣿⣿⡆⠘⣿⣿⣆⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⣸⣿⣿⣿⡄⠙⠛⠋⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⣿⣿⣿⣿⣷⡀⣿⣿⣿⣿⠿⠿⢿⣄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⢰⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣶⣄⡀⢻⣿⣿⣿⠟⢿⣿⠛⣦⡀⢻⣿⡇⠀
+⠀⠀⢸⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⠛⣶⡞⠻⣶⠛⢻⡄⠹⠀⠀
+⠀⠀⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣷⣿⣷⣾⣿⣶⣿⣿⠆⠀⠀
+⠀⢠⣿⣿⣿⡄⢹⣿⣿⣿⣿⣿⣿⣿⣿⣿⣏⣉⣉⣉⣉⣉⣉⣉⣉⣉⡉⠀⠀⠀
+⠀⢸⣿⣿⣿⣷⡀⠻⠿⠿⠿⠿⠿⠿⠿⠿⠿⠿⠿⠿⠿⠿⠿⠿⠿⠿⠃⠀⠀⠀
+⠀⣿⣿⣿⣿⣿⣷⣶⣶⣶⣶⣶⡄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+</pre>
 
 ### Modern External Attack Surface Mapping & Threat Intelligence Platform
 **Asynchronous • Modular • High-Concurrency • EPSS + CISA KEV Prioritization • Masscan & Nuclei Active Scanning • Shodan • Censys • crt.sh • OTX**

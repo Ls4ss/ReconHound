@@ -90,13 +90,6 @@ app = typer.Typer(
 )
 
 # Create hound subcommand group (Interactive EASM Attack Surface Graph Dashboard)
-hound_app = typer.Typer(
-    name="hound",
-    help="ReconHound - Interactive EASM Attack Surface Graph Dashboard management",
-    add_completion=False,
-    rich_markup_mode="rich",
-)
-
 HOUND_BANNER = """[cyan]⠀⠀⠀⠀⡀⠀⠀⠀⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
 ⠀⠀⠀⠀⣷⠀⠀⢰⣷⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
 ⠀⠀⠀⠀⣿⣧⠀⣼⣿⣇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
@@ -112,6 +105,13 @@ HOUND_BANNER = """[cyan]⠀⠀⠀⠀⡀⠀⠀⠀⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀�
 [cyan]⠀⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀[/cyan]
 [cyan]⠀⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀[/cyan]
 [cyan]⠀⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀[/cyan]"""
+
+hound_app = typer.Typer(
+    name="hound",
+    help=f"\b\n{HOUND_BANNER}\n\nReconHound - Interactive EASM Attack Surface Graph Dashboard management",
+    add_completion=False,
+    rich_markup_mode="rich",
+)
 
 
 app.add_typer(hound_app, name="hound", rich_help_panel="Interactive Dashboard")

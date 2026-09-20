@@ -2216,13 +2216,29 @@ class EASMDashboard {
                 // Double tap detected: Toggle Expansion
                 this.expandedCanvasNodes = this.expandedCanvasNodes || new Set();
                 
-                if (this.expandedCanvasNodes.has(node.id())) {
-                    // Collapse
-                    this.expandedCanvasNodes.delete(node.id());
+                const outgoers = node.outgoers('node');
+                if (outgoers.length > 0) {
+                    // Check if all outgoers are currently visible
+                    const allVisible = outgoers.every(child => !child.hidden());
+                    
+                    if (allVisible) {
+                        // FORCE COLLAPSE: Remove this node and any other parent holding these children open
+                        this.expandedCanvasNodes.delete(node.id());
+                        outgoers.forEach(child => {
+                            child.incomers('node').forEach(parent => {
+                                this.expandedCanvasNodes.delete(parent.id());
+                            });
+                        });
+                    } else {
+                        // Expand
+                        this.expandedCanvasNodes.add(node.id());
+                    }
                 } else {
-                    // Expand
-                    this.expandedCanvasNodes.add(node.id());
-                    const outgoers = node.outgoers('node');
+                    if (this.expandedCanvasNodes.has(node.id())) {
+                        this.expandedCanvasNodes.delete(node.id());
+                    } else {
+                        this.expandedCanvasNodes.add(node.id());
+                    }
                 }
 
                 this.applyLeadFilter({ relayout: true });

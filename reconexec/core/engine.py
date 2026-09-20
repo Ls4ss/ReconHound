@@ -33,6 +33,7 @@ from reconexec.modules.reverse_whois import ReverseWhoisModule
 from reconexec.modules.securitytrails import SecurityTrailsModule
 from reconexec.modules.shodan import ShodanModule
 from reconexec.modules.zone_transfer import ZoneTransferModule
+from reconexec.modules.alienvault import AlienVaultModule
 from reconexec.utils.http import AsyncHTTPClient, http_client
 
 logger = logging.getLogger("reconexec.engine")
@@ -63,9 +64,10 @@ class ThreatTrackEngine:
         "crtsh": CrtshModule,
         "whois": ReverseWhoisModule,
         "sectrails": SecurityTrailsModule,
-        "nvd": NVDModule,
-        "exploitdb": ExploitDBModule,
         "axfr": ZoneTransferModule,
+        "exploitdb": ExploitDBModule,
+        "nvd": NVDModule,
+        "otx": AlienVaultModule,
     }
 
     def __init__(
@@ -113,8 +115,14 @@ class ThreatTrackEngine:
                 raise FileNotFoundError(f"Target file not found: {raw}")
             return {"type": "file", "clean_target": raw, "root_domain": None, "subdomain": None, "port": None}
 
+        if "," in raw:
+            return {"type": "csv_list", "clean_target": raw, "root_domain": None, "subdomain": None, "port": None}
+
         if raw.upper().startswith("CVE-"):
             return {"type": "cve", "clean_target": raw.upper(), "root_domain": None, "subdomain": None, "port": None}
+
+        if raw.lower() == "trend":
+            return {"type": "trend", "clean_target": "trend", "root_domain": None, "subdomain": None, "port": None}
 
         if "@" in raw and " " not in raw and "://" not in raw:
             domain_part = raw.split("@", 1)[1] if "@" in raw else None
@@ -317,6 +325,26 @@ class ThreatTrackEngine:
                     "tier": "None",
                 }
 
+        # 5.5 AlienVault OTX
+        if "otx" in active_mod_names:
+            av_mod = self.modules["otx"]
+            if av_mod.is_configured():
+                status_report["otx"] = {
+                    "name": "AlienVault OTX",
+                    "configured": True,
+                    "valid": True,
+                    "status": "Active (API Key)",
+                    "tier": "Standard API",
+                }
+            else:
+                status_report["otx"] = {
+                    "name": "AlienVault OTX",
+                    "configured": False,
+                    "valid": False,
+                    "status": "Not Configured (Bypassed)",
+                    "tier": "None",
+                }
+
         # 6. ExploitDB / GitHub Token
         if "exploitdb" in active_mod_names:
             from reconexec.config import is_placeholder_key
@@ -349,6 +377,14 @@ class ThreatTrackEngine:
         if target_type == "file":
             return await self._scan_file(target, enabled_modules)
 
+        # Handle Daily Threat Briefing batch
+        if target_type == "trend":
+            return await self._scan_trend(enabled_modules)
+
+        # Handle comma-separated list of targets
+        if target_type == "csv_list":
+            return await self._scan_csv_list(target, enabled_modules)
+
         active_mod_names = (
             [m for m in enabled_modules if m in self.modules]
             if enabled_modules and "all" not in enabled_modules
@@ -357,7 +393,7 @@ class ThreatTrackEngine:
         
         # Force-add intel modules if not present
         if enabled_modules and "all" not in enabled_modules:
-            for im in ["nvd", "exploitdb"]:
+            for im in ["nvd", "exploitdb", "otx"]:
                 if im not in active_mod_names and im in self.modules:
                     active_mod_names.append(im)
 
@@ -448,6 +484,12 @@ class ThreatTrackEngine:
                 st_target = root_domain or clean_target if target_type == "domain" else clean_target
                 self._notify("sectrails", f"Querying SecurityTrails for {st_target}...")
                 recon_tasks.append(self.modules["sectrails"].run(st_target, context))
+
+            # 6. AlienVault OTX Passive DNS (Domains/IPs)
+            if target_type in ("domain", "ip") and "otx" in active_mod_names:
+                av_target = root_domain or clean_target if target_type == "domain" else clean_target
+                self._notify("otx", f"Querying AlienVault OTX Passive DNS for {av_target}...")
+                recon_tasks.append(self.modules["otx"].run(av_target, context))
 
             # 6. Zone Transfer (AXFR)
             if target_type == "domain" and "axfr" in active_mod_names:
@@ -891,6 +933,24 @@ class ThreatTrackEngine:
                     enriched_vulns[cve].exploits = exps
 
         # ----------------------------------------------------
+        # Stage 3.5: Threat Actor / APT Attribution (AlienVault OTX)
+        # ----------------------------------------------------
+        if all_unique_cves and "otx" in active_mod_names and self.modules["otx"].is_configured():
+            self._notify("otx", f"Hunting Threat Actor attribution for {len(all_unique_cves)} CVEs...")
+            av_mod = self.modules["otx"]
+            
+            # Use alienvault module to fetch findings for these CVEs
+            # Pass a dummy context to use target_type=cve or just rely on the cve string.
+            av_tasks = [av_mod.run(target=cve, context={"target_type": "cve"}) for cve in all_unique_cves]
+            av_results = await asyncio.gather(*av_tasks, return_exceptions=True)
+            
+            for cve, findings_list in zip(all_unique_cves, av_results):
+                if isinstance(findings_list, list) and cve in enriched_vulns:
+                    for f in findings_list:
+                        if f.type == FindingType.THREAT_ACTOR and f.metadata and "attribution" in f.metadata:
+                            enriched_vulns[cve].attribution.append(f.metadata["attribution"])
+
+        # ----------------------------------------------------
         # Stage 4: Attach Enriched Vulnerabilities to Specific Hosts
         # ----------------------------------------------------
         for host_ip, host_obj in hosts_map.items():
@@ -1036,7 +1096,7 @@ class ThreatTrackEngine:
             else list(self.modules.keys())
         )
         if enabled_modules and "all" not in enabled_modules:
-            for im in ["nvd", "exploitdb"]:
+            for im in ["nvd", "exploitdb", "otx"]:
                 if im not in active_mod_names and im in self.modules:
                     active_mod_names.append(im)
 
@@ -1076,6 +1136,131 @@ class ThreatTrackEngine:
         combined_result.elapsed_seconds = (combined_result.completed_at - combined_result.started_at).total_seconds()
         combined_result.calculate_summary()
         self._notify("engine", f"Batch scan finished: processed {total} targets with {len(all_findings)} findings.")
+        return combined_result
+
+    async def _scan_csv_list(
+        self,
+        csv_string: str,
+        enabled_modules: Optional[List[str]],
+    ) -> ScanResult:
+        """Process comma-separated targets with pre-flight check executed once and live progress."""
+        targets = [t.strip() for t in csv_string.split(",") if t.strip()]
+        total = len(targets)
+        self._notify("engine", f"Loaded {total} targets from comma-separated list")
+
+        active_mod_names = (
+            [m for m in enabled_modules if m in self.modules]
+            if enabled_modules and "all" not in enabled_modules
+            else list(self.modules.keys())
+        )
+        if enabled_modules and "all" not in enabled_modules:
+            for im in ["nvd", "exploitdb", "otx"]:
+                if im not in active_mod_names and im in self.modules:
+                    active_mod_names.append(im)
+
+        # Pre-flight API verification layer: validate all APIs once for the batch
+        self._notify("engine", "Verifying environment API credentials and endpoints...")
+        api_statuses = await self.verify_environment_apis(active_mod_names)
+        for mod, info in api_statuses.items():
+            if info.get("configured") and not info.get("valid"):
+                self._notify(mod, f"{info.get('name')}: {info.get('status')}")
+
+        combined_result = ScanResult(
+            target="CSV Targets",
+            target_type="csv_list",
+            started_at=datetime.now(timezone.utc),
+            modules_run=enabled_modules or list(self.MODULE_REGISTRY.keys()),
+        )
+
+        all_findings: List[Finding] = []
+        all_hosts: List[HostResult] = []
+        all_warnings: List[str] = []
+
+        for idx, target_item in enumerate(targets, 1):
+            self._notify("engine", f"Processing target [{idx}/{total}]: {target_item}")
+            sub_res = await self.scan(
+                target_item,
+                enabled_modules=enabled_modules,
+                skip_preflight=True,
+            )
+            all_findings.extend(sub_res.findings)
+            all_hosts.extend(sub_res.hosts)
+            all_warnings.extend(sub_res.warnings)
+
+        combined_result.hosts = all_hosts
+        combined_result.findings = all_findings
+        combined_result.warnings = list(dict.fromkeys(all_warnings))
+        combined_result.completed_at = datetime.now(timezone.utc)
+        combined_result.elapsed_seconds = (combined_result.completed_at - combined_result.started_at).total_seconds()
+        combined_result.calculate_summary()
+        self._notify("engine", f"Batch scan finished: processed {total} targets with {len(all_findings)} findings.")
+        return combined_result
+    async def _scan_trend(self, enabled_modules: List[str]) -> ScanResult:
+        """Fetch the latest 10 CISA KEV entries and process them sequentially."""
+        from reconexec.config import settings
+        
+        self._notify("engine", "Fetching latest Threat Briefing (CISA KEV catalog)...")
+        data = await self.http_client.get_json(url=settings.cisa_kev_url, timeout=20.0)
+        
+        cves_to_scan = []
+        if data and "vulnerabilities" in data:
+            vulns = data["vulnerabilities"]
+            vulns.sort(key=lambda x: x.get("dateAdded", ""), reverse=True)
+            for v in vulns[:10]:
+                cves_to_scan.append(v.get("cveID", "").upper())
+        
+        if not cves_to_scan:
+            self._notify("engine", "Failed to load trending CVEs.")
+            return ScanResult(target="trend", target_type="trend")
+            
+        self._notify("engine", f"Analyzing top {len(cves_to_scan)} recently weaponized vulnerabilities...")
+        
+        active_mod_names = (
+            [m for m in enabled_modules if m in self.modules]
+            if enabled_modules and "all" not in enabled_modules
+            else list(self.modules.keys())
+        )
+        if enabled_modules and "all" not in enabled_modules:
+            for im in ["nvd", "exploitdb", "otx"]:
+                if im not in active_mod_names and im in self.modules:
+                    active_mod_names.append(im)
+
+        # Pre-flight API verification layer: validate all APIs once for the batch
+        self._notify("engine", "Verifying environment API credentials and endpoints...")
+        api_statuses = await self.verify_environment_apis(active_mod_names)
+        for mod, info in api_statuses.items():
+            if info.get("configured") and not info.get("valid"):
+                self._notify(mod, f"{info.get('name')}: {info.get('status')}")
+
+        combined_result = ScanResult(
+            target="trend",
+            target_type="trend",
+            started_at=datetime.now(timezone.utc),
+            modules_run=enabled_modules or list(self.MODULE_REGISTRY.keys()),
+        )
+        
+        all_findings: List[Finding] = []
+        all_hosts: List[HostResult] = []
+        all_warnings: List[str] = []
+        
+        for idx, cve_id in enumerate(cves_to_scan, 1):
+            self._notify("engine", f"Processing target [{idx}/{len(cves_to_scan)}]: {cve_id}")
+            sub_res = await self.scan(
+                cve_id,
+                enabled_modules=enabled_modules,
+                skip_preflight=True,
+            )
+            all_findings.extend(sub_res.findings)
+            all_hosts.extend(sub_res.hosts)
+            all_warnings.extend(sub_res.warnings)
+            
+        combined_result.hosts = all_hosts
+        combined_result.findings = all_findings
+        combined_result.warnings = list(dict.fromkeys(all_warnings))
+        combined_result.completed_at = datetime.now(timezone.utc)
+        combined_result.elapsed_seconds = (combined_result.completed_at - combined_result.started_at).total_seconds()
+        combined_result.calculate_summary()
+        self._notify("engine", f"Threat Briefing finished: processed {len(cves_to_scan)} targets with {len(all_findings)} findings.")
         return combined_result
 
 

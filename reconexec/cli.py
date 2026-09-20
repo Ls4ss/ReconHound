@@ -77,7 +77,7 @@ cli_name = "reconexec"
 
 app = typer.Typer(
     name=cli_name,
-    help="""ReconExec: External Attack Surface Mapping & Threat Intelligence Engine
+    help="""ReconExec v3.0.0 - Advanced Passive Recon Like a Boss
 
  ┌─────────────┐   ┌────────────────┐   ┌────────────────┐   ┌─────────────┐
  │  ReconExec  │──▶│ Asset Mapping  │──▶│ Threat Intel   │──▶│ ReconHound  │
@@ -201,7 +201,8 @@ module_display_names = {
     'crtsh': 'crt.sh',
     'whois': 'Reverse WHOIS',
     'sectrails': 'SecurityTrails',
-    'axfr': 'Zone Transfer'
+    'axfr': 'Zone Transfer',
+    'otx': 'AlienVault OTX'
 }
 
 for m_name in ThreatTrackEngine.MODULE_REGISTRY.keys():
@@ -212,9 +213,9 @@ for m_name in ThreatTrackEngine.MODULE_REGISTRY.keys():
 
 @app.command(name="intel", rich_help_panel="Utility & Intelligence")
 def intel_command(
-    cve_id: str = typer.Argument(
+    target: str = typer.Argument(
         ...,
-        help="Target CVE or Threat ID (e.g., CVE-2021-44228)",
+        help="Target CVE (e.g., CVE-2021-44228), a comma-separated list, a file of CVEs, or 'trend' for daily briefing",
     ),
     output_format: str = typer.Option(
         "table",
@@ -235,19 +236,24 @@ def intel_command(
         help="Directory to save generated reports",
     ),
 ) -> None:
-    """Execute threat intelligence lookup for specific vulnerabilities.
+    """Execute advanced threat intelligence lookups.
+    
+    This command supports individual CVE lookups, batch processing from a file, 
+    comma-separated lists, and a daily threat briefing of recently weaponized vulnerabilities.
     
     Examples:
-      reconexec intel CVE-2021-44228
-      reconexec intel CVE-2023-22527 --format json
+      reconexec intel CVE-2021-44228                        # Lookup a specific vulnerability
+      reconexec intel CVE-2021-44228,CVE-2023-34362         # Lookup multiple CVEs separated by comma
+      reconexec intel cves.txt                              # Batch process multiple CVEs from a file
+      reconexec intel trend                                 # Top 10 recently exploited CVEs (CISA KEV)
     """
     
-    if not cve_id:
-        print_error("CVE ID is required.")
-        print_info(f"Usage: {cli_name} intel <cve_id>")
+    if not target:
+        print_error("Target is required.")
+        print_info(f"Usage: {cli_name} intel <target>")
         raise typer.Exit(1)
         
-    _execute_scan(cve_id, output_format, output_file, output_dir, None, cli_name, is_intel=True)
+    _execute_scan(target, output_format, output_file, output_dir, None, cli_name, is_intel=True)
 
 
 def _execute_scan(
@@ -267,7 +273,7 @@ def _execute_scan(
     except (FileNotFoundError, ValueError) as exc:
         print_error(str(exc))
         if is_intel:
-            print_info("Target must be a valid CVE (e.g., CVE-2021-44228) or an existing File containing CVEs.")
+            print_info("Target must be 'trend', a valid CVE (e.g., CVE-2021-44228) or an existing File containing CVEs.")
         else:
             print_info("Target must be a valid IP, CIDR, Domain, URL, CVE, existing File, or Shodan Query filter (e.g., org:'Target', port:443).")
         raise typer.Exit(1)
@@ -744,7 +750,7 @@ def main() -> None:
     """Main CLI entry point."""
     if len(sys.argv) == 1:
         sys.argv.append("--help")
-    elif len(sys.argv) == 2 and sys.argv[1] in ["config", "hound"]:
+    elif len(sys.argv) == 2 and sys.argv[1] in ["config", "hound", "intel"]:
         sys.argv.append("--help")
     app(prog_name="reconexec")
 

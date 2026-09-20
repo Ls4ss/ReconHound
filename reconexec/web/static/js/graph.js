@@ -5109,11 +5109,7 @@ class EASMDashboard {
                 <div class="property">
                     <span class="key">Autonomous System (ASN):</span>
                     <span class="value" style="color: #60a5fa; font-weight: 600; font-family: monospace;">${data.asn}</span>
-                </div>` : ''}
-                <div class="property">
-                    <span class="key">Type:</span>
-                    <span class="value">ORGANIZATION / ASN CLUSTER</span>
-                </div>`;
+                </div>` : ''}`;
             } else {
                 mainPropertiesHtml = `
                 <div class="property" style="flex-direction: column; align-items: flex-start;">
@@ -5124,11 +5120,7 @@ class EASMDashboard {
                     </div>
                 </div>
                 ${resolvedIpsHtml}
-                ${historicalIpsHtml}
-                <div class="property">
-                    <span class="key">Type:</span>
-                    <span class="value">${data.target_type ? `${data.type.toUpperCase()} (${data.target_type.toUpperCase()})` : data.type.toUpperCase()}</span>
-                </div>`;
+                ${historicalIpsHtml}`;
             }
 
             html = `

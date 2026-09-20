@@ -1373,9 +1373,7 @@ class EASMDashboard {
 
     async selectAllLeads() {
         this.cy.nodes().forEach(node => {
-            if (node.data('type') !== 'target' && node.data('is_root') !== true) {
-                this.expandedCanvasNodes.add(node.id());
-            }
+            this.expandedCanvasNodes.add(node.id());
         });
         if (typeof this.showToast === 'function') {
             this.showToast('success', 'All assets expanded on canvas');

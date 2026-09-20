@@ -2620,8 +2620,16 @@ class EASMDashboard {
                 } else {
                     // Expand
                     this.expandedCanvasNodes.add(node.id());
+                    const outgoers = node.outgoers('node');
+                    let types = {};
+                    outgoers.forEach(n => {
+                        const t = n.data('type') || 'unknown';
+                        types[t] = (types[t] || 0) + 1;
+                    });
+                    const typesStr = Object.entries(types).map(([k,v]) => `${k}:${v}`).join(', ');
+                    
                     if (typeof this.showToast === 'function') {
-                        this.showToast('info', `Expanded node connections`);
+                        this.showToast('info', `Expanded node connections. Outgoers: ${outgoers.length} (${typesStr})`);
                     }
                 }
 

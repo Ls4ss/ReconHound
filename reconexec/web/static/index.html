@@ -182,7 +182,7 @@
                         <button id="btn-toggle-export" aria-label="Toggle Export" style="background: transparent; border: none; padding: 8px 16px; color: var(--text-white); cursor: pointer; display: flex; align-items: center; gap: 6px; font-size: 0.85rem; transition: all 0.2s;">
                             <i data-lucide="download" class="ui-icon"></i> Export
                         </button>
-                        <button id="btn-import-db" aria-label="Import JSON" style="background: transparent; border: none; padding: 8px 16px; color: var(--cyan-accent, #00f0ff); cursor: pointer; display: flex; align-items: center; gap: 6px; font-size: 0.85rem; transition: all 0.2s;">
+                        <button id="btn-import-db" aria-label="Import JSON" style="background: transparent; border: none; padding: 8px 16px; color: var(--text-white); cursor: pointer; display: flex; align-items: center; gap: 6px; font-size: 0.85rem; transition: all 0.2s;">
                             <i data-lucide="upload" class="ui-icon"></i> Import
                         </button>
                         <input type="file" id="import-json-input" accept=".json" style="display: none;">
@@ -646,7 +646,7 @@
                 </button>
             </div>
             <div class="modal-body">
-                <p>Are you sure you want to delete database <strong id="delete-db-target-name" style="color: var(--cyan-accent, #00f0ff);"></strong>?</p>
+                <p>Are you sure you want to delete database <strong id="delete-db-target-name" style="color: var(--text-white);"></strong>?</p>
                 <p class="modal-warning-text" style="color: var(--text-muted); font-size: 0.82rem; margin-top: 0.5rem; line-height: 1.4;">
                     This will permanently remove the SQLite file and all associated asset topology findings. This action cannot be undone.
                 </p>
@@ -674,7 +674,7 @@
                 </button>
             </div>
             <div class="modal-body">
-                <p>Are you sure you want to delete <strong id="delete-asset-target-name" style="color: var(--cyan-accent, #00f0ff);"></strong> from the database?</p>
+                <p>Are you sure you want to delete <strong id="delete-asset-target-name" style="color: var(--text-white);"></strong> from the database?</p>
                 <div id="delete-asset-impact-container" style="background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.05); border-radius: 6px; padding: 12px; margin-top: 15px;">
                     <p style="margin: 0 0 10px 0; font-size: 0.85rem; color: #ccc;">This action will also permanently destroy:</p>
                     <ul id="delete-asset-impact-list" style="margin: 0; padding-left: 20px; font-size: 0.85rem; color: #ef4444; line-height: 1.6;">

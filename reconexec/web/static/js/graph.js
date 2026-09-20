@@ -455,8 +455,8 @@ class EASMDashboard {
 
     populateLeadSelector(elements, preserveSelection = false) {
         try {
-            console.log('=== LEAD SELECTOR DEBUG START ===');
-            console.log('Populating asset selector from graph data...');
+            
+            
             this.assets = [];
             
             const leadList = document.getElementById('asset-list');
@@ -470,14 +470,14 @@ class EASMDashboard {
             
             // Try to get elements from Cytoscape if not provided
             if (!elements && this.cy) {
-                console.log('Getting elements from Cytoscape instance...');
+                
                 const cyNodes = this.cy.nodes().jsons();
                 const cyEdges = this.cy.edges().jsons();
                 elements = {
                     nodes: cyNodes,
                     edges: cyEdges
                 };
-                console.log(`Got ${cyNodes.length} nodes and ${cyEdges.length} edges from Cytoscape`);
+                
             }
             
             if (!elements || !elements.nodes || !Array.isArray(elements.nodes)) {
@@ -486,11 +486,11 @@ class EASMDashboard {
                 return;
             }
             
-            console.log(`Total nodes in graph: ${elements.nodes.length}`);
-            console.log(`Total edges in graph: ${elements.edges ? elements.edges.length : 0}`);
+            
+            
             
             // Debug: Log first few nodes to see structure
-            console.log('First 3 nodes structure:', elements.nodes.slice(0, 3));
+            
             
 
             // 1. Look for pre-calculated explore_assets data from the backend
@@ -498,13 +498,13 @@ class EASMDashboard {
             const rootData = rootNode ? (rootNode.data || rootNode) : null;
             
             if (rootData && rootData.explore_assets && Array.isArray(rootData.explore_assets)) {
-                console.log(`Using pre-calculated explore_assets from backend: ${rootData.explore_assets.length} assets`);
+                
                 this.assets = rootData.explore_assets.map(asset => {
                     const matchedNode = elements.nodes.find(n => (n.data || n).id === asset.id);
                     const isTarget = matchedNode ? ((matchedNode.data || matchedNode).is_target === true || (matchedNode.data || matchedNode).is_target === 'true') : false;
                     
                     if (isTarget) {
-                        console.log(`[DEBUG] Matched Target Asset: ${asset.id} | TargetName: ${asset.display_name || asset.label}`);
+                        
                     }
                     
                     return {
@@ -601,7 +601,7 @@ class EASMDashboard {
                 elements.nodes.forEach((node, index) => {
                     try {
                         const nodeData = node.data || node;
-                        console.log(`Force asset ${index + 1}: ${nodeData.id} (${nodeData.type})`);
+                        
                         
                         // Create a more descriptive display name
                         let displayName = nodeData.label || nodeData.name || nodeData.ip || nodeData.id;
@@ -628,7 +628,7 @@ class EASMDashboard {
                         };
                         
                         this.assets.push(asset);
-                        console.log(`✓ Force asset created: ${asset.display_name}`);
+                        
                     } catch (error) {
                         console.error(`Error creating force asset ${index}:`, error);
                     }
@@ -667,8 +667,8 @@ class EASMDashboard {
                 });
             }
 
-            console.log(`✓ Created ${this.assets.length} assets total (preserveSelection: ${preserveSelection})`);
-            console.log('=== LEAD SELECTOR DEBUG END ===');
+            
+            
             
             // Always try to render, even if we have 0 assets
             this.renderLeadSelector();
@@ -1183,14 +1183,14 @@ class EASMDashboard {
     }
 
     renderLeadSelector() {
-        console.log('=== RENDER LEAD SELECTOR START ===');
+        
         const leadList = document.getElementById('asset-list');
         if (!leadList) {
             console.error('❌ Asset list element not found in renderLeadSelector');
             return;
         }
 
-        console.log(`Rendering ${this.assets.length} assets`);
+        
 
         if (this.assets.length === 0) {
             console.error('❌ CRITICAL: Still no assets to render after all fallbacks!');
@@ -1211,7 +1211,7 @@ class EASMDashboard {
             return;
         }
 
-        console.log('✓ Clearing asset list and rendering assets...');
+        
         leadList.innerHTML = '';
         const fragment = document.createDocumentFragment();
 
@@ -1352,8 +1352,8 @@ class EASMDashboard {
             lucide.createIcons();
         }
         
-        console.log(`✓ Rendered ${this.assets.length} asset items successfully`);
-        console.log('=== RENDER LEAD SELECTOR END ===');
+        
+        
     }
 
     toggleLead(assetId) {
@@ -2611,23 +2611,10 @@ class EASMDashboard {
                 if (this.expandedCanvasNodes.has(node.id())) {
                     // Collapse
                     this.expandedCanvasNodes.delete(node.id());
-                    if (typeof this.showToast === 'function') {
-                        this.showToast('info', `Collapsed node connections`);
-                    }
                 } else {
                     // Expand
                     this.expandedCanvasNodes.add(node.id());
                     const outgoers = node.outgoers('node');
-                    let types = {};
-                    outgoers.forEach(n => {
-                        const t = n.data('type') || 'unknown';
-                        types[t] = (types[t] || 0) + 1;
-                    });
-                    const typesStr = Object.entries(types).map(([k,v]) => `${k}:${v}`).join(', ');
-                    
-                    if (typeof this.showToast === 'function') {
-                        this.showToast('info', `Expanded node connections. Outgoers: ${outgoers.length} (${typesStr})`);
-                    }
                 }
 
                 this.applyLeadFilter({ relayout: true });
@@ -6280,7 +6267,7 @@ class EASMDashboard {
     }
 
     showEmergencyLeadSelector() {
-        console.log('Showing emergency asset selector fallback...');
+        
         const leadList = document.getElementById('asset-list');
         if (leadList) {
             leadList.innerHTML = `
@@ -6298,7 +6285,7 @@ class EASMDashboard {
     }
 
     forcePopulateFromCytoscape() {
-        console.log('🚨 FORCE POPULATE: Attempting to extract assets directly from Cytoscape...');
+        
         
         if (!this.cy) {
             console.error('Cytoscape not initialized, cannot force populate');
@@ -6307,7 +6294,7 @@ class EASMDashboard {
         
         try {
             const allNodes = this.cy.nodes();
-            console.log(`Found ${allNodes.length} nodes in Cytoscape`);
+            
             
             if (allNodes.length === 0) {
                 console.error('No nodes in Cytoscape to populate from');
@@ -6319,7 +6306,7 @@ class EASMDashboard {
             allNodes.forEach((node, index) => {
                 try {
                     const nodeData = node.data();
-                    console.log(`Force processing node ${index + 1}: ${nodeData.id} (${nodeData.type})`);
+                    
                     
                     let displayName = nodeData.label || nodeData.name || nodeData.ip || nodeData.id;
                     if (nodeData.ip) {
@@ -6344,13 +6331,13 @@ class EASMDashboard {
                     };
                     
                     this.assets.push(asset);
-                    console.log(`✓ Force asset created: ${asset.display_name}`);
+                    
                 } catch (error) {
                     console.error(`Error force processing node ${index}:`, error);
                 }
             });
             
-            console.log(`🚨 FORCE POPULATE: Created ${this.assets.length} assets`);
+            
             this.renderLeadSelector();
             
         } catch (error) {

@@ -711,6 +711,45 @@ def stop_server() -> None:
     except Exception as e:
         print_error(f"Failed to stop server: {e}")
 
+@hound_app.command("restart", rich_help_panel="Server Operations")
+def restart_server(
+    db: Optional[str] = typer.Option(
+        None,
+        "--db",
+        "-d",
+        help="Specific database name in data/dbs/ to load (e.g., target.sqlite). If not provided, dynamic mode is enabled.",
+    ),
+    port: int = typer.Option(
+        8000,
+        "--port",
+        "-p",
+        help="Port to run the webserver on",
+    ),
+    host: str = typer.Option(
+        "0.0.0.0",
+        "--host",
+        "-h",
+        help="Host binding address",
+    ),
+) -> None:
+    """Restart the background webserver."""
+    from reconexec.web.process_manager import WebServerManager
+    import time
+    
+    manager = WebServerManager()
+    
+    if manager.is_running():
+        print_info("Stopping existing web server...")
+        manager.stop_server()
+        time.sleep(1)
+        print_success("Web server stopped.")
+    else:
+        print_warning("Web server was not running.")
+        
+    print_info("Starting web server...")
+    # Hide banner for start_server since we already print status
+    start_server(db=db, port=port, host=host)
+
 
 @hound_app.command("list-dbs", rich_help_panel="Database Management")
 def list_databases() -> None:

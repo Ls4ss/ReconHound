@@ -5065,7 +5065,7 @@ class EASMDashboard {
                 const historicalIps = Array.isArray(data.historical_ips) ? data.historical_ips : [];
                 if (historicalIps.length > 0) {
                     const histBadges = historicalIps.map(item => {
-                        const isMarked = this.targetManager.isTarget(item.ip);
+                        const isMarked = this.markedTargets.has(item.ip);
                         const targetColor = isMarked ? '#ef4444' : '#94a3b8';
                         const targetBg = isMarked ? 'rgba(239, 68, 68, 0.25)' : 'rgba(148, 163, 184, 0.15)';
                         return `

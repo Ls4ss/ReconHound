@@ -5661,7 +5661,6 @@ class EASMDashboard {
                         ${kevBadge}
                     </span>
                 </div>
-                ${threatActorsHtml}
                 <div class="property">
                     <span class="key">CVSS Score:</span>
                     <span class="value">${data.cvss_score || 'N/A'}</span>
@@ -5682,6 +5681,7 @@ class EASMDashboard {
                     <span class="key">Available PoCs:</span>
                     <span class="value">${data.exploit_count || 0}</span>
                 </div>
+                ${threatActorsHtml}
                 ${hostAndServiceHtml}
                 ${data.description ? `
                 <h4>Description</h4>

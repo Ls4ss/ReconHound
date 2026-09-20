@@ -89,6 +89,11 @@ class Settings(BaseSettings):
         validation_alias="SHODAN_API_KEY",
         description="Shodan.io API key",
     )
+    alienvault_api_key: Optional[str] = Field(
+        default=None,
+        validation_alias="ALIENVAULT_API_KEY",
+        description="AlienVault OTX API key",
+    )
     nvd_api_key: Optional[str] = Field(
         default=None,
         validation_alias="NVD_API_KEY",

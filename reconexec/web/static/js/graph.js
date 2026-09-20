@@ -1413,36 +1413,20 @@ class EASMDashboard {
         // Get selected asset IDs
         const selectedLeadIds = Array.from(this.selectedLeads);
         const visibleNodes = new Set();
-
-        // Rule: When NO assets are selected (default upon DB load), render NOTHING except target_root!
-        if (selectedLeadIds.length === 0) {
-            this.cy.nodes().hide();
-            this.cy.edges().hide();
+        
+        // Notify blank canvas on first load if no explicit leads are selected
+        if (selectedLeadIds.length === 0 && !this._hasNotifiedBlankCanvas) {
             const rootNode = this.cy.getElementById('target_root');
             if (rootNode.length > 0) {
-                rootNode.show();
-                // Always gently center the root node when it becomes the only survivor
-                this.cy.animate({
-                    center: { eles: rootNode },
-                    zoom: 1.2
-                }, { duration: 500 });
-                
-                if (!this._hasNotifiedBlankCanvas) {
-                    if (typeof this.showToast === 'function') {
-                        this.showToast('info', 'Interactive Canvas: Double-click the root node to expand connections, or use the Inventory sidebar.');
-                    }
-                    this._hasNotifiedBlankCanvas = true;
+                if (typeof this.showToast === 'function') {
+                    this.showToast('info', 'Interactive Canvas: Double-click the root node to expand connections, or use the Inventory sidebar.');
                 }
             } else {
-                if (!this._hasNotifiedBlankCanvas) {
-                    if (typeof this.showToast === 'function') {
-                        this.showToast('info', 'Empty Canvas: Select assets from the Inventory sidebar to begin mapping.');
-                    }
-                    this._hasNotifiedBlankCanvas = true;
+                if (typeof this.showToast === 'function') {
+                    this.showToast('info', 'Empty Canvas: Select assets from the Inventory sidebar to begin mapping.');
                 }
             }
-            this.visibleLeadNodes = new Set(['target_root']);
-            return;
+            this._hasNotifiedBlankCanvas = true;
         }
 
         // Show all nodes and edges for filtering pass

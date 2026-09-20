@@ -52,6 +52,7 @@ class AsyncHTTPClient:
                 timeout=httpx.Timeout(self.timeout, connect=10.0),
                 headers=self._headers,
                 follow_redirects=True,
+                verify=False,
                 limits=httpx.Limits(
                     max_connections=50,
                     max_keepalive_connections=20,

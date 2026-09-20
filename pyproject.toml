@@ -5,7 +5,7 @@ build-backend = "hatchling.build"
 [project]
 name = "reconexec"
 version = "3.0.0"
-description = "Modern Attack Surface Management & Threat Intelligence Engine"
+description = "ReconExec: The core CLI engine powering the ReconHound EASM platform."
 readme = "README.md"
 requires-python = ">=3.11"
 license = { text = "MIT" }

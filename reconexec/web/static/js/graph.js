@@ -108,7 +108,7 @@ class EASMDashboard {
                 return 180;
             }
             
-            const rows = 10;
+            const rows = Math.max(1, Math.ceil(Math.sqrt(children.length)));
             const rowHeights = new Array(rows).fill(0);
             children.forEach((c, idx) => {
                 const r = idx % rows;
@@ -127,12 +127,15 @@ class EASMDashboard {
             let maxChildren = 0;
             nodes.forEach(n => {
                 const cCount = childrenMap[n.id()] ? childrenMap[n.id()].length : 0;
-                maxChildren = Math.max(maxChildren, cCount);
+                const rows = Math.max(1, Math.ceil(Math.sqrt(cCount)));
+                const cols = Math.ceil(cCount / rows);
+                maxChildren = Math.max(maxChildren, cols);
             });
-            return Math.max(1, Math.ceil(maxChildren / 10));
+            return Math.max(1, maxChildren);
         };
         
-        const t1_cols = Math.max(1, Math.ceil(t1_domains.length / 10));
+        const t1_rows = Math.max(1, Math.ceil(Math.sqrt(t1_domains.length)));
+        const t1_cols = Math.max(1, Math.ceil(t1_domains.length / t1_rows));
         const t2_cols = getMaxCols(t1_domains);
         const t3_cols = getMaxCols(t2_subdomains);
         const t4_cols = getMaxCols(t3_ips);
@@ -144,10 +147,10 @@ class EASMDashboard {
             t4: 0,
             t5: 0
         };
-        X_SPACINGS.t2 = X_SPACINGS.t1 + (t1_cols * 350) + 150;
-        X_SPACINGS.t3 = X_SPACINGS.t2 + (t2_cols * 350) + 150;
-        X_SPACINGS.t4 = X_SPACINGS.t3 + (t3_cols * 350) + 150;
-        X_SPACINGS.t5 = X_SPACINGS.t4 + (t4_cols * 350) + 150;
+        X_SPACINGS.t2 = X_SPACINGS.t1 + (t1_cols * 220) + 150;
+        X_SPACINGS.t3 = X_SPACINGS.t2 + (t2_cols * 220) + 150;
+        X_SPACINGS.t4 = X_SPACINGS.t3 + (t3_cols * 220) + 150;
+        X_SPACINGS.t5 = X_SPACINGS.t4 + (t4_cols * 220) + 150;
 
         const getNextTierX = (currentTierX) => {
             if (currentTierX === X_SPACINGS.t1) return X_SPACINGS.t2;
@@ -172,7 +175,7 @@ class EASMDashboard {
                 return a.id().localeCompare(b.id());
             });
             
-            const rows = 10;
+            const rows = Math.max(1, Math.ceil(Math.sqrt(children.length)));
             const rowHeights = new Array(rows).fill(0);
             children.forEach((c, idx) => {
                 const r = idx % rows;
@@ -193,16 +196,18 @@ class EASMDashboard {
             
             const nextGlobalTierX = getNextTierX(tierX);
 
+            const X_SPACING = 200; // Tighter dynamic spacing
+
             children.forEach((c, idx) => {
                 let cCol = Math.floor(idx / rows);
                 const cRow = idx % rows;
                 
-                let x = tierX + xOffset + (cCol * 350);
+                let x = tierX + xOffset + (cCol * X_SPACING);
                 const y = rowStartYs[cRow];
                 
                 if (!positions[c.id()]) {
                     positions[c.id()] = { x, y };
-                    placeChildren(c.id(), childrenMap[c.id()], x, nextGlobalTierX, xOffset + (cCol * 350));
+                    placeChildren(c.id(), childrenMap[c.id()], x, nextGlobalTierX, xOffset + (cCol * X_SPACING));
                 }
             });
         };

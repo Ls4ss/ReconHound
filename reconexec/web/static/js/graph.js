@@ -1372,23 +1372,22 @@ class EASMDashboard {
     }
 
     async selectAllLeads() {
-        const ids = [];
-        this.assets.forEach(asset => {
-            if (!this.selectedLeads.has(asset.id)) {
-                this.selectedLeads.add(asset.id);
-                ids.push(asset.id);
+        this.cy.nodes().forEach(node => {
+            if (node.data('type') !== 'target' && node.data('is_root') !== true) {
+                this.expandedCanvasNodes.add(node.id());
             }
         });
-        await this.setTargetsBulk(ids);
-        this.renderLeadSelector(); // Re-render to update icons
+        if (typeof this.showToast === 'function') {
+            this.showToast('success', 'All assets expanded on canvas');
+        }
         this.applyLeadFilter({ relayout: true });
     }
 
     async deselectAllLeads() {
-        const ids = Array.from(this.selectedLeads);
-        this.selectedLeads.clear();
-        await this.removeTargetsBulk(ids);
-        this.renderLeadSelector();
+        this.expandedCanvasNodes.clear();
+        if (typeof this.showToast === 'function') {
+            this.showToast('info', 'Canvas collapsed to root targets');
+        }
         this.applyLeadFilter({ relayout: true });
     }
     filterExploreLeads(query) {

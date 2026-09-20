@@ -1,14 +1,14 @@
-<h1 align="center">DetecTI - Attack Surface Management</h1>
+<h1 align="center">ReconHound - Attack Surface Management</h1>
 
 <div align="center">
 
-<img width="90" src="https://avatars.githubusercontent.com/u/129181562?s=200&v=4" alt="DetecTI Security Logo">
+<img width="90" src="https://avatars.githubusercontent.com/u/129181562?s=200&v=4" alt="ReconHound Logo">
 
-### Modern External Attack Surface Mapping & Threat Intelligence Engine
-**Asynchronous • Modular • High-Concurrency • EPSS + CISA KEV Prioritization • Masscan & Nuclei Active Scanning • Shodan • Censys • crt.sh • Reverse WHOIS**
+### Modern External Attack Surface Mapping & Threat Intelligence Platform
+**Asynchronous • Modular • High-Concurrency • EPSS + CISA KEV Prioritization • Masscan & Nuclei Active Scanning • Shodan • Censys • crt.sh • OTX**
 
 [![Website: detecti.com.br](https://img.shields.io/badge/Official_Website-detecti.com.br-00d4ff.svg)](https://detecti.com.br)
-[![Documentation: Official Docs](https://img.shields.io/badge/Documentation-Official_Docs-8A2BE2.svg)](https://detecti.com.br/docs/detecti-cli/en.html)
+[![Documentation: Official Docs](https://img.shields.io/badge/Documentation-Official_Docs-8A2BE2.svg)](https://detecti.com.br/docs/reconhound/en.html)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
@@ -18,9 +18,13 @@
 
 ## 📚 Official Documentation
 
-> **For complete guides, installation, CLI usage, architecture, and threat intelligence scoring, please visit the [DetecTI-CLI Official Documentation](https://detecti.com.br/docs/detecti-cli/en.html).**
+> **For complete guides, installation, CLI usage, architecture, and threat intelligence scoring, please visit the [ReconHound Official Documentation](https://detecti.com.br/docs/reconhound/en.html).**
 
-**DetecTI-CLI** is a high-performance Python engine designed for **External Attack Surface Management (EASM)**, **Active & Passive Asset Reconnaissance**, and **Vulnerability Weaponization Intelligence**. It maps exposed internet infrastructure, performs targeted vulnerability validation, and enriches findings with real-world exploitation risk data (FIRST EPSS + CISA KEV).
+**ReconHound** is a high-performance External Attack Surface Management (EASM) and Threat Intelligence ecosystem. It maps exposed internet infrastructure, performs targeted vulnerability validation, and enriches findings with real-world exploitation risk data (FIRST EPSS + CISA KEV + Threat Actor Attribution).
+
+The platform consists of two main components:
+1. **ReconExec (`reconx`)**: The high-speed, asynchronous command-line execution engine.
+2. **ReconHound Dashboard**: The interactive, Cytoscape-powered graphical UI for attack surface visualization.
 
 ---
 
@@ -28,50 +32,50 @@
 
 ```bash
 # 1. Download and install from PyPI
-pip install detecti-cli
+pip install reconexec
 
 # 2. Run the automated setup routine
-detecti-cli config-check --setup
+reconx config-check --setup
 
 # 3. Explore commands
-detecti-cli --help
+reconx --help
 ```
 
-*For prerequisites like Masscan and Nuclei, and advanced API keys configuration, check the [Installation Guide](https://detecti.com.br/docs/detecti-cli/en.html#setup-install).*
+*For prerequisites like Masscan and Nuclei, and advanced API keys configuration, check the [Installation Guide](https://detecti.com.br/docs/reconhound/en.html#setup-install).*
 
 ---
 
-## 💻 CLI Usage Examples
+## 💻 ReconExec (CLI) Usage Examples
 
 ```bash
 # Recon a single IP or CIDR Subnet
-detecti-cli recon 142.250.191.68
-detecti-cli recon 142.250.191.0/24
+reconx recon 142.250.191.68
+reconx recon 142.250.191.0/24
 
 # Recon a Domain (Subdomains + Reverse WHOIS + Infrastructure)
-detecti-cli recon spacex.com
+reconx recon spacex.com
 
 # Recon a Batch Target List from File
-detecti-cli recon targets.txt
+reconx recon targets.txt
 
 # Fetch Threat Intelligence for a specific CVE
-detecti-cli intel CVE-2021-44228
+reconx intel CVE-2021-44228
 
-# Start the Interactive EASM Web Dashboard (DetecTIHound)
-detecti-cli hound start
+# Start the Interactive EASM Web Dashboard (ReconHound)
+reconx hound start
 ```
 
-*For advanced queries, vulnerability filtering, and reporting, see the [CLI Usage Guide](https://detecti.com.br/docs/detecti-cli/en.html#cli-quickstart).*
+*For advanced queries, vulnerability filtering, and reporting, see the [CLI Usage Guide](https://detecti.com.br/docs/reconhound/en.html#cli-quickstart).*
 
 ---
 
 ## 🏗️ Architecture
 
 ```
-DetecTI-CLI/
+ReconHound/
 ├── pyproject.toml           # Modern Packaging & Dependency Definition
 ├── README.md                # Project Overview
-├── detecti/                 # Main Application Package
+├── reconexec/               # Main CLI Engine Package (reconx)
 │   ├── cli.py               # Typer & Rich Command Line Interface entrypoint
 │   ├── config.py            # Pydantic Settings, .env & Environment Loader
 │   ├── core/                    
@@ -88,12 +92,13 @@ DetecTI-CLI/
 │   │   ├── reverse_whois.py # Reverse WHOIS (Hybrid WhoisFreaks + Free Fallback)
 │   │   ├── shodan.py        # Shodan Host, DNS, Range & Query Scanner
 │   │   ├── censys.py        # Censys Platform API v3 Asset & Host Intelligence
+│   │   ├── alienvault.py    # OTX Threat Attribution & Passive DNS
 │   │   ├── masscan.py       # High-Speed Active Port Scanner
 │   │   ├── nuclei.py        # Asynchronous Nuclei Vulnerability Scanner Engine
 │   │   ├── nvd.py           # NVD 2.0 (CVSS/CWE) + EPSS Probability + CISA KEV
 │   │   └── exploitdb.py     # ExploitDB (searchsploit) & GitHub PoC Collector
 │   ├── reporters/           # Report Generation Subsystem (CSV, HTML, JSON, Markdown)
-│   ├── web/                 # Interactive EASM Dashboard Subsystem
+│   ├── web/                 # Interactive EASM Dashboard Subsystem (ReconHound)
 │   │   ├── api/             
 │   │   │   ├── auth.py      # JWT Authentication & Authorization
 │   │   │   ├── graph_builder.py # Cytoscape Graph Topology Builder
@@ -115,6 +120,6 @@ DetecTI-CLI/
   <sub><b>Lucas S. (Ls4ss)</b></sub>
 </a>
 <br />
-<sub>Developed for <b><a href="https://detecti.com.br" target="_blank">DetecTI Security</a></b></sub>
+<sub>Developed by <b><a href="https://detecti.com.br" target="_blank">DetecTI Security</a></b></sub>
 
 Feel free to open Issues or submit Pull Requests to contribute!

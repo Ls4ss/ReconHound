@@ -133,10 +133,16 @@
                             <i data-lucide="chevron-down" class="ui-icon accordion-icon"></i>
                         </summary>
                         <div class="accordion-body" style="padding: 0;">
-                            <div class="db-dropdown-header" style="background: rgba(0,0,0,0.2); padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.05); display: flex; justify-content: space-between;">
+                            <div class="db-dropdown-header" style="background: rgba(0,0,0,0.2); padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.05); display: flex; justify-content: space-between; align-items: center;">
                                 <span style="font-size: 0.8rem; color: #aaa;">Attack Surface Databases</span>
-                                <span class="db-count-badge" id="db-count-badge" style="background: rgba(0, 240, 255, 0.2); color: #00f0ff; padding: 2px 6px; border-radius: 10px; font-size: 0.7rem;">0</span>
+                                <div style="display: flex; gap: 6px; align-items: center;">
+                                    <button id="btn-import-db" class="action-btn" title="Import JSON Database" style="padding: 2px 6px; font-size: 0.7rem; background: transparent; border: 1px solid rgba(0,240,255,0.3); color: #00f0ff;">
+                                        <i data-lucide="upload" style="width: 10px; height: 10px; margin-right: 4px;"></i>Import
+                                    </button>
+                                    <span class="db-count-badge" id="db-count-badge" style="background: rgba(0, 240, 255, 0.2); color: #00f0ff; padding: 2px 6px; border-radius: 10px; font-size: 0.7rem;">0</span>
+                                </div>
                             </div>
+                            <input type="file" id="import-json-input" accept=".json" style="display: none;">
                             <div class="db-dropdown-list" id="db-dropdown-list" style="display: flex; flex-direction: column; gap: 4px; max-height: 250px; overflow-y: auto;">
                                 <!-- Dynamic DB List Items populated via JS -->
                             </div>
@@ -1003,6 +1009,62 @@
                     document.body.style.cursor = 'default';
                 }
             });
+
+            // --- IMPORT JSON DB LOGIC ---
+            const btnImportDb = document.getElementById('btn-import-db');
+            const fileInputImportDb = document.getElementById('import-json-input');
+            
+            if (btnImportDb && fileInputImportDb) {
+                btnImportDb.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    fileInputImportDb.click();
+                });
+                
+                fileInputImportDb.addEventListener('change', async (e) => {
+                    const file = e.target.files[0];
+                    if (!file) return;
+                    
+                    const formData = new FormData();
+                    formData.append('file', file);
+                    
+                    try {
+                        // Change button icon to loading
+                        const originalHtml = btnImportDb.innerHTML;
+                        btnImportDb.innerHTML = '<i data-lucide="loader" class="ui-icon lucide-spin" style="width:10px; height:10px; margin-right:4px;"></i>Uploading...';
+                        
+                        const response = await fetch('/api/v1/import', {
+                            method: 'POST',
+                            body: formData
+                        });
+                        
+                        const result = await response.json();
+                        
+                        if (response.ok && result.success) {
+                            alert(`Import Successful! ${result.message}\nFound: ${result.hosts_count} hosts, ${result.findings_count} findings.\nThe page will now reload to load the new database.`);
+                            
+                            // Ask backend to switch to the new DB (if applicable) or just reload
+                            try {
+                                await fetch('/api/v1/select_db', {
+                                    method: 'POST',
+                                    headers: {'Content-Type': 'application/json'},
+                                    body: JSON.stringify({ db_path: `data/dbs/${result.db_name}` })
+                                });
+                            } catch (e) {}
+                            
+                            window.location.reload();
+                        } else {
+                            throw new Error(result.detail || result.message || 'Failed to import JSON');
+                        }
+                    } catch (err) {
+                        alert(`Import Error: ${err.message}`);
+                    } finally {
+                        fileInputImportDb.value = ''; // Reset input
+                        btnImportDb.innerHTML = '<i data-lucide="upload" style="width: 10px; height: 10px; margin-right: 4px;"></i>Import';
+                        if(window.lucide) window.lucide.createIcons();
+                    }
+                });
+            }
         });
     </script>
 

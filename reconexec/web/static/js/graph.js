@@ -4385,27 +4385,6 @@ Are you sure you want to proceed?`)) {
         }
     }
 
-    toggleClusterExpansion(clusterId) {
-        let isExpanding = false;
-        let parentId = null;
-
-        const clusterNode = this.cy.getElementById(clusterId);
-        if (clusterNode.length > 0) {
-            parentId = clusterNode.data('parent_ip') || clusterNode.data('parent_srv');
-        }
-
-            isExpanding = false;
-        } else {
-            isExpanding = true;
-        }
-        this.closeInspector();
-        
-        if (isExpanding && parentId) {
-            this.applyLeadFilter({ expandedClusterId: clusterId, parentId: parentId });
-        } else {
-            this.applyLeadFilter({ relayout: false });
-        }
-    }
 
 
     showCoreContextMenu(x, y) {

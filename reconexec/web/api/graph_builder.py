@@ -60,30 +60,18 @@ class GraphBuilder:
                 root_target_node=root_target_node
             )
 
-            # Determine which IPs to spawn: only explicit targets or if in discovery mode
-            # We NO LONGER spawn IPs just because a parent FQDN is marked.
-            is_discovery = (target_type == "discovery" or not explicit_targets)
-            visible_ip_nodes = [n for n in ip_nodes if is_discovery or n["data"]["ip"].lower() in explicit_targets or str(n["data"]["id"]).replace("ip_", "").lower() in explicit_targets]
-            
-            connected_ip_ids = {n["data"]["id"] for n in visible_ip_nodes}
-            nodes.extend(visible_ip_nodes)
+            nodes.extend(ip_nodes)
             edges.extend(ip_edges)
             
-            # 4. Build service nodes connected to in-scope IPs
+            # 4. Build service nodes
             service_nodes, service_edges = self._build_service_nodes(conn)
-            visible_service_nodes = [n for n in service_nodes if any(e["data"]["target"] == n["data"]["id"] and e["data"]["source"] in connected_ip_ids for e in service_edges)]
-            visible_service_edges = [e for e in service_edges if e["data"]["source"] in connected_ip_ids]
-            nodes.extend(visible_service_nodes)
-            edges.extend(visible_service_edges)
+            nodes.extend(service_nodes)
+            edges.extend(service_edges)
             
-            # 5. Build vulnerability nodes connected to in-scope services/IPs
+            # 5. Build vulnerability nodes
             vuln_nodes, vuln_edges = self._build_vulnerability_nodes(conn)
-            visible_srv_and_ip_ids = connected_ip_ids.union({n["data"]["id"] for n in visible_service_nodes})
-            visible_vuln_edges = [e for e in vuln_edges if e["data"]["source"] in visible_srv_and_ip_ids]
-            visible_vuln_node_ids = {e["data"]["target"] for e in visible_vuln_edges}
-            visible_vuln_nodes = [n for n in vuln_nodes if n["data"]["id"] in visible_vuln_node_ids]
-            nodes.extend(visible_vuln_nodes)
-            edges.extend(visible_vuln_edges)
+            nodes.extend(vuln_nodes)
+            edges.extend(vuln_edges)
         
         # --- EMBED PASSIVE DATA FOR FQDN INSPECTOR ---
         # To support the inspector showing data without spawning the nodes visually:

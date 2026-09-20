@@ -96,6 +96,24 @@ hound_app = typer.Typer(
     add_completion=False,
     rich_markup_mode="rich",
 )
+
+HOUND_BANNER = """[cyan]⠀⠀⠀⠀⡀⠀⠀⠀⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⣷⠀⠀⢰⣷⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⣿⣧⠀⣼⣿⣇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⢸⣿⣿⡆⠘⣿⣿⣆⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⣸⣿⣿⣿⡄⠙⠛⠋⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⣿⣿⣿⣿⣷⡀⣿⣿⣿⣿⠿⠿⢿⣄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀[/cyan][bold cyan]   RECONHOUND DAEMON[/bold cyan]
+[cyan]⠀⠀⢰⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣶⣄⡀⢻⣿⣿⣿⠟⢿⣿⠛⣦⡀⢻⣿⡇⠀[/cyan][dim]   ==================================[/dim]
+[cyan]⠀⠀⢸⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⠛⣶⡞⠻⣶⠛⢻⡄⠹⠀⠀[/cyan][bold green]   [✓][/bold green] Attack Surface Dashboard UI
+[cyan]⠀⠀⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣷⣿⣷⣾⣿⣶⣿⣿⠆⠀⠀[/cyan][bold green]   [✓][/bold green] Threat Tracking Engine
+[cyan]⠀⢠⣿⣿⣿⡄⢹⣿⣿⣿⣿⣿⣿⣿⣿⣿⣏⣉⣉⣉⣉⣉⣉⣉⣉⣉⡉⠀⠀⠀[/cyan]
+[cyan]⠀⢸⣿⣿⣿⣷⡀⠻⠿⠿⠿⠿⠿⠿⠿⠿⠿⠿⠿⠿⠿⠿⠿⠿⠿⠿⠃⠀⠀⠀[/cyan]
+[cyan]⠀⣿⣿⣿⣿⣿⣷⣶⣶⣶⣶⣶⡄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀[/cyan]
+[cyan]⠀⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀[/cyan]
+[cyan]⠀⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀[/cyan]
+[cyan]⠀⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀[/cyan]"""
+
+
 app.add_typer(hound_app, name="hound", rich_help_panel="Interactive Dashboard")
 # Create config subcommand group (System & Configuration)
 config_app = typer.Typer(
@@ -536,13 +554,13 @@ def start_server(
         None,
         "--db",
         "-d",
-        help="Target SQLite database file inside ./data/dbs/ or full path (optional, can be selected via UI)",
+        help="Specific database name in data/dbs/ to load (e.g., target.sqlite). If not provided, dynamic mode is enabled.",
     ),
     port: int = typer.Option(
         8000,
         "--port",
         "-p",
-        help="Port for the HTTP server",
+        help="Port to run the webserver on",
     ),
     host: str = typer.Option(
         "0.0.0.0",
@@ -552,7 +570,9 @@ def start_server(
     ),
 ) -> None:
     """Start the non-blocking EASM graph webserver in the background."""
-    
+    from reconexec.utils.logger import console
+    console.print(HOUND_BANNER)
+    console.print()
     try:
         import fastapi
         import uvicorn
@@ -608,7 +628,9 @@ def start_server(
 @hound_app.command("status", rich_help_panel="Server Operations")
 def server_status() -> None:
     """Check the status of the background webserver."""
-    
+    from reconexec.utils.logger import console
+    console.print(HOUND_BANNER)
+    console.print()
     try:
         import psutil
     except ImportError:
@@ -661,7 +683,9 @@ def server_status() -> None:
 @hound_app.command("stop", rich_help_panel="Server Operations")
 def stop_server() -> None:
     """Stop the background webserver gracefully."""
-    
+    from reconexec.utils.logger import console
+    console.print(HOUND_BANNER)
+    console.print()
     try:
         import psutil
     except ImportError:

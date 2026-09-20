@@ -5633,7 +5633,7 @@ class EASMDashboard {
                 `).join('');
 
                 threatActorsHtml = `
-                    <div class="risk-accordion-group" style="margin-top: 15px; border-color: rgba(220, 38, 38, 0.2);">
+                    <div class="risk-accordion-group" style="margin: 10px 0; border-color: rgba(220, 38, 38, 0.2);">
                         <div class="risk-accordion-header" onclick="window.dashboard.toggleRiskAccordion(this)" style="background: rgba(220, 38, 38, 0.05);">
                             <span class="risk-accordion-title" style="color: #f87171;">
                                 <i data-lucide="shield-alert" style="color: #f87171;"></i> Threat Actors & Malware (${uniqueActors.length})
@@ -5661,6 +5661,7 @@ class EASMDashboard {
                         ${kevBadge}
                     </span>
                 </div>
+                ${threatActorsHtml}
                 <div class="property">
                     <span class="key">CVSS Score:</span>
                     <span class="value">${data.cvss_score || 'N/A'}</span>
@@ -5686,7 +5687,6 @@ class EASMDashboard {
                     <span class="value">${data.exploit_count || 0}</span>
                 </div>
                 ${hostAndServiceHtml}
-                ${threatActorsHtml}
                 ${data.description ? `
                 <h4>Description</h4>
                 <p style="font-size: 0.85rem; line-height: 1.4; color: #ccc; background: #181818; padding: 8px; border-radius: 4px; border: 1px solid #2a2a2a;">${data.description}</p>

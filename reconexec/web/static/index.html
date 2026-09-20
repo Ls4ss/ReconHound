@@ -341,17 +341,23 @@
             </div>
             
             <div class="inventory-header" style="display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; border-bottom: 1px solid rgba(255, 255, 255, 0.08); background: var(--bg-header);">
-                <h3 style="margin: 0; display: flex; align-items: center; gap: 8px; font-size: 1rem;"><i data-lucide="table" class="ui-icon" style="color: var(--cyan-accent);"></i> Asset Inventory Details</h3>
-                <button class="close-btn" id="close-inventory-drawer" aria-label="Close Inventory" style="background: transparent; border: none; cursor: pointer; color: var(--text-muted);"><i data-lucide="x" class="ui-icon"></i></button>
+                <div style="display: flex; align-items: center; gap: 15px;">
+                    <h3 style="margin: 0; display: flex; align-items: center; gap: 8px; font-size: 1rem;"><i data-lucide="table" class="ui-icon" style="color: var(--cyan-accent);"></i> Asset Inventory Details</h3>
+                    <div style="position: relative; display: flex; align-items: center;">
+                        <i data-lucide="search" style="position: absolute; left: 8px; width: 14px; height: 14px; color: var(--text-muted);"></i>
+                        <input type="text" id="inventory-search" placeholder="Search assets..." style="background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.1); color: #fff; padding: 6px 12px 6px 28px; border-radius: 4px; font-size: 0.8rem; width: 250px; outline: none; transition: border-color 0.2s;" onfocus="this.style.borderColor='var(--cyan-accent)'" onblur="this.style.borderColor='rgba(255,255,255,0.1)'" onkeyup="window.renderInventoryTable()">
+                    </div>
+                </div>
+                <button class="close-btn" id="close-inventory-drawer" aria-label="Close Inventory" style="background: transparent; border: none; cursor: pointer; color: var(--text-muted); transition: color 0.2s;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='var(--text-muted)'"><i data-lucide="x" class="ui-icon"></i></button>
             </div>
             <div class="inventory-content" style="flex: 1; padding: 0; overflow: auto; background: var(--bg-secondary);">
                 <table style="width: 100%; border-collapse: collapse; text-align: left; color: var(--text-primary); font-size: 0.85rem; font-family: var(--font-mono);">
                     <thead style="position: sticky; top: 0; z-index: 10;">
                         <tr style="background: rgba(30, 30, 45, 0.95); backdrop-filter: blur(5px); color: var(--text-muted); border-bottom: 1px solid rgba(255,255,255,0.1);">
-                            <th style="padding: 12px 20px; font-weight: 600; text-transform: uppercase; font-size: 0.75rem;">Asset</th>
-                            <th style="padding: 12px; font-weight: 600; text-transform: uppercase; font-size: 0.75rem;">Type</th>
-                            <th style="padding: 12px; font-weight: 600; text-transform: uppercase; font-size: 0.75rem;">Ports / Services</th>
-                            <th style="padding: 12px; font-weight: 600; text-transform: uppercase; font-size: 0.75rem;">Vulnerabilities (CVEs)</th>
+                            <th onclick="window.sortInventory('value')" style="padding: 12px 20px; font-weight: 600; text-transform: uppercase; font-size: 0.75rem; cursor: pointer; user-select: none; transition: color 0.2s;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color=''">Asset <i data-lucide="arrow-up-down" style="width:12px; height:12px; display:inline-block; margin-left:4px; opacity:0.5; vertical-align: middle;"></i></th>
+                            <th onclick="window.sortInventory('type')" style="padding: 12px; font-weight: 600; text-transform: uppercase; font-size: 0.75rem; cursor: pointer; user-select: none; transition: color 0.2s;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color=''">Type <i data-lucide="arrow-up-down" style="width:12px; height:12px; display:inline-block; margin-left:4px; opacity:0.5; vertical-align: middle;"></i></th>
+                            <th onclick="window.sortInventory('services')" style="padding: 12px; font-weight: 600; text-transform: uppercase; font-size: 0.75rem; cursor: pointer; user-select: none; transition: color 0.2s;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color=''">Ports / Services <i data-lucide="arrow-up-down" style="width:12px; height:12px; display:inline-block; margin-left:4px; opacity:0.5; vertical-align: middle;"></i></th>
+                            <th onclick="window.sortInventory('vulnerabilities')" style="padding: 12px; font-weight: 600; text-transform: uppercase; font-size: 0.75rem; cursor: pointer; user-select: none; transition: color 0.2s;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color=''">Vulnerabilities (CVEs) <i data-lucide="arrow-up-down" style="width:12px; height:12px; display:inline-block; margin-left:4px; opacity:0.5; vertical-align: middle;"></i></th>
                             <th style="padding: 12px; font-weight: 600; text-transform: uppercase; font-size: 0.75rem;">Actions</th>
                         </tr>
                     </thead>
@@ -877,81 +883,129 @@
                 }
             };
 
-            window.populateInventoryTable = async function() {
+            window.inventoryData = [];
+            window.inventorySortKey = 'value';
+            window.inventorySortDir = 1;
+
+            window.sortInventory = function(key) {
+                if (window.inventorySortKey === key) {
+                    window.inventorySortDir *= -1;
+                } else {
+                    window.inventorySortKey = key;
+                    window.inventorySortDir = 1;
+                }
+                window.renderInventoryTable();
+            };
+
+            window.renderInventoryTable = function() {
                 const tbody = document.querySelector('.inventory-content tbody');
                 if (!tbody) return;
                 
-                tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding: 30px; color: var(--text-muted);"><i data-lucide="loader" style="animation: spin 1s linear infinite; width: 24px; height: 24px; color: var(--cyan-accent);"></i><br><br>Loading complete inventory...</td></tr>`;
-                if (window.lucide) window.lucide.createIcons();
+                let searchTerm = '';
+                const searchInput = document.getElementById('inventory-search');
+                if (searchInput) searchTerm = searchInput.value.toLowerCase();
 
-                try {
-                    let assets = [];
-                    if (window.api && window.api.getAssets) {
-                        assets = await window.api.getAssets();
-                    }
-
-                    let html = '';
-                        // NO NEED TO RENDER ROWS IF EMPTY -> DONE IN THE IF
-                    if (!assets || assets.length === 0) {
-                        html = `<tr><td colspan="5" style="text-align:center; padding: 20px; color: var(--text-muted);">No assets found in the database.</td></tr>`;
-                    } else {
-                        assets.forEach(asset => {
-                            const label = asset.value;
-                            const type = asset.type;
-                            const svcsCount = asset.services || 0;
-                            const vulnsCount = asset.vulnerabilities || 0;
-                            const portsList = asset.ports_list || '';
-                            
-                            let svcsText = svcsCount > 0 ? `${svcsCount} Service(s)` : 'N/A';
-                            if (portsList) {
-                                let parts = portsList.split(',');
-                                if (parts.length > 5) {
-                                    svcsText = parts.slice(0, 5).join(', ') + ` +${parts.length - 5} more`;
-                                } else {
-                                    svcsText = portsList.replace(/,/g, ', ');
-                                }
-                            }
-                            
-                            let vulnBadge = vulnsCount > 0 ? `<span style="color: #ef4444; font-weight: bold;">${vulnsCount} Findings</span>` : `<span style="color: var(--text-muted);">0 Findings</span>`;
-                            if (asset.has_cisa_kev) {
-                                vulnBadge += ` <span style="background: rgba(239, 68, 68, 0.2); border: 1px solid #ef4444; color: #ff4757; padding: 1px 6px; border-radius: 4px; font-size: 0.65rem; margin-left: 5px;">KEV</span>`;
-                            }
-                            
-                            const isTarget = window.dashboard && window.dashboard.markedTargets && window.dashboard.markedTargets.has(label);
-                            const targetIcon = isTarget ? 'check-circle' : 'crosshair';
-                            const targetColor = isTarget ? '#10b981' : '#64748b';
-                            const targetTitle = isTarget ? 'Remove from Targets' : 'Add to Targets';
-                            
-                            let targetBadge = `
-                                <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-                                    <button onclick="window.toggleInventoryTarget('${label}', this)" class="inventory-target-btn" title="${targetTitle}" style="background: transparent; border: none; cursor: pointer; display: flex; align-items: center; justify-content: flex-start; color: ${targetColor}; transition: color 0.2s;">
-                                        <i data-lucide="${targetIcon}" style="width: 18px; height: 18px;"></i>
-                                    </button>
-                                    <button onclick="window.promptDeleteAsset('${type}', '${label}')" class="inventory-delete-btn" title="Delete Asset" style="background: transparent; border: none; cursor: pointer; display: flex; align-items: center; justify-content: flex-start; color: #ef4444; transition: color 0.2s;">
-                                        <i data-lucide="trash-2" style="width: 18px; height: 18px;"></i>
-                                    </button>
-                                </div>
-                            `;
-
-                            let nameColor = type === 'ip' ? 'var(--purple-light)' : (type === 'domain' ? 'var(--cyan-accent)' : '#4ecdc4');
-                            
-                            html += `
-                                <tr style="border-bottom: 1px solid rgba(255,255,255,0.03); transition: background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.02)'" onmouseout="this.style.background='transparent'">
-                                    <td style="padding: 12px 20px; color: ${nameColor};">${label}</td>
-                                    <td style="padding: 12px; text-transform: capitalize;">${type}</td>
-                                    <td style="padding: 12px; color: var(--text-muted);">${svcsText}</td>
-                                    <td style="padding: 12px;">${vulnBadge}</td>
-                                    <td style="padding: 12px;">${targetBadge}</td>
-                                </tr>
-                            `;
-                        });
-                    }
-                    tbody.innerHTML = html;
-                    if (window.lucide) window.lucide.createIcons();
-                } catch (e) {
-                    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding: 20px; color: #ef4444;">Failed to load inventory data.</td></tr>`;
-                    console.error('Failed to load inventory:', e);
+                let assets = [...window.inventoryData];
+                
+                if (searchTerm) {
+                    assets = assets.filter(asset => 
+                        (asset.value && asset.value.toLowerCase().includes(searchTerm)) ||
+                        (asset.type && asset.type.toLowerCase().includes(searchTerm)) ||
+                        (asset.ports_list && asset.ports_list.toLowerCase().includes(searchTerm))
+                    );
                 }
+
+                assets.sort((a, b) => {
+                    let valA = a[window.inventorySortKey];
+                    let valB = b[window.inventorySortKey];
+                    if (valA === undefined || valA === null) valA = '';
+                    if (valB === undefined || valB === null) valB = '';
+                    if (typeof valA === 'string') valA = valA.toLowerCase();
+                    if (typeof valB === 'string') valB = valB.toLowerCase();
+                    
+                    if (valA < valB) return -1 * window.inventorySortDir;
+                    if (valA > valB) return 1 * window.inventorySortDir;
+                    return 0;
+                });
+
+                let html = '';
+                if (!assets || assets.length === 0) {
+                    html = `<tr><td colspan="5" style="text-align:center; padding: 20px; color: var(--text-muted);">No assets found.</td></tr>`;
+                } else {
+                    assets.forEach(asset => {
+                        const label = asset.value;
+                        const type = asset.type;
+                        const svcsCount = asset.services || 0;
+                        const vulnsCount = asset.vulnerabilities || 0;
+                        const portsList = asset.ports_list || '';
+                        
+                        let svcsText = svcsCount > 0 ? `${svcsCount} Service(s)` : 'N/A';
+                        if (portsList) {
+                            let parts = portsList.split(',');
+                            if (parts.length > 5) {
+                                svcsText = parts.slice(0, 5).join(', ') + ` +${parts.length - 5} more`;
+                            } else {
+                                svcsText = portsList.replace(/,/g, ', ');
+                            }
+                        }
+                        
+                        let vulnBadge = vulnsCount > 0 ? `<span style="color: #ef4444; font-weight: bold;">${vulnsCount} Findings</span>` : `<span style="color: var(--text-muted);">0 Findings</span>`;
+                        if (asset.has_cisa_kev) {
+                            vulnBadge += ` <span style="background: rgba(239, 68, 68, 0.2); border: 1px solid #ef4444; color: #ff4757; padding: 1px 6px; border-radius: 4px; font-size: 0.65rem; margin-left: 5px;">KEV</span>`;
+                        }
+                        
+                        const isTarget = window.dashboard && window.dashboard.markedTargets && window.dashboard.markedTargets.has(label);
+                        const targetIcon = isTarget ? 'check-circle' : 'crosshair';
+                        const targetColor = isTarget ? '#10b981' : '#64748b';
+                        const targetTitle = isTarget ? 'Remove from Targets' : 'Add to Targets';
+                        
+                        let targetBadge = `
+                            <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                                <button onclick="window.toggleInventoryTarget('${label}', this)" class="inventory-target-btn" title="${targetTitle}" style="background: transparent; border: none; cursor: pointer; display: flex; align-items: center; justify-content: flex-start; color: ${targetColor}; transition: color 0.2s;">
+                                    <i data-lucide="${targetIcon}" style="width: 18px; height: 18px;"></i>
+                                </button>
+                                <button onclick="window.promptDeleteAsset('${type}', '${label}')" class="inventory-delete-btn" title="Delete Asset" style="background: transparent; border: none; cursor: pointer; display: flex; align-items: center; justify-content: flex-start; color: #ef4444; transition: color 0.2s;">
+                                    <i data-lucide="trash-2" style="width: 18px; height: 18px;"></i>
+                                </button>
+                            </div>
+                        `;
+
+                        let nameColor = type === 'ip' ? 'var(--purple-light)' : (type === 'domain' ? 'var(--cyan-accent)' : '#4ecdc4');
+                        
+                        html += `
+                            <tr style="border-bottom: 1px solid rgba(255,255,255,0.03); transition: background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.02)'" onmouseout="this.style.background='transparent'">
+                                <td style="padding: 12px 20px; color: ${nameColor};">${label}</td>
+                                <td style="padding: 12px; text-transform: capitalize;">${type}</td>
+                                <td style="padding: 12px; color: var(--text-muted);">${svcsText}</td>
+                                <td style="padding: 12px;">${vulnBadge}</td>
+                                <td style="padding: 12px;">${targetBadge}</td>
+                            </tr>
+                        `;
+                    });
+                }
+                tbody.innerHTML = html;
+                if (window.lucide) window.lucide.createIcons();
+            };
+
+            window.populateInventoryTable = async function(forceRefresh = true) {
+                const tbody = document.querySelector('.inventory-content tbody');
+                if (!tbody) return;
+                
+                if (forceRefresh || window.inventoryData.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding: 30px; color: var(--text-muted);"><i data-lucide="loader" style="animation: spin 1s linear infinite; width: 24px; height: 24px; color: var(--cyan-accent);"></i><br><br>Loading complete inventory...</td></tr>`;
+                    if (window.lucide) window.lucide.createIcons();
+
+                    try {
+                        if (window.api && window.api.getAssets) {
+                            window.inventoryData = await window.api.getAssets();
+                        }
+                    } catch (e) {
+                        tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding: 20px; color: #ef4444;">Failed to load inventory data.</td></tr>`;
+                        console.error('Failed to load inventory:', e);
+                        return;
+                    }
+                }
+                window.renderInventoryTable();
             };
 
             function toggleInventory() {

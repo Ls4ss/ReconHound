@@ -1490,29 +1490,43 @@ class EASMDashboard {
             }
         };
 
-        const addDescendants = (nodeId, visited = new Set()) => {
-            if (visited.has(nodeId)) return;
-            visited.add(nodeId);
-            
-            const node = this.cy.getElementById(nodeId);
-            if (!node.length) return;
-            
-            node.outgoers('node').forEach(childNode => {
-                const childId = childNode.id();
-                visibleNodes.add(childId);
-                addDescendants(childId, visited);
-            });
-        };
+        // Recursive addDescendants REMOVED to enforce BloodHound-style interactive hop-by-hop expansion.
 
         selectedLeadIds.forEach(assetId => {
             addAncestors(assetId);
-            addDescendants(assetId);
+            // Selected leads themselves are visible
+            visibleNodes.add(assetId);
         });
 
         // Always ensure target_root is visible if any asset is selected
         const rootNode = this.cy.getElementById('target_root');
         if (rootNode.length > 0) {
             visibleNodes.add('target_root');
+        }
+
+        // Expansion Pass: Iteratively show 1-hop descendants of explicitly expanded nodes
+        this.expandedCanvasNodes = this.expandedCanvasNodes || new Set();
+        const processExpansions = () => {
+            let addedNew = false;
+            this.expandedCanvasNodes.forEach(nodeId => {
+                if (visibleNodes.has(nodeId)) {
+                    const node = this.cy.getElementById(nodeId);
+                    if (node.length) {
+                        node.outgoers('node').forEach(child => {
+                            if (!visibleNodes.has(child.id())) {
+                                visibleNodes.add(child.id());
+                                addedNew = true;
+                            }
+                        });
+                    }
+                }
+            });
+            return addedNew;
+        };
+        
+        let expanding = true;
+        while(expanding) {
+            expanding = processExpansions();
         }
 
         // Third pass: Smart Clustering / Collapsing for high fan-out nodes (>15 services or vulns)
@@ -2607,37 +2621,37 @@ class EASMDashboard {
 
             this.hideContextMenu();
 
-            // Double Click to Expand Logic
+            // Double Click to Expand/Collapse Logic
             const now = Date.now();
             if (now - lastTapTime < 350 && lastTapNodeId === node.id()) {
-                // Double tap detected: Expand Neighbors
-                let expandedCount = 0;
-                // Get all nodes connected to this node in the full memory graph
-                // Since this.cy contains ALL elements (some hidden by applyLeadFilter),
-                // we can just query the hidden neighbors directly from cytoscape instance!
-                const hiddenNeighbors = node.neighborhood('node:hidden');
+                // Double tap detected: Toggle Expansion
+                this.expandedCanvasNodes = this.expandedCanvasNodes || new Set();
                 
-                hiddenNeighbors.forEach(neighbor => {
-                    const cleanId = neighbor.id().replace(/^(dom_|sub_|ip_)/, '');
-                    // Find corresponding lead item
+                if (this.expandedCanvasNodes.has(node.id())) {
+                    // Collapse
+                    this.expandedCanvasNodes.delete(node.id());
+                    if (typeof this.showToast === 'function') {
+                        this.showToast('info', `Collapsed node connections`);
+                    }
+                } else {
+                    // Expand
+                    this.expandedCanvasNodes.add(node.id());
+                    // Also auto-select it as a lead so it forces visibility if it wasn't already a lead
+                    const cleanId = node.id().replace(/^(dom_|sub_|ip_)/, '');
                     const matchingLead = this.assets.find(a => 
                         (a.id || '').toLowerCase() === cleanId.toLowerCase() ||
-                        a.id === neighbor.id()
+                        a.id === node.id()
                     );
-                    
-                    if (matchingLead && !this.selectedLeads.has(matchingLead.id)) {
+                    if (matchingLead) {
                         this.selectedLeads.add(matchingLead.id);
-                        expandedCount++;
                     }
-                });
-
-                if (expandedCount > 0) {
-                    this.applyLeadFilter({ relayout: true });
-                    this.renderLeadSelector();
                     if (typeof this.showToast === 'function') {
-                        this.showToast('info', `Expanded ${expandedCount} neighboring asset(s)`);
+                        this.showToast('info', `Expanded node connections`);
                     }
                 }
+
+                this.applyLeadFilter({ relayout: true });
+                this.renderLeadSelector();
                 
                 lastTapTime = 0;
                 lastTapNodeId = null;

@@ -18,6 +18,7 @@ class FindingType(str, Enum):
     OPEN_PORT = "OPEN_PORT"
     VULNERABILITY = "VULNERABILITY"
     EXPLOIT = "EXPLOIT"
+    THREAT_ACTOR = "THREAT_ACTOR"
 
 
 class SeverityLevel(str, Enum):
@@ -81,6 +82,7 @@ class VulnerabilityData(BaseModel):
     cisa_kev: Optional[CISAKEVData] = Field(default=None, description="CISA KEV catalog metadata")
     references: List[str] = Field(default_factory=list, description="List of reference URLs (from NVD or vendor)")
     exploits: List[ExploitData] = Field(default_factory=list, description="Public exploits and GitHub PoCs")
+    attribution: List[str] = Field(default_factory=list, description="Threat Actors or Malware attributed to this vulnerability")
 
     @property
     def epss_score(self) -> Optional[float]:
@@ -254,8 +256,6 @@ class ScanResult(BaseModel):
                 summary.associated_domains_count += 1
             elif finding.type == FindingType.OPEN_PORT and not self.hosts:
                 summary.open_ports_count += 1
-            elif finding.type == FindingType.EXPLOIT and not self.hosts:
-                summary.exploits_count += 1
             elif finding.type == FindingType.VULNERABILITY and finding.vulnerability and not self.hosts:
                 cve = finding.vulnerability.cve_id
                 if cve not in seen_vulns:

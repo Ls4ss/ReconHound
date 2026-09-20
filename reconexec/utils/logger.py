@@ -216,7 +216,7 @@ def render_scan_output(result: ScanResult) -> None:
             table.add_column("CVSS Score", style="bold", width=14)
             table.add_column("EPSS Score", style="yellow", width=14)
             table.add_column("CISA KEV", style="bold", width=12)
-            table.add_column("Exploits & PoCs", style="white")
+            table.add_column("Weaponization & Attribution", style="white")
 
             for vf in vuln_findings:
                 v = vf.vulnerability
@@ -227,6 +227,10 @@ def render_scan_output(result: ScanResult) -> None:
                 kev_cell = "[bold white on red] YES [/bold white on red]" if v.in_cisa_kev else "[dim]No[/dim]"
 
                 exploits_info = [f"[bold red]{e.source}:[/bold red] {e.url}" for e in v.exploits]
+                if hasattr(v, "attribution") and v.attribution:
+                    attr_tags = set(v.attribution)
+                    exploits_info.extend([f"[bold orange3]TA/Malware:[/bold orange3] {a}" for a in sorted(attr_tags)])
+                    
                 exploit_cell = "\n".join(exploits_info) if exploits_info else "[dim]None[/dim]"
                 if v.cwe_name:
                     cwe_items = [c.strip() for c in v.cwe_name.split(",") if c.strip()]
@@ -265,14 +269,19 @@ def get_real_ip() -> str:
     return "127.0.0.1"
 
 
-def render_summary_panel(summary: Any, elapsed: float) -> Panel:
+def render_summary_panel(summary: Any, elapsed: float, is_cve: bool = False) -> Panel:
     """Generate a clean executive summary panel."""
-    lines = [
-        f"[bold white]Total Findings:[/bold white] {summary.total_findings}",
-        f"[bold green]Total Hosts Mapped:[/bold green] {summary.total_hosts_count}",
-        f"[cyan]Subdomains Discovered:[/cyan] {summary.subdomains_count}",
-        f"[blue]Associated Domains (Reverse WHOIS):[/blue] {summary.associated_domains_count}",
-        f"[green]Open Ports / Services:[/green] {summary.open_ports_count}",
+    lines = []
+    if not is_cve:
+        lines.extend([
+            f"[bold white]Total Findings:[/bold white] {summary.total_findings}",
+            f"[bold green]Total Hosts Mapped:[/bold green] {summary.total_hosts_count}",
+            f"[cyan]Subdomains Discovered:[/cyan] {summary.subdomains_count}",
+            f"[blue]Associated Domains (Reverse WHOIS):[/blue] {summary.associated_domains_count}",
+            f"[green]Open Ports / Services:[/green] {summary.open_ports_count}",
+        ])
+    
+    lines.extend([
         f"[yellow]Vulnerabilities (CVEs):[/yellow] {summary.vulnerabilities_count} "
         f"([bold red]{summary.critical_vulns_count} Critical[/bold red], "
         f"[red]{summary.high_vulns_count} High[/red], "
@@ -281,7 +290,7 @@ def render_summary_panel(summary: Any, elapsed: float) -> Panel:
         f"[bold white on red] CISA Known Exploited (KEV): [/bold white on red] {summary.cisa_kev_count}",
         f"[bold red]Exploits & PoCs Found:[/bold red] {summary.exploits_count}",
         f"[dim]Scan duration: {elapsed:.2f} seconds[/dim]",
-    ]
+    ])
     return Panel(
         "\n".join(lines),
         title="[bold green]Executive Scan Summary[/bold green]",
@@ -296,7 +305,7 @@ def render_executive_summary(result: ScanResult, is_cve_flag: bool = False) -> N
 
     # 1. Executive Summary Panel
     console.print("")
-    console.print(render_summary_panel(result.summary, result.elapsed_seconds))
+    console.print(render_summary_panel(result.summary, result.elapsed_seconds, is_cve))
 
     # Runtime API & Recon Notices (e.g. Shodan [IP]: No information available for that IP.)
     if result.warnings:
@@ -330,7 +339,7 @@ def render_executive_summary(result: ScanResult, is_cve_flag: bool = False) -> N
             table.add_column("Severity / CVSS", style="bold", width=16)
             table.add_column("EPSS Risk", style="yellow", width=12)
             table.add_column("CISA KEV", style="bold", width=12)
-            table.add_column("Public PoCs & Weaponization", style="white")
+            table.add_column("Weaponization & Attribution", style="white")
 
             for h_ip, v in unique_vulns:
                 sev_str = v.cvss_severity.value if hasattr(v.cvss_severity, "value") else str(v.cvss_severity)
@@ -340,6 +349,9 @@ def render_executive_summary(result: ScanResult, is_cve_flag: bool = False) -> N
                 kev_cell = "[bold white on red] YES [/bold white on red]" if v.in_cisa_kev else "[dim]No[/dim]"
 
                 exploits_info = [f"[bold red]{exp.source}:[/bold red] {exp.url}" for exp in v.exploits]
+                if hasattr(v, "attribution") and v.attribution:
+                    attr_tags = set(v.attribution)
+                    exploits_info.extend([f"[bold orange3]TA/Malware:[/bold orange3] {a}" for a in sorted(attr_tags)])
                 exploit_cell = "\n".join(exploits_info) if exploits_info else "[dim]None[/dim]"
 
                 table.add_row(v.cve_id, cvss_cell, epss_cell, kev_cell, exploit_cell)

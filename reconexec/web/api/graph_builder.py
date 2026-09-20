@@ -289,7 +289,7 @@ class GraphBuilder:
                     pass
 
             is_apex = (sub_name.strip().lower() == domain_name.strip().lower())
-            is_hist = (resolution_type == "HISTORICAL")
+            is_hist = (resolution_type == "IPS_HISTORY")
             
             sub_sources = []
             if sub_sources_raw:

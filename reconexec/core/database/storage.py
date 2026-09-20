@@ -77,14 +77,16 @@ class DatabaseManager:
                     conn.execute("ALTER TABLE scan_logs ADD COLUMN input_target TEXT")
             except Exception:
                 pass
-
             # Auto-migrate: ensure source column exists in vulnerabilities table
             try:
                 cols = [row[1] for row in conn.execute("PRAGMA table_info(vulnerabilities)").fetchall()]
                 if "source" not in cols:
                     conn.execute("ALTER TABLE vulnerabilities ADD COLUMN source TEXT")
+                if "threat_actors" not in cols:
+                    conn.execute("ALTER TABLE vulnerabilities ADD COLUMN threat_actors TEXT")
             except Exception:
                 pass
+
 
             # Auto-migrate: ensure postal_code, latitude, longitude exist in ip_addresses table
             try:
@@ -525,17 +527,21 @@ class DatabaseManager:
             is_cisa_kev = getattr(vuln, 'in_cisa_kev', False)
             source = getattr(vuln, 'source', None) or "Unknown"
             
+            
+            threat_actors_json = json.dumps(vuln.attribution) if getattr(vuln, 'attribution', None) else None
+            
             conn.execute("""
                 INSERT INTO vulnerabilities (
                     id, service_id, ip_id, cve_id, severity, cvss_score, cvss_version,
                     description, cwe_id, cwe_name, epss_score, epss_percentile,
-                    is_cisa_kev, cisa_kev_data, source
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    is_cisa_kev, cisa_kev_data, threat_actors, source
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """, (
                 vuln_id, service_id, ip_id, vuln.cve_id, severity, cvss_score, cvss_version,
                 vuln.description, cwe_id, cwe_name, epss_score, epss_percentile,
-                is_cisa_kev, cisa_kev_json, source
+                is_cisa_kev, cisa_kev_json, threat_actors_json, source
             ))
+
             
             # Store individual exploits in the exploits table for detailed querying
             if vuln.exploits:

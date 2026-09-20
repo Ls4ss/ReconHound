@@ -5621,8 +5621,35 @@ class EASMDashboard {
                 }
             }
             
+            
+            let threatActorsHtml = '';
+            if (data.threat_actors && Array.isArray(data.threat_actors) && data.threat_actors.length > 0) {
+                const uniqueActors = [...new Set(data.threat_actors)];
+                const actorItems = uniqueActors.map(actor => `
+                    <div style="background: rgba(220, 38, 38, 0.1); border: 1px solid rgba(220, 38, 38, 0.3); border-radius: 4px; padding: 6px 8px; margin-bottom: 6px; display: flex; align-items: center; gap: 8px;">
+                        <i data-lucide="skull" style="width: 14px; height: 14px; color: #f87171;"></i>
+                        <span style="color: #fca5a5; font-size: 0.85rem; font-family: var(--font-mono);">${actor}</span>
+                    </div>
+                `).join('');
+
+                threatActorsHtml = `
+                    <div class="risk-accordion-group" style="margin-top: 15px; border-color: rgba(220, 38, 38, 0.2);">
+                        <div class="risk-accordion-header" onclick="this.parentElement.classList.toggle('active')" style="background: rgba(220, 38, 38, 0.05);">
+                            <span class="risk-accordion-title" style="color: #f87171;">
+                                <i data-lucide="shield-alert" style="color: #f87171;"></i> Threat Actors & Malware (${uniqueActors.length})
+                            </span>
+                            <i data-lucide="chevron-down" class="risk-accordion-icon"></i>
+                        </div>
+                        <div class="risk-accordion-content" style="padding: 10px;">
+                            ${actorItems}
+                        </div>
+                    </div>
+                `;
+            }
+
             html = `
                 <h4>Vulnerability Details</h4>
+
                 <div class="property">
                     <span class="key">CVE ID:</span>
                     <span class="value" style="color: #00d4ff; font-weight: bold;">${data.cve_id}</span>
@@ -5659,6 +5686,7 @@ class EASMDashboard {
                     <span class="value">${data.exploit_count || 0}</span>
                 </div>
                 ${hostAndServiceHtml}
+                ${threatActorsHtml}
                 ${data.description ? `
                 <h4>Description</h4>
                 <p style="font-size: 0.85rem; line-height: 1.4; color: #ccc; background: #181818; padding: 8px; border-radius: 4px; border: 1px solid #2a2a2a;">${data.description}</p>

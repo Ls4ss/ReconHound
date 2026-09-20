@@ -888,20 +888,25 @@ class GraphBuilder:
         
         try:
             # Ensure source column exists
+            
             try:
                 cols = [r[1] for r in conn.execute("PRAGMA table_info(vulnerabilities)").fetchall()]
                 has_source_col = "source" in cols
+                has_threat_actors_col = "threat_actors" in cols
             except Exception:
                 has_source_col = False
+                has_threat_actors_col = False
 
             source_select = "v.source" if has_source_col else "'NVD' as source"
+            threat_actors_select = "v.threat_actors" if has_threat_actors_col else "NULL as threat_actors"
 
             cursor = conn.execute(f"""
                 SELECT v.id, v.ip_id, v.service_id, v.cve_id, v.severity, v.cvss_score, 
                        v.epss_score, v.is_cisa_kev, v.description, {source_select},
                        COUNT(e.id) as exploit_count,
                        ip.id as resolved_ip_id, ip.ip, ip.org, ip.country, ip.asn,
-                       s.port, s.protocol, s.service_name, s.product, s.version, s.url, s.ssl
+                       s.port, s.protocol, s.service_name, s.product, s.version, s.url, s.ssl,
+                       {threat_actors_select}
                 FROM vulnerabilities v
                 LEFT JOIN exploits e ON v.id = e.vulnerability_id
                 LEFT JOIN services s ON v.service_id = s.id
@@ -909,13 +914,15 @@ class GraphBuilder:
                 GROUP BY v.id, v.ip_id, v.service_id, v.cve_id, v.severity, v.cvss_score, 
                          v.epss_score, v.is_cisa_kev, v.description, {source_select},
                          ip.id, ip.ip, ip.org, ip.country, ip.asn,
-                         s.port, s.protocol, s.service_name, s.product, s.version, s.url, s.ssl
+                         s.port, s.protocol, s.service_name, s.product, s.version, s.url, s.ssl,
+                         {threat_actors_select}
             """)
             
             for row in cursor.fetchall():
                 (vuln_id, ip_id, service_id, cve_id, severity, cvss_score, epss_score, 
                  is_cisa_kev, description, vuln_source, exploit_count, resolved_ip_id, ip_address, 
-                 org, country, asn, port, protocol, service_name, product, version, url, ssl) = row
+                 org, country, asn, port, protocol, service_name, product, version, url, ssl, threat_actors_json) = row
+
                 
                 # Build vulnerability label - keep it simple with just CVE ID
                 label = cve_id or "Unknown CVE"
@@ -956,6 +963,15 @@ class GraphBuilder:
                             "exploit_type": exploit_row[6]
                         })
                     
+                    
+                    threat_actors = []
+                    if threat_actors_json:
+                        import json
+                        try:
+                            threat_actors = json.loads(threat_actors_json)
+                        except Exception:
+                            pass
+                            
                     nodes.append({
                         "data": {
                             "id": node_id,
@@ -971,6 +987,8 @@ class GraphBuilder:
                             "description": description or "",
                             "exploit_count": exploit_count,
                             "exploits": exploits,
+                            "threat_actors": threat_actors,
+
                             "has_pocs": exploit_count > 0,
                             "ip": ip_address or "",
                             "ip_id": f"ip_{resolved_ip_id}" if resolved_ip_id else (f"ip_{ip_id}" if ip_id else None),

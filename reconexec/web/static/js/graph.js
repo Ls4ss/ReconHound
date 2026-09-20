@@ -5021,6 +5021,7 @@ class EASMDashboard {
             }
 
             let resolvedIpsHtml = '';
+            let historicalIpsHtml = '';
             if (rawType === 'domain' || rawType === 'subdomain') {
                 const resolvedIps = data.resolved_ips || [];
 
@@ -5060,6 +5061,38 @@ class EASMDashboard {
                         <span class="value" style="color: #94a3b8; font-style: italic;">Unresolved / None</span>
                     </div>`;
                 }
+                
+                const historicalIps = Array.isArray(data.historical_ips) ? data.historical_ips : [];
+                if (historicalIps.length > 0) {
+                    const histBadges = historicalIps.map(item => {
+                        const isMarked = this.targetManager.isTarget(item.ip);
+                        const targetColor = isMarked ? '#ef4444' : '#94a3b8';
+                        const targetBg = isMarked ? 'rgba(239, 68, 68, 0.25)' : 'rgba(148, 163, 184, 0.15)';
+                        return `
+                        <span style="display: inline-flex; align-items: center; gap: 4px; padding: 2px 6px; background: rgba(148, 163, 184, 0.1); border: 1px solid rgba(148, 163, 184, 0.3); border-radius: 4px; font-family: monospace; font-size: 0.8rem; color: #94a3b8; margin-right: 4px; margin-bottom: 2px; text-decoration: line-through;">
+                            ${item.ip}
+                            <button type="button" class="risk-focus-btn" style="margin: 0; padding: 1px 4px; font-size: 0.65rem; background: ${targetBg}; color: ${targetColor}; border: none; border-radius: 2px; cursor: pointer;" onclick="event.stopPropagation(); window.dashboard.toggleTargetMark('${item.ip}')" title="${isMarked ? 'Remove Target' : 'Set as Target (IP)'}"><i data-lucide="crosshair" style="width: 10px; height: 10px;"></i></button>
+                            <button type="button" class="risk-focus-btn" style="margin: 0; padding: 1px 4px; font-size: 0.65rem; background: rgba(148, 163, 184, 0.15); color: #94a3b8; border: none; border-radius: 2px; cursor: pointer;" onclick="event.stopPropagation(); window.dashboard.focusNode('${item.id}')" title="Focus IP in graph"><i data-lucide="focus" style="width: 10px; height: 10px;"></i></button>
+                        </span>
+                        `;
+                    }).join('');
+                    
+                    historicalIpsHtml = `
+                    <div class="risk-accordion-group" style="margin-top: 0.75rem; margin-bottom: 0.5rem;">
+                        <div class="risk-accordion-header" onclick="window.dashboard.toggleRiskAccordion(this)">
+                            <div class="risk-accordion-title">
+                                <i data-lucide="history" class="accordion-icon ui-icon" style="color: #94a3b8;"></i>
+                                <span style="color: #94a3b8;">Historical IPs (${historicalIps.length})</span>
+                            </div>
+                            <div class="risk-accordion-status" style="display: flex; flex-wrap: wrap; align-items: center; gap: 6px; justify-content: flex-end;">
+                                <i data-lucide="chevron-down" class="accordion-chevron ui-icon"></i>
+                            </div>
+                        </div>
+                        <div class="risk-accordion-body" style="display: none; max-height: 250px; overflow-y: auto; padding: 8px 6px;">
+                            <div style="display: flex; flex-wrap: wrap; gap: 4px; align-items: center;">${histBadges}</div>
+                        </div>
+                    </div>`;
+                }
             }
 
             let mainPropertiesHtml = '';
@@ -5091,6 +5124,7 @@ class EASMDashboard {
                     </div>
                 </div>
                 ${resolvedIpsHtml}
+                ${historicalIpsHtml}
                 <div class="property">
                     <span class="key">Type:</span>
                     <span class="value">${data.target_type ? `${data.type.toUpperCase()} (${data.target_type.toUpperCase()})` : data.type.toUpperCase()}</span>

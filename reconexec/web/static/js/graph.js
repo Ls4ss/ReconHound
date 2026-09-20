@@ -21,8 +21,6 @@ class EASMDashboard {
             vulnServicesOnly: false
         };
         this.searchTerm = '';
-        this.expandedClusters = new Set();
-        this.manualCollapsedClusters = new Set();
         this._hasRunInitialLayout = false;
         
         // Target Management & Active Scan State
@@ -2231,6 +2229,17 @@ class EASMDashboard {
                         });
                     } else {
                         // Expand
+                        if (outgoers.length >= 500) {
+                            if (!window.confirm(`Safety Warning: This node has ${outgoers.length} connections.
+
+Expanding this many nodes at once may cause your browser to freeze temporarily while drawing the graph.
+
+Are you sure you want to proceed?`)) {
+                                lastTapTime = 0;
+                                lastTapNodeId = null;
+                                return;
+                            }
+                        }
                         this.expandedCanvasNodes.add(node.id());
                     }
                 } else {
@@ -2770,7 +2779,6 @@ class EASMDashboard {
         if (layoutSelect) {
             layoutSelect.addEventListener('change', (e) => {
                 // Collapse all expanded clusters back to their default compact grouped state
-                this.expandedClusters.clear();
                 let layoutName = e.target.value || this.getAvailableLayout();
                 runSmoothLayout(layoutName);
             });
@@ -3211,8 +3219,6 @@ class EASMDashboard {
 
             // Reset current graph UI and filtering state
             this.selectedLeads.clear();
-            this.expandedClusters.clear();
-            this.manualCollapsedClusters.clear();
             this._hasRunInitialLayout = false;
             this.searchTerm = '';
             
@@ -4383,13 +4389,8 @@ class EASMDashboard {
             parentId = clusterNode.data('parent_ip') || clusterNode.data('parent_srv');
         }
 
-        if (this.expandedClusters.has(clusterId)) {
-            this.expandedClusters.delete(clusterId);
-            this.manualCollapsedClusters.add(clusterId);
             isExpanding = false;
         } else {
-            this.expandedClusters.add(clusterId);
-            this.manualCollapsedClusters.delete(clusterId);
             isExpanding = true;
         }
         this.closeInspector();
@@ -4401,32 +4402,6 @@ class EASMDashboard {
         }
     }
 
-    toggleAssetChildrenCollapse(assetId, type) {
-        let prefix = 'cluster_srv_';
-        if (type === 'ip_vulns') {
-            prefix = 'cluster_ip_vuln_';
-        } else if (type === 'vulns') {
-            prefix = 'cluster_vuln_';
-        }
-        const clusterId = `${prefix}${assetId}`;
-
-        const existingCluster = this.cy.getElementById(clusterId);
-        const isCurrentlyCollapsed = existingCluster.length > 0 && !existingCluster.hidden();
-
-        if (isCurrentlyCollapsed) {
-            // Uncollapse: open and spread children
-            this.manualCollapsedClusters.delete(clusterId);
-            this.expandedClusters.add(clusterId);
-            this.closeInspector();
-            this.applyLeadFilter({ expandedClusterId: clusterId, parentId: assetId });
-        } else {
-            // Collapse: group children into cluster node
-            this.expandedClusters.delete(clusterId);
-            this.manualCollapsedClusters.add(clusterId);
-            this.closeInspector();
-            this.applyLeadFilter({ relayout: false });
-        }
-    }
 
     showCoreContextMenu(x, y) {
         const menu = document.getElementById('cy-context-menu');
@@ -4533,96 +4508,6 @@ class EASMDashboard {
                     this.selectAllLeads();
                     this.hideContextMenu();
                 }
-            });
-        }
-
-        if (false) {
-            const isServiceCluster = nodeType === 'cluster_services';
-            collapseActions.push({
-                id: 'ctx-action-cluster',
-                label: isServiceCluster ? `Uncollapse Services (${data.count})` : `Uncollapse Vulnerabilities (${data.count})`,
-                icon: 'maximize-2',
-                disabled: false,
-                action: () => {
-                    this.toggleClusterExpansion(nodeId);
-                }
-            });
-        } else if (nodeType === 'ip') {
-            const clusterSrv = this.cy.getElementById(`cluster_srv_${nodeId}`);
-            const isServicesCollapsed = clusterSrv.length > 0 && !clusterSrv.hidden();
-            let servicesCount = isServicesCollapsed ? (clusterSrv.data('count') || 0) : node.outgoers('node[type="service"], node[type="http"], node[type="https"]').filter(s => !s.hidden()).length;
-            if (servicesCount === 0 && isServicesCollapsed) servicesCount = clusterSrv.data('count') || 0;
-
-            const clusterVuln = this.cy.getElementById(`cluster_ip_vuln_${nodeId}`);
-            const isVulnsCollapsed = clusterVuln.length > 0 && !clusterVuln.hidden();
-            let directVulnsCount = isVulnsCollapsed ? (clusterVuln.data('count') || 0) : node.outgoers('node[type="vulnerability"]').filter(v => !v.hidden()).length;
-            if (directVulnsCount === 0 && isVulnsCollapsed) directVulnsCount = clusterVuln.data('count') || 0;
-
-            if (servicesCount > 1 || isServicesCollapsed) {
-                collapseActions.push({
-                    id: 'ctx-action-collapse-srv',
-                    label: isServicesCollapsed ? `Uncollapse Services (${servicesCount})` : `Collapse Services (${servicesCount})`,
-                    icon: isServicesCollapsed ? 'maximize-2' : 'minimize-2',
-                    disabled: false,
-                    action: () => {
-                        this.toggleAssetChildrenCollapse(nodeId, 'services');
-                    }
-                });
-            }
-
-            if (directVulnsCount > 1 || isVulnsCollapsed) {
-                collapseActions.push({
-                    id: 'ctx-action-collapse-vuln',
-                    label: isVulnsCollapsed ? `Uncollapse Direct Vulnerabilities (${directVulnsCount})` : `Collapse Direct Vulnerabilities (${directVulnsCount})`,
-                    icon: isVulnsCollapsed ? 'maximize-2' : 'minimize-2',
-                    disabled: false,
-                    action: () => {
-                        this.toggleAssetChildrenCollapse(nodeId, 'ip_vulns');
-                    }
-                });
-            }
-
-            if (collapseActions.length === 0) {
-                collapseActions.push({
-                    id: 'ctx-action-collapse-none',
-                    label: 'Collapse / Uncollapse (Not enough children)',
-                    icon: 'minimize-2',
-                    disabled: true,
-                    action: () => {}
-                });
-            }
-        } else if (nodeType === 'service' || nodeType === 'http' || nodeType === 'https') {
-            const clusterVuln = this.cy.getElementById(`cluster_vuln_${nodeId}`);
-            const isVulnsCollapsed = clusterVuln.length > 0 && !clusterVuln.hidden();
-            let vulnsCount = isVulnsCollapsed ? (clusterVuln.data('count') || 0) : node.outgoers('node[type="vulnerability"]').filter(v => !v.hidden()).length;
-            if (vulnsCount === 0 && isVulnsCollapsed) vulnsCount = clusterVuln.data('count') || 0;
-
-            if (vulnsCount > 1 || isVulnsCollapsed) {
-                collapseActions.push({
-                    id: 'ctx-action-collapse-srv-vuln',
-                    label: isVulnsCollapsed ? `Uncollapse Vulnerabilities (${vulnsCount})` : `Collapse Vulnerabilities (${vulnsCount})`,
-                    icon: isVulnsCollapsed ? 'maximize-2' : 'minimize-2',
-                    disabled: false,
-                    action: () => {
-                        this.toggleAssetChildrenCollapse(nodeId, 'vulns');
-                    }
-                });
-            } else {
-                collapseActions.push({
-                    id: 'ctx-action-collapse-none',
-                    label: 'Collapse / Uncollapse (Not enough vulnerabilities)',
-                    icon: 'minimize-2',
-                    disabled: true,
-                    action: () => {}
-                });
-            }
-        } else {
-            collapseActions.push({
-                id: 'ctx-action-collapse-none',
-                label: 'Collapse / Uncollapse (Not applicable)',
-                icon: 'minimize-2',
-                disabled: true,
-                action: () => {}
             });
         }
 

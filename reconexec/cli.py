@@ -99,7 +99,7 @@ HOUND_BANNER = """[cyan]⠀⠀⠀⠀⡀⠀⠀⠀⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀�
 [cyan]⠀⠀⢰⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣶⣄⡀⢻⣿⣿⣿⠟⢿⣿⠛⣦⡀⢻⣿⡇⠀[/cyan][dim]   ==================================[/dim]
 [cyan]⠀⠀⢸⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⠛⣶⡞⠻⣶⠛⢻⡄⠹⠀⠀[/cyan][bold green]   [✓][/bold green] Attack Surface Dashboard UI
 [cyan]⠀⠀⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣷⣿⣷⣾⣿⣶⣿⣿⠆⠀⠀[/cyan][bold green]   [✓][/bold green] Threat Tracking Engine
-[cyan]⠀⢠⣿⣿⣿⡄⢹⣿⣿⣿⣿⣿⣿⣿⣿⣿⣏⣉⣉⣉⣉⣉⣉⣉⣉⣉⡉⠀⠀⠀[/cyan]
+[cyan]⠀⢠⣿⣿⣿⡄⢹⣿⣿⣿⣿⣿⣿⣿⣿⣿⣏⣉⣉⣉⣉⣉⣉⣉⣉⣉⡉⠀⠀⠀[/cyan][bold white]   Usage: reconexec hound start[/bold white]
 [cyan]⠀⢸⣿⣿⣿⣷⡀⠻⠿⠿⠿⠿⠿⠿⠿⠿⠿⠿⠿⠿⠿⠿⠿⠿⠿⠿⠃⠀⠀⠀[/cyan]
 [cyan]⠀⣿⣿⣿⣿⣿⣷⣶⣶⣶⣶⣶⡄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀[/cyan]
 [cyan]⠀⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀[/cyan]

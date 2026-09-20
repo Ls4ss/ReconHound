@@ -24,6 +24,12 @@ class APIClient {
             console.log(`API response status: ${response.status}`);
 
             if (!response.ok) {
+                if (response.status === 401) {
+                    if (window.location.pathname !== '/login') {
+                        window.location.href = '/login';
+                    }
+                    throw new Error("Session expired");
+                }
                 const errorText = await response.text();
                 console.error(`API error response: ${errorText}`);
                 throw new Error(`HTTP ${response.status}: ${response.statusText}`);
@@ -175,3 +181,61 @@ class APIClient {
 window.api = new APIClient();
 
 
+
+/**
+ * Session Manager to auto-refresh JWT (Sliding Session)
+ * Keeps the session alive as long as the user is actively using the dashboard.
+ */
+class SessionManager {
+    constructor() {
+        this.lastActiveTime = Date.now();
+        this.refreshInterval = 10 * 60 * 1000; // Check every 10 minutes
+        this.maxIdleTime = 15 * 60 * 1000; // If idle for > 15 mins, don't auto-refresh (let it expire naturally)
+        
+        // Track user activity
+        const updateActivity = () => {
+            this.lastActiveTime = Date.now();
+        };
+        
+        window.addEventListener('mousemove', updateActivity, { passive: true });
+        window.addEventListener('keydown', updateActivity, { passive: true });
+        window.addEventListener('click', updateActivity, { passive: true });
+        window.addEventListener('scroll', updateActivity, { passive: true });
+        
+        // Start background refresh loop
+        setInterval(() => this.checkAndRefresh(), this.refreshInterval);
+    }
+    
+    async checkAndRefresh() {
+        const now = Date.now();
+        const idleTime = now - this.lastActiveTime;
+        
+        if (idleTime < this.maxIdleTime) {
+            try {
+                const response = await fetch('/api/v1/auth/refresh', {
+                    method: 'POST',
+                    headers: { 'Accept': 'application/json' }
+                });
+                if (!response.ok) {
+                    console.warn('[SessionManager] Silent JWT refresh failed', response.status);
+                    if (response.status === 401) {
+                        // The session actually expired server-side or cookie was cleared
+                        if (typeof window.showToast === 'function') {
+                            window.showToast('error', 'Session expired. Please login again.');
+                        }
+                        setTimeout(() => window.location.href = '/login', 2000);
+                    }
+                } else {
+                    console.log('[SessionManager] JWT Session refreshed successfully (Sliding Session)');
+                }
+            } catch (err) {
+                console.error('[SessionManager] Error refreshing session:', err);
+            }
+        }
+    }
+}
+
+// Initialize session manager
+if (window.location.pathname !== '/login') {
+    window.sessionManager = new SessionManager();
+}

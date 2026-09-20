@@ -107,3 +107,28 @@ async def login_for_access_token(
 async def logout(response: Response):
     response.delete_cookie("reconexec_token")
     return {"message": "Successfully logged out"}
+
+@router.post("/refresh")
+async def refresh_token(
+    response: Response,
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    Refresh the JWT token to keep the session alive.
+    Requires a currently valid token.
+    """
+    access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    access_token = create_access_token(
+        data={"sub": current_user["username"]}, expires_delta=access_token_expires
+    )
+    
+    response.set_cookie(
+        key="reconexec_token", 
+        value=access_token, 
+        httponly=True, 
+        max_age=ACCESS_TOKEN_EXPIRE_MINUTES * 60,
+        expires=ACCESS_TOKEN_EXPIRE_MINUTES * 60,
+        samesite="lax"
+    )
+    
+    return {"access_token": access_token, "token_type": "bearer"}

@@ -406,7 +406,7 @@ class GraphBuilder:
                 except:
                     pass
 
-            if domain_id in domains_to_spawn:
+            if True:
                 dname_lower = domain_name.lower()
                 domain_subs = [s for s in all_subdomains if s.get("domain_id") == domain_id or s.get("domain_name", "").lower() == dname_lower]
                 is_waf = domain_waf_map.get(domain_id, False)
@@ -435,7 +435,7 @@ class GraphBuilder:
                         edges.append({"data": {"id": f"e_target_dom_{domain_id}", "source": "target_root", "target": f"dom_{domain_id}", "label": "MATCHES_DOMAIN"}})
 
         for sub_id, sub_info in subdomain_info_map.items():
-            if sub_id in subdomains_to_spawn:
+            if True:
                 sname_lower = sub_info["name"].lower()
                 parent_dom_id = sub_info["domain_id"]
                 sub_related = [s for s in all_subdomains if s.get("domain_id") == parent_dom_id and s.get("id") != sub_id]
@@ -451,6 +451,7 @@ class GraphBuilder:
                     "resolved_ips": sub_info.get("resolved_ips", []),
                     "related_subdomains": sub_related,
                     "is_target": (sname_lower in explicit_targets),
+                    "is_root": False,
                     "is_waf_bypass": is_waf
                 }
                 classes = []

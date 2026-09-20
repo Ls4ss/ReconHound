@@ -651,20 +651,12 @@ class EASMDashboard {
                         }
                     }
                     
-                    if (this.isTargetMarked(asset.display_name || asset.label)) {
-                        this.selectedLeads.add(asset.id);
-                    }
+                    // Removed auto-selection of marked targets and Tier 1 leads.
+                    // This enforces the "Blank Canvas / Target Root Only" UX on initial DB load.
                 });
                 
                 if (hydratedTargets) {
                     this.renderTargetsList();
-                }
-                // If no targets were selected from backend, fallback to Tier 1
-                if (this.selectedLeads.size === 0) {
-                    const tier1Leads = this.assets.filter(l => l.is_tier1);
-                    if (tier1Leads.length > 0 && tier1Leads.length <= 50) {
-                        tier1Leads.forEach(asset => this.selectedLeads.add(asset.id));
-                    }
                 }
             } else {
                 const currentLeadIds = new Set(this.assets.map(l => l.id));
@@ -1434,6 +1426,20 @@ class EASMDashboard {
                     center: { eles: rootNode },
                     zoom: 1.2
                 }, { duration: 500 });
+                
+                if (!this._hasNotifiedBlankCanvas) {
+                    if (typeof this.showToast === 'function') {
+                        this.showToast('info', 'Interactive Canvas: Double-click the root node to expand connections, or use the Inventory sidebar.');
+                    }
+                    this._hasNotifiedBlankCanvas = true;
+                }
+            } else {
+                if (!this._hasNotifiedBlankCanvas) {
+                    if (typeof this.showToast === 'function') {
+                        this.showToast('info', 'Empty Canvas: Select assets from the Inventory sidebar to begin mapping.');
+                    }
+                    this._hasNotifiedBlankCanvas = true;
+                }
             }
             this.visibleLeadNodes = new Set(['target_root']);
             return;
@@ -2591,12 +2597,54 @@ class EASMDashboard {
         // Node Left-Click Handler:
         // Single click: select ONLY this node and show inspector
         // Ctrl/Cmd + Left-Click: toggle selection on this node while keeping previously selected nodes
+        let lastTapTime = 0;
+        let lastTapNodeId = null;
+
         this.cy.on('tap', 'node', (event) => {
             const node = event.target;
             const originalEvent = event.originalEvent;
             const isMultiSelect = isModifierHeld || (originalEvent && (originalEvent.ctrlKey || originalEvent.metaKey || originalEvent.shiftKey));
 
             this.hideContextMenu();
+
+            // Double Click to Expand Logic
+            const now = Date.now();
+            if (now - lastTapTime < 350 && lastTapNodeId === node.id()) {
+                // Double tap detected: Expand Neighbors
+                let expandedCount = 0;
+                // Get all nodes connected to this node in the full memory graph
+                // Since this.cy contains ALL elements (some hidden by applyLeadFilter),
+                // we can just query the hidden neighbors directly from cytoscape instance!
+                const hiddenNeighbors = node.neighborhood('node:hidden');
+                
+                hiddenNeighbors.forEach(neighbor => {
+                    const cleanId = neighbor.id().replace(/^(dom_|sub_|ip_)/, '');
+                    // Find corresponding lead item
+                    const matchingLead = this.assets.find(a => 
+                        (a.id || '').toLowerCase() === cleanId.toLowerCase() ||
+                        a.id === neighbor.id()
+                    );
+                    
+                    if (matchingLead && !this.selectedLeads.has(matchingLead.id)) {
+                        this.selectedLeads.add(matchingLead.id);
+                        expandedCount++;
+                    }
+                });
+
+                if (expandedCount > 0) {
+                    this.applyLeadFilter({ relayout: true });
+                    this.renderLeadSelector();
+                    if (typeof this.showToast === 'function') {
+                        this.showToast('info', `Expanded ${expandedCount} neighboring asset(s)`);
+                    }
+                }
+                
+                lastTapTime = 0;
+                lastTapNodeId = null;
+                return;
+            }
+            lastTapTime = now;
+            lastTapNodeId = node.id();
 
             if (isMultiSelect) {
                 // Multi-select toggle

@@ -5634,13 +5634,13 @@ class EASMDashboard {
 
                 threatActorsHtml = `
                     <div class="risk-accordion-group" style="margin-top: 15px; border-color: rgba(220, 38, 38, 0.2);">
-                        <div class="risk-accordion-header" onclick="this.parentElement.classList.toggle('active')" style="background: rgba(220, 38, 38, 0.05);">
+                        <div class="risk-accordion-header" onclick="window.dashboard.toggleRiskAccordion(this)" style="background: rgba(220, 38, 38, 0.05);">
                             <span class="risk-accordion-title" style="color: #f87171;">
                                 <i data-lucide="shield-alert" style="color: #f87171;"></i> Threat Actors & Malware (${uniqueActors.length})
                             </span>
-                            <i data-lucide="chevron-down" class="risk-accordion-icon"></i>
+                            <i data-lucide="chevron-down" class="accordion-chevron ui-icon"></i>
                         </div>
-                        <div class="risk-accordion-content" style="padding: 10px;">
+                        <div class="risk-accordion-body" style="display: none; padding: 10px;">
                             ${actorItems}
                         </div>
                     </div>

@@ -9,7 +9,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Query, Response
+from fastapi import APIRouter, UploadFile, File, Depends, HTTPException, Query, Response
 from fastapi.requests import Request
 from fastapi import BackgroundTasks
 import sys
@@ -525,6 +525,53 @@ async def delete_asset(
         return {"status": "success", "message": f"Asset {asset_value} deleted."}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+@router.post("/import")
+async def import_scan_data(file: UploadFile = File(...)):
+    """Import a JSON scan result and convert it into a new SQLite EASM database."""
+    if not file.filename.endswith('.json'):
+        raise HTTPException(status_code=400, detail="Only JSON files are supported")
+    
+    try:
+        content = await file.read()
+        
+        # 1. Validate the JSON via Pydantic model
+        try:
+            from reconexec.core.models import ScanResult
+            scan_result = ScanResult.model_validate_json(content)
+        except Exception as e:
+            raise HTTPException(status_code=400, detail=f"Invalid JSON format or schema mismatch: {str(e)}")
+            
+        # 2. Generate a new database path
+        from reconexec.config import DETECTI_HOME
+        from reconexec.core.database.storage import DatabaseManager
+        from datetime import datetime
+        
+        dbs_dir = DETECTI_HOME / "data" / "dbs"
+        dbs_dir.mkdir(parents=True, exist_ok=True)
+        
+        safe_target = "".join(c if c.isalnum() else "_" for c in scan_result.target)[:40]
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        db_filename = f"imported_{safe_target}_{timestamp}.sqlite"
+        db_path = dbs_dir / db_filename
+        
+        # 3. Save to database using the existing manager
+        db_manager = DatabaseManager(db_path)
+        db_manager.save_scan_result(scan_result)
+        
+        # 4. Return success
+        return {
+            "success": True, 
+            "message": f"Successfully imported EASM data for {scan_result.target}", 
+            "db_name": db_filename,
+            "findings_count": len(scan_result.findings),
+            "hosts_count": len(scan_result.hosts)
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to process import: {str(e)}")
+
 
 @router.get("/export")
 async def export_graph_data(

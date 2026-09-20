@@ -263,7 +263,7 @@ class GraphBuilder:
         sources_select = "s.sources" if has_sources else "NULL as sources"
 
         cursor_subs = conn.execute(f"""
-            SELECT s.id, s.name, s.domain_id, d.name as domain_name, si.ip_id, ip.ip, {meta_select}, {sources_select}
+            SELECT s.id, s.name, s.domain_id, d.name as domain_name, si.ip_id, ip.ip, {meta_select}, {sources_select}, si.resolution_type
             FROM subdomains s
             JOIN domains d ON s.domain_id = d.id
             LEFT JOIN subdomain_ips si ON s.id = si.subdomain_id
@@ -276,9 +276,10 @@ class GraphBuilder:
         subdomain_info_map: Dict[str, Dict] = {}
         domain_resolved_ips_map: Dict[str, list] = {}
         domain_waf_map: Dict[str, bool] = {}
+        domain_historical_ips_map: Dict[str, list] = {}
         
         import json
-        for sub_id, sub_name, domain_id, domain_name, ip_id, ip_addr, metadata_raw, sub_sources_raw in cursor_subs.fetchall():
+        for sub_id, sub_name, domain_id, domain_name, ip_id, ip_addr, metadata_raw, sub_sources_raw, resolution_type in cursor_subs.fetchall():
             is_waf = False
             if metadata_raw:
                 try:
@@ -288,6 +289,7 @@ class GraphBuilder:
                     pass
 
             is_apex = (sub_name.strip().lower() == domain_name.strip().lower())
+            is_hist = (resolution_type == "HISTORICAL")
             
             sub_sources = []
             if sub_sources_raw:
@@ -303,9 +305,14 @@ class GraphBuilder:
                     if is_waf:
                         domain_waf_map[domain_id] = True
                     # Track domain resolved IPs (apex)
-                    domain_ips_list = domain_resolved_ips_map.setdefault(domain_id, [])
-                    if not any(r["id"] == f"ip_{ip_id}" for r in domain_ips_list):
-                        domain_ips_list.append({"id": f"ip_{ip_id}", "ip": ip_addr})
+                    if is_hist:
+                        domain_hist_list = domain_historical_ips_map.setdefault(domain_id, [])
+                        if not any(r["id"] == f"ip_{ip_id}" for r in domain_hist_list):
+                            domain_hist_list.append({"id": f"ip_{ip_id}", "ip": ip_addr})
+                    else:
+                        domain_ips_list = domain_resolved_ips_map.setdefault(domain_id, [])
+                        if not any(r["id"] == f"ip_{ip_id}" for r in domain_ips_list):
+                            domain_ips_list.append({"id": f"ip_{ip_id}", "ip": ip_addr})
 
             if not is_apex:
                 if sub_id not in subdomain_info_map:
@@ -317,7 +324,8 @@ class GraphBuilder:
                         "is_waf_bypass": is_waf,
                         "sources": sub_sources,
                         "ips": [],
-                        "resolved_ips": []
+                        "resolved_ips": [],
+                        "historical_ips": []
                     }
                 elif is_waf:
                     subdomain_info_map[sub_id]["is_waf_bypass"] = True
@@ -328,7 +336,10 @@ class GraphBuilder:
 
                 if ip_addr and ip_addr not in subdomain_info_map[sub_id]["ips"]:
                     subdomain_info_map[sub_id]["ips"].append(ip_addr)
-                    subdomain_info_map[sub_id]["resolved_ips"].append({"id": f"ip_{ip_id}", "ip": ip_addr})
+                    if is_hist:
+                        subdomain_info_map[sub_id]["historical_ips"].append({"id": f"ip_{ip_id}", "ip": ip_addr})
+                    else:
+                        subdomain_info_map[sub_id]["resolved_ips"].append({"id": f"ip_{ip_id}", "ip": ip_addr})
 
         all_domains = []
         for row in domains_list:
@@ -407,6 +418,7 @@ class GraphBuilder:
                     "related_subdomains": domain_subs,
                     "subdomain_count": len(domain_subs),
                     "resolved_ips": domain_resolved_ips_map.get(domain_id, []),
+                    "historical_ips": domain_historical_ips_map.get(domain_id, []),
                     "is_target": (dname_lower in explicit_targets),
                     "is_root": False,
                     "is_waf_bypass": is_waf
@@ -437,6 +449,7 @@ class GraphBuilder:
                     "domain_id": parent_dom_id,
                     "domain_name": sub_info["domain_name"],
                     "resolved_ips": sub_info.get("resolved_ips", []),
+                    "historical_ips": sub_info.get("historical_ips", []),
                     "related_subdomains": sub_related,
                     "is_target": (sname_lower in explicit_targets),
                     "is_root": False,

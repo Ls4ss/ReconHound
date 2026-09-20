@@ -57,7 +57,7 @@ async def list_databases(request: Request) -> Dict:
             size_mb = db_file.stat().st_size / (1024 * 1024)
             mod_time = datetime.fromtimestamp(db_file.stat().st_mtime).strftime("%Y-%m-%d %H:%M")
             
-            clean_name = db_file.stem  # Strip .sqlite
+            clean_name = db_file.stem.replace('_', ' ')  # Strip .sqlite and convert underscores back to spaces for UI
             target = clean_name
             try:
                 dm = DatabaseManager(db_file)
@@ -549,10 +549,15 @@ async def import_scan_data(file: UploadFile = File(...)):
         dbs_dir = DETECTI_HOME / "data" / "dbs"
         dbs_dir.mkdir(parents=True, exist_ok=True)
         
-        safe_target = "".join(c if c.isalnum() else "_" for c in scan_result.target)[:40]
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        db_filename = f"imported_{safe_target}_{timestamp}.sqlite"
+        base_name = file.filename[:-5] if file.filename.endswith('.json') else file.filename
+        db_filename = base_name.replace(" ", "_") + ".sqlite"
         db_path = dbs_dir / db_filename
+        
+        # Prevent overwriting if file already exists
+        counter = 1
+        while db_path.exists():
+            db_filename = f"{base_name.replace(' ', '_')}_{counter}.sqlite"
+            db_path = dbs_dir / db_filename
         
         # 3. Save to database using the existing manager
         db_manager = DatabaseManager(db_path)

@@ -1039,16 +1039,18 @@
                         const result = await response.json();
                         
                         if (response.ok && result.success) {
-                            alert(`Import Successful! ${result.message}\nFound: ${result.hosts_count} hosts, ${result.findings_count} findings.\nThe page will now reload to load the new database.`);
-                            
-                            // Ask backend to switch to the new DB (if applicable) or just reload
+                            // Ask backend to switch to the new DB before alerting and reloading
                             try {
-                                await fetch('/api/v1/select_db', {
+                                await fetch('/api/v1/databases/select', {
                                     method: 'POST',
                                     headers: {'Content-Type': 'application/json'},
-                                    body: JSON.stringify({ db_path: `data/dbs/${result.db_name}` })
+                                    body: JSON.stringify({ name: result.db_name })
                                 });
-                            } catch (e) {}
+                            } catch (e) {
+                                console.error("Error auto-selecting database:", e);
+                            }
+
+                            alert(`Import Successful! ${result.message}\nFound: ${result.hosts_count} hosts, ${result.findings_count} findings.\nThe page will now reload to load the new database.`);
                             
                             window.location.reload();
                         } else {

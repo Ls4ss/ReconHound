@@ -2620,15 +2620,6 @@ class EASMDashboard {
                 } else {
                     // Expand
                     this.expandedCanvasNodes.add(node.id());
-                    // Also auto-select it as a lead so it forces visibility if it wasn't already a lead
-                    const cleanId = node.id().replace(/^(dom_|sub_|ip_)/, '');
-                    const matchingLead = this.assets.find(a => 
-                        (a.id || '').toLowerCase() === cleanId.toLowerCase() ||
-                        a.id === node.id()
-                    );
-                    if (matchingLead) {
-                        this.selectedLeads.add(matchingLead.id);
-                    }
                     if (typeof this.showToast === 'function') {
                         this.showToast('info', `Expanded node connections`);
                     }

@@ -5039,14 +5039,24 @@ class EASMDashboard {
                     }).join('');
 
                     resolvedIpsHtml = `
-                    <div class="property">
-                        <span class="key">${resolvedIps.length === 1 ? 'Resolved IP:' : 'Resolved IPs:'}</span>
-                        <div class="value" style="display: flex; flex-wrap: wrap; gap: 4px; align-items: center;">${ipsBadges}</div>
+                    <div class="risk-accordion-group" style="margin-top: 0.75rem; margin-bottom: 0.5rem;">
+                        <div class="risk-accordion-header" onclick="window.dashboard.toggleRiskAccordion(this)">
+                            <div class="risk-accordion-title">
+                                <i data-lucide="server" class="accordion-icon ui-icon" style="color: #60a5fa;"></i>
+                                <span>${resolvedIps.length === 1 ? 'Resolved IP' : 'Resolved IPs'} (${resolvedIps.length})</span>
+                            </div>
+                            <div class="risk-accordion-status" style="display: flex; flex-wrap: wrap; align-items: center; gap: 6px; justify-content: flex-end;">
+                                <i data-lucide="chevron-down" class="accordion-chevron ui-icon"></i>
+                            </div>
+                        </div>
+                        <div class="risk-accordion-body" style="display: none; max-height: 250px; overflow-y: auto; padding: 8px 6px;">
+                            <div style="display: flex; flex-wrap: wrap; gap: 4px; align-items: center;">${ipsBadges}</div>
+                        </div>
                     </div>`;
                 } else {
                     resolvedIpsHtml = `
                     <div class="property">
-                        <span class="key">Resolved IP:</span>
+                        <span class="key">Resolved IPs:</span>
                         <span class="value" style="color: #94a3b8; font-style: italic;">Unresolved / None</span>
                     </div>`;
                 }

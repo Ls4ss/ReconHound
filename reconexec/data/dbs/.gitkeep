@@ -1,2 +1,0 @@
-# This directory stores SQLite databases for ReconExec EASM scan results
-# Each target gets its own database file for web dashboard visualization

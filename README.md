@@ -23,8 +23,8 @@
 ### Modern External Attack Surface Mapping & Threat Intelligence Platform
 **Asynchronous • Modular • High-Concurrency • EPSS + CISA KEV Prioritization • Masscan & Nuclei Active Scanning • Shodan • Censys • crt.sh • OTX**
 
-[![Website: detecti.com.br](https://img.shields.io/badge/Official_Website-detecti.com.br-00d4ff.svg)](https://detecti.com.br)
-[![Documentation: Official Docs](https://img.shields.io/badge/Documentation-Official_Docs-8A2BE2.svg)](https://detecti.com.br/docs/reconhound/en.html)
+[![Website: lucassouza.io](https://img.shields.io/badge/Official_Website-lucassouza.io-00d4ff.svg)](https://lucassouza.io)
+[![Documentation: Official Docs](https://img.shields.io/badge/Documentation-Official_Docs-8A2BE2.svg)](https://lucassouza.io/reconhound)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
@@ -34,7 +34,7 @@
 
 ## 📚 Official Documentation
 
-> **For complete guides, installation, CLI usage, architecture, and threat intelligence scoring, please visit the [ReconHound Official Documentation](https://detecti.com.br/docs/reconhound/en.html).**
+> **For complete guides, installation, CLI usage, architecture, and threat intelligence scoring, please visit the [ReconHound Official Documentation](https://lucassouza.io/reconhound).**
 
 **ReconHound** is a high-performance External Attack Surface Management (EASM) and Threat Intelligence ecosystem. It maps exposed internet infrastructure, performs targeted vulnerability validation, and enriches findings with real-world exploitation risk data (FIRST EPSS + CISA KEV + Threat Actor Attribution).
 
@@ -57,7 +57,7 @@ reconx config-check --setup
 reconx --help
 ```
 
-*For prerequisites like Masscan and Nuclei, and advanced API keys configuration, check the [Installation Guide](https://detecti.com.br/docs/reconhound/en.html#setup-install).*
+*For prerequisites like Masscan and Nuclei, and advanced API keys configuration, check the [Installation Guide](https://lucassouza.io/reconhound#setup-install).*
 
 ---
 
@@ -81,7 +81,7 @@ reconx intel CVE-2021-44228
 reconx hound start
 ```
 
-*For advanced queries, vulnerability filtering, and reporting, see the [CLI Usage Guide](https://detecti.com.br/docs/reconhound/en.html#cli-quickstart).*
+*For advanced queries, vulnerability filtering, and reporting, see the [CLI Usage Guide](https://lucassouza.io/reconhound#cli-quickstart).*
 
 ---
 
@@ -136,6 +136,6 @@ ReconHound/
   <sub><b>Lucas S. (Ls4ss)</b></sub>
 </a>
 <br />
-<sub>Developed by <b><a href="https://detecti.com.br" target="_blank">DetecTI Security</a></b></sub>
+<sub>Developed by <b><a href="https://lucassouza.io" target="_blank">Lucas Souza</a></b></sub>
 
 Feel free to open Issues or submit Pull Requests to contribute!

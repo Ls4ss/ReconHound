@@ -1,711 +1,655 @@
 <!DOCTYPE html>
+
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ReconHound</title>
-    <!-- Favicon -->
-    <link rel="apple-touch-icon" sizes="180x180" href="/static/apple-touch-icon.png">
-    <link rel="icon" type="image/png" sizes="32x32" href="/static/favicon-32x32.png">
-    <link rel="icon" type="image/png" sizes="16x16" href="/static/favicon-16x16.png">
-    <link rel="manifest" href="/static/site.webmanifest">
-    <link rel="shortcut icon" href="/static/favicon.ico">
-    <!-- Google Fonts - Inter & JetBrains Mono -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/static/css/dashboard.css?v=96">
-    <script src="/static/js/cytoscape.min.js"></script>
-    <script src="/static/js/cytoscape-cose-bilkent.js"></script>
-    <script src="/static/js/lucide.min.js"></script>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport"/>
+<title>ReconHound</title>
+<!-- Favicon -->
+<link href="/static/apple-touch-icon.png" rel="apple-touch-icon" sizes="180x180"/>
+<link href="/static/favicon-32x32.png" rel="icon" sizes="32x32" type="image/png"/>
+<link href="/static/favicon-16x16.png" rel="icon" sizes="16x16" type="image/png"/>
+<link href="/static/site.webmanifest" rel="manifest"/>
+<link href="/static/favicon.ico" rel="shortcut icon"/>
+<!-- Google Fonts - Inter & JetBrains Mono -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&amp;family=JetBrains+Mono:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="/static/css/dashboard.css?v=96" rel="stylesheet"/>
+<script src="/static/js/cytoscape.min.js"></script>
+<script src="/static/js/cytoscape-cose-bilkent.js"></script>
+<script src="/static/js/lucide.min.js"></script>
 </head>
 <body>
-    <div class="dashboard-container">
-        <!-- Header -->
-        <header class="dashboard-header">
-            <div class="header-content">
-                <!-- Left: Mobile Sidebar Toggle & Brand -->
-                <div class="header-left">
-                    <button id="toggle-sidebar" class="sidebar-toggle-btn" aria-label="Toggle Sidebar Menu" title="Toggle Filters & Controls">
-                        <i data-lucide="menu" class="ui-icon"></i>
-                    </button>
-                    <a href="https://detecti.com.br" target="_blank" rel="noopener noreferrer" class="header-brand logo-title" style="text-decoration: none; display: flex; align-items: center; font-family: 'JetBrains Mono', monospace; font-size: 1.5rem; font-weight: 700; color: var(--text-main);" title="Visit DetecTI Security Official Website">
-                        <div class="brand-text">
-                            <h1 class="brand-title" style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-                                <span>Recon<span class="ti-highlight">Hound</span></span>
-                                <span style="font-size: 0.5em; background: rgba(0, 240, 255, 0.1); color: var(--cyan-accent); border: 1px solid rgba(0, 240, 255, 0.3); padding: 1px 6px; border-radius: 4px; font-weight: bold; font-family: var(--font-mono); letter-spacing: 0.5px;">v3.0.0</span>
-                            </h1>
-                            <span class="brand-subtitle">Attack Surface Management</span>
-                        </div>
-                    </a>
-                    <a href="https://detecti.com.br/docs/reconhound/en.html" target="_blank" rel="noopener noreferrer" class="header-docs-icon-btn" title="Official Documentation (Opens in new tab)" aria-label="Official Documentation">
-                        <i data-lucide="book-open" class="ui-icon"></i>
-                    </a>
-                </div>
-
-                <!-- Right: Database Selector, Export Actions & Targets Button -->
-                <div class="header-right">
-
-                    <!-- Database Selector (Header) -->
-                    <div class="header-control-group" style="margin-right: 15px; border-right: 1px solid rgba(255,255,255,0.1); padding-right: 15px; display: flex; align-items: center;">
-                        <button id="btn-toggle-db-header" class="action-btn db-trigger-btn" aria-label="Select Database" style="display: flex; align-items: center; gap: 6px;">
-                            <i data-lucide="database" class="ui-icon" style="width: 14px; height: 14px;"></i>
-                            <span id="current-db-label" style="max-width: 200px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 500;">Loading...</span>
-                            <i data-lucide="chevron-down" class="ui-icon" style="width: 14px; height: 14px;"></i>
-                        </button>
-                        
-                        <!-- Header DB Popover -->
-                        <div id="header-db-popover" class="toolbar-popover hidden" style="display: none; position: absolute; top: 50px; right: 140px; width: 320px; background: rgba(30, 30, 45, 0.95); border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.5); border: 1px solid #444; padding: 0; backdrop-filter: blur(5px); z-index: 9999;">
-                            <div class="db-dropdown-header" style="background: rgba(0,0,0,0.2); padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.05); display: flex; justify-content: space-between;">
-                                <span style="font-size: 0.8rem; color: #aaa;">Select Database</span>
-                                <span class="db-count-badge" id="db-count-badge" style="background: rgba(0, 240, 255, 0.2); color: #00f0ff; padding: 2px 6px; border-radius: 10px; font-size: 0.7rem;">0</span>
-                            </div>
-                            <div id="db-dropdown-list" style="display: flex; flex-direction: column; gap: 4px; max-height: 350px; overflow-y: auto; padding: 6px;">
-                                <!-- Dynamic DB List Items populated natively by graph.js -->
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Target Management Drawer Trigger Button (At the far right corner) -->
-                    <div class="header-control-group">
-                        <button id="btn-toggle-targets" class="action-btn targets-drawer-trigger-btn" aria-label="Toggle Target Management" title="Target Management & Active Scan">
-                            <i data-lucide="crosshair" class="ui-icon"></i>
-                            <span class="target-btn-label">Targets</span>
-                            <span id="target-scan-indicator" class="target-scan-indicator" style="display: none;">
-                                <span class="target-scan-pulse-dot"></span>
-                                <span>Scanning...</span>
-                            </span>
-                            <span id="target-badge-count" class="target-count-badge" style="display: none;">0</span>
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </header>
-
-        <!-- Main Content -->
-        <div class="dashboard-main">
-            <!-- Sidebar Backdrop for Mobile/Tablet -->
-            <div id="sidebar-backdrop" class="drawer-backdrop"></div>
-
-            <!-- Sidebar -->
-            <aside class="sidebar mini-mode" id="dashboard-sidebar">
-                <!-- Sidebar Mobile Header -->
-                <div class="sidebar-mobile-header">
-                    <span class="sidebar-mobile-title"><i data-lucide="activity" class="ui-icon"></i> Surface &amp; Controls</span>
-                    <button id="close-sidebar" class="sidebar-close-btn" aria-label="Close Sidebar"><i data-lucide="x" class="ui-icon"></i></button>
-                </div>
-
+<div class="dashboard-container">
+<!-- Header -->
+<header class="dashboard-header">
+<div class="header-content">
+<!-- Left: Mobile Sidebar Toggle & Brand -->
+<div class="header-left">
+<button aria-label="Toggle Sidebar Menu" class="sidebar-toggle-btn" id="toggle-sidebar" style=" margin-left: -9.5px;" title="Toggle Filters &amp; Controls">
+<i class="ui-icon" data-lucide="menu"></i>
+</button>
+<a class="header-brand logo-title" href="https://lucassouza.io/reconhound" rel="noopener noreferrer" style="text-decoration: none; display: flex; align-items: center; font-family: 'JetBrains Mono', monospace; font-size: 1.5rem; font-weight: 700; color: var(--text-main);" target="_blank" title="Official Documentation">
+<div class="brand-text">
+<h1 class="brand-title" style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+<span>Recon<span class="ti-highlight">Hound</span></span>
+<span style="font-size: 0.5em; background: rgba(0, 240, 255, 0.1); color: var(--cyan-accent); border: 1px solid rgba(0, 240, 255, 0.3); padding: 1px 6px; border-radius: 4px; font-weight: bold; font-family: var(--font-mono); letter-spacing: 0.5px;">v3.0.0</span>
+</h1>
+<span class="brand-subtitle">Attack Surface Management</span>
+</div>
+</a>
+</div>
+<!-- Right: Database Selector, Export Actions & Targets Button -->
+<div class="header-right">
+<!-- Database Selector (Header) -->
+<div class="header-control-group" style="margin-right: 15px; border-right: 1px solid rgba(255,255,255,0.1); padding-right: 15px; display: flex; align-items: center;">
+<button aria-label="Select Database" class="action-btn db-trigger-btn" id="btn-toggle-db-header" style="display: flex; align-items: center; gap: 6px;">
+<i class="ui-icon" data-lucide="database" style="width: 14px; height: 14px;"></i>
+<span id="current-db-label" style="max-width: 200px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 500;">Loading...</span>
+<i class="ui-icon" data-lucide="chevron-down" style="width: 14px; height: 14px;"></i>
+</button>
+<!-- Header DB Popover -->
+<div class="toolbar-popover hidden" id="header-db-popover" style="display: none; position: absolute; top: 50px; right: 140px; width: 320px; background: rgba(30, 30, 45, 0.95); border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.5); border: 1px solid #444; padding: 0; backdrop-filter: blur(5px); z-index: 9999;">
+<div class="db-dropdown-header" style="background: rgba(0,0,0,0.2); padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.05); display: flex; justify-content: space-between;">
+<span style="font-size: 0.8rem; color: #aaa;">Select Database</span>
+<span class="db-count-badge" id="db-count-badge" style="background: rgba(0, 240, 255, 0.2); color: #00f0ff; padding: 2px 6px; border-radius: 10px; font-size: 0.7rem;">0</span>
+</div>
+<div id="db-dropdown-list" style="display: flex; flex-direction: column; gap: 4px; max-height: 350px; overflow-y: auto; padding: 6px;">
+<!-- Dynamic DB List Items populated natively by graph.js -->
+</div>
+</div>
+</div>
+<!-- Target Management Drawer Trigger Button (At the far right corner) -->
+<div class="header-control-group">
+<button aria-label="Toggle Target Management" class="action-btn targets-drawer-trigger-btn" id="btn-toggle-targets" title="Target Management &amp; Active Scan">
+<i class="ui-icon" data-lucide="crosshair"></i>
+<span class="target-btn-label">Targets</span>
+<span class="target-scan-indicator" id="target-scan-indicator" style="display: none;">
+<span class="target-scan-pulse-dot"></span>
+<span>Scanning...</span>
+</span>
+<span class="target-count-badge" id="target-badge-count" style="display: none;">0</span>
+</button>
+</div>
+</div>
+</div>
+</header>
+<!-- Main Content -->
+<div class="dashboard-main">
+<!-- Sidebar Backdrop for Mobile/Tablet -->
+<div class="drawer-backdrop" id="sidebar-backdrop"></div>
+<!-- Sidebar -->
+<aside class="sidebar mini-mode" id="dashboard-sidebar">
+<!-- Sidebar Mobile Header -->
+<div class="sidebar-mobile-header">
+<span class="sidebar-mobile-title"><i class="ui-icon" data-lucide="activity"></i> Surface &amp; Controls</span>
+<button aria-label="Close Sidebar" class="sidebar-close-btn" id="close-sidebar"><i class="ui-icon" data-lucide="x"></i></button>
+</div>
 <!-- Metrics Accordion Panel -->
-                <div class="panel metrics-panel asset-accordion-panel">
-                    <details class="sidebar-accordion" id="metrics-accordion" name="sidebar-accordion-group" open>
-                        <summary class="accordion-header">
-                            <span class="accordion-title"><i data-lucide="bar-chart-3" class="ui-icon panel-title-icon"></i> <span class="title-text">Attack Surface Metrics</span></span>
-                            <i data-lucide="chevron-down" class="ui-icon accordion-icon"></i>
-                        </summary>
-                        <div class="accordion-body">
-                            <!-- Attack Surface Metrics: Organized in 2-Column Pairs -->
-                            <div class="metric-grid">
-                                <div class="metric-item">
-                                    <span class="metric-value" id="domains-count">-</span>
-                                    <span class="metric-label">Domains</span>
-                                </div>
-                                <div class="metric-item">
-                                    <span class="metric-value" id="subdomains-count">-</span>
-                                    <span class="metric-label">Subdomains</span>
-                                </div>
-                                <div class="metric-item">
-                                    <span class="metric-value" id="ips-count">-</span>
-                                    <span class="metric-label">IP Addresses</span>
-                                </div>
-                                <div class="metric-item">
-                                    <span class="metric-value" id="services-count">-</span>
-                                    <span class="metric-label">Open Services</span>
-                                </div>
-                                <div class="metric-item verified-highlight">
-                                    <span class="metric-value" id="verified-services-count">-</span>
-                                    <span class="metric-label">Verified Services</span>
-                                </div>
-                                <div class="metric-item critical">
-                                    <span class="metric-value" id="vulns-count">-</span>
-                                    <span class="metric-label">Vulnerabilities</span>
-                                </div>
-                                <div class="metric-item critical">
-                                    <span class="metric-value" id="kev-count">-</span>
-                                    <span class="metric-label">CISA KEV</span>
-                                </div>
-                                <div class="metric-item epss-highlight">
-                                    <span class="metric-value" id="epss-count">-</span>
-                                    <span class="metric-label">High EPSS (&gt;50%)</span>
-                                </div>
-                            </div>
-                        </div>
-                    </details>
-                </div>
-
-
-                
-
-                <!-- Inventory Button Panel -->
-                <div class="panel inventory-panel asset-accordion-panel" style="margin-top: 10px;">
-                    <div id="btn-toggle-inventory" class="accordion-header" style="border-radius: 6px;">
-                        <span class="accordion-title"><i data-lucide="table" class="ui-icon panel-title-icon"></i> <span class="title-text">Inventory</span></span>
-                        <i data-lucide="arrow-up-right" class="ui-icon accordion-icon"></i>
-                    </div>
-                </div>
-
-                <!-- Sidebar Footer -->
-                <div class="sidebar-footer">
-                    <div class="sidebar-logout" style="padding-bottom: 15px; border-bottom: 1px solid rgba(255, 255, 255, 0.05); margin-bottom: 15px;">
-                        <button id="btn-logout" class="action-btn" style="width: 100%; justify-content: center; background: rgba(239, 68, 68, 0.1); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.3);">
-                            <i data-lucide="log-out" class="ui-icon"></i> Terminate Session
+<div class="panel metrics-panel asset-accordion-panel">
+<details class="sidebar-accordion" id="metrics-accordion" name="sidebar-accordion-group" open="">
+<summary class="accordion-header">
+<span class="accordion-title"><i class="ui-icon panel-title-icon" data-lucide="bar-chart-3"></i> <span class="title-text">Attack Surface Metrics</span></span>
+<i class="ui-icon accordion-icon" data-lucide="chevron-down"></i>
+</summary>
+<div class="accordion-body">
+<!-- Attack Surface Metrics: Organized in 2-Column Pairs -->
+<div class="metric-grid">
+<div class="metric-item">
+<span class="metric-value" id="domains-count">-</span>
+<span class="metric-label">Domains</span>
+</div>
+<div class="metric-item">
+<span class="metric-value" id="subdomains-count">-</span>
+<span class="metric-label">Subdomains</span>
+</div>
+<div class="metric-item">
+<span class="metric-value" id="ips-count">-</span>
+<span class="metric-label">IP Addresses</span>
+</div>
+<div class="metric-item">
+<span class="metric-value" id="services-count">-</span>
+<span class="metric-label">Open Services</span>
+</div>
+<div class="metric-item verified-highlight">
+<span class="metric-value" id="verified-services-count">-</span>
+<span class="metric-label">Verified Services</span>
+</div>
+<div class="metric-item critical">
+<span class="metric-value" id="vulns-count">-</span>
+<span class="metric-label">Vulnerabilities</span>
+</div>
+<div class="metric-item critical">
+<span class="metric-value" id="kev-count">-</span>
+<span class="metric-label">CISA KEV</span>
+</div>
+<div class="metric-item epss-highlight">
+<span class="metric-value" id="epss-count">-</span>
+<span class="metric-label">High EPSS (&gt;50%)</span>
+</div>
+</div>
+</div>
+</details>
+</div>
+<!-- Inventory Button Panel -->
+<div class="panel inventory-panel asset-accordion-panel" style="margin-top: 10px;">
+<div class="accordion-header" id="btn-toggle-inventory" style="border-radius: 6px;">
+<span class="accordion-title"><i class="ui-icon panel-title-icon" data-lucide="table"></i> <span class="title-text">Inventory</span></span>
+<i class="ui-icon accordion-icon" data-lucide="arrow-up-right"></i>
+</div>
+</div>
+<!-- Sidebar Footer -->
+<div class="sidebar-footer">
+<div class="sidebar-logout" style="padding-bottom: 15px; border-bottom: 1px solid rgba(255, 255, 255, 0.05); margin-bottom: 15px;">
+<button class="action-btn" id="btn-logout" style="width: 100%; justify-content: center; background: rgba(239, 68, 68, 0.1); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.3);">
+<i class="ui-icon" data-lucide="log-out"></i> Terminate Session
                         </button>
-                    </div>
-                    <div><a href="https://detecti.com.br/docs/reconhound/en.html" target="_blank" rel="noopener noreferrer" class="sidebar-docs-link"><i data-lucide="book-marked" class="ui-icon sidebar-docs-icon"></i> Official Documentation ↗</a></div>
-                    <div class="sidebar-powered">Powered by <a href="https://detecti.com.br" target="_blank" rel="noopener noreferrer">Detec<span class="ti-highlight">TI</span> Security</a></div>
-                </div>
-            </aside>
-
-            <!-- Graph Container -->
-            <main class="graph-container">
-                <div class="canvas-toolbar" id="canvas-toolbar" style="position: absolute; top: 20px; left: 20px; z-index: 100; display: flex; flex-direction: column; gap: 8px; flex-wrap: wrap;">
-                    <style>
+</div>
+<div><a class="sidebar-docs-link" href="https://lucassouza.io/reconhound" rel="noopener noreferrer" target="_blank"><i class="ui-icon sidebar-docs-icon" data-lucide="book-marked"></i> Official Documentation ↗</a></div>
+<div class="sidebar-powered">Powered by <a href="https://lucassouza.io" rel="noopener noreferrer" target="_blank">Lucas Souza</a></div>
+</div>
+</aside>
+<!-- Graph Container -->
+<main class="graph-container">
+<div class="canvas-toolbar" id="canvas-toolbar" style="position: absolute; top: 20px; left: 20px; z-index: 100; display: flex; flex-direction: column; gap: 8px; flex-wrap: wrap; align-items: flex-start;">
+<style>
                         .segmented-toolbar button:hover { background: rgba(255, 255, 255, 0.08) !important; }
                         .segmented-toolbar button.active { background: rgba(0, 240, 255, 0.15) !important; color: #00f0ff !important; }
                     </style>
-                    <!-- Toolbar Buttons (Segmented Bar) -->
-                    <div class="segmented-toolbar" style="display: flex; background: rgba(25, 27, 38, 0.95); border: 1px solid var(--border-color); border-radius: 6px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.5); backdrop-filter: blur(10px);">
-                        <button id="btn-toggle-search" aria-label="Toggle Search" style="background: transparent; border: none; border-right: 1px solid var(--border-color); padding: 8px 16px; color: var(--text-white); cursor: pointer; display: flex; align-items: center; gap: 6px; font-size: 0.85rem; transition: all 0.2s;">
-                            <i data-lucide="search" class="ui-icon"></i> Search
+<!-- Toolbar Buttons (Segmented Bar) -->
+<div class="segmented-toolbar" style="display: flex; background: rgba(25, 27, 38, 0.95); border: 1px solid var(--border-color); border-radius: 6px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.5); backdrop-filter: blur(10px);">
+<button aria-label="Toggle Search" id="btn-toggle-search" style="background: transparent; border: none; border-right: 1px solid var(--border-color); padding: 8px 16px; color: var(--text-white); cursor: pointer; display: flex; align-items: center; gap: 6px; font-size: 0.85rem; transition: all 0.2s;">
+<i class="ui-icon" data-lucide="search"></i> Search
                         </button>
-                        <button id="btn-toggle-filters" aria-label="Toggle Filters" style="background: transparent; border: none; border-right: 1px solid var(--border-color); padding: 8px 16px; color: var(--text-white); cursor: pointer; display: flex; align-items: center; gap: 6px; font-size: 0.85rem; transition: all 0.2s;">
-                            <i data-lucide="filter" class="ui-icon"></i> Filters
+<button aria-label="Toggle Filters" id="btn-toggle-filters" style="background: transparent; border: none;  padding: 8px 16px; color: var(--text-white); cursor: pointer; display: flex; align-items: center; gap: 6px; font-size: 0.85rem; transition: all 0.2s;">
+<i class="ui-icon" data-lucide="filter"></i> Filters
                         </button>
-                        <button id="btn-toggle-export" aria-label="Toggle Export" style="background: transparent; border: none; padding: 8px 16px; color: var(--text-white); cursor: pointer; display: flex; align-items: center; gap: 6px; font-size: 0.85rem; transition: all 0.2s;">
-                            <i data-lucide="download" class="ui-icon"></i> Export
-                        </button>
-                        <button id="btn-import-db" aria-label="Import JSON" style="background: transparent; border: none; padding: 8px 16px; color: var(--text-white); cursor: pointer; display: flex; align-items: center; gap: 6px; font-size: 0.85rem; transition: all 0.2s;">
-                            <i data-lucide="upload" class="ui-icon"></i> Import
-                        </button>
-                        <input type="file" id="import-json-input" accept=".json" style="display: none;">
-                    </div>
-
-                    <!-- Search Popover -->
-                    <div id="search-popover" class="toolbar-popover hidden" style="display: none; width: 350px; max-width: calc(100vw - 40px); background: rgba(30, 30, 45, 0.95); border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.5); border: 1px solid #444; padding: 5px; backdrop-filter: blur(5px);">
-                        <div class="search-group" style="margin: 0; background: transparent; border: none; box-shadow: none;">
-                            <i data-lucide="search" class="ui-icon search-asset-icon"></i>
-                            <input type="text" id="search-input" placeholder="Search nodes (IP, domain, CVE, port...)" class="search-input" style="background: rgba(0,0,0,0.2); color: #fff; outline: none; border: none;">
-                            <button id="clear-search" class="clear-btn" aria-label="Clear Search"><i data-lucide="x" class="ui-icon"></i></button>
-                        </div>
-                    </div>
-
-                    <!-- Filters Popover -->
-                    <div id="filters-popover" class="toolbar-popover hidden" style="display: none; width: 280px; background: rgba(30, 30, 45, 0.95); border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.5); border: 1px solid #444; padding: 12px; backdrop-filter: blur(5px);">
-                        <div class="filter-group" style="display: flex; flex-direction: column;">
-                            <label class="filter-checkbox filter-3d-matrix-item" style="border-bottom: 1px solid rgba(140, 82, 255, 0.25); padding-bottom: 0.7rem; margin-bottom: 0.2rem;">
-                                <input type="checkbox" id="pop-filter-3d-matrix">
-                                <span class="checkmark"></span>
-                                <span style="color: #00e5ff; font-weight: 600;">3D Risk Matrix</span>&nbsp;<span style="color: var(--text-muted); font-size: 0.78rem;">(Active + Threat + Impact)</span>
-                            </label>
-                            <label class="filter-checkbox">
-                                <input type="checkbox" id="pop-filter-kev">
-                                <span class="checkmark"></span>
-                                <span style="color: #ff4757; font-weight: 600;">CISA KEV</span>&nbsp;<span style="color: var(--text-muted); font-size: 0.78rem;">(Known Exploited)</span>
-                            </label>
-                            <label class="filter-checkbox">
-                                <input type="checkbox" id="pop-filter-high-epss">
-                                <span class="checkmark"></span>
-                                <span style="color: #ffa502; font-weight: 600;">High EPSS</span>&nbsp;<span style="color: var(--text-muted); font-size: 0.78rem;">(>50% Probability)</span>
-                            </label>
-                            <label class="filter-checkbox">
-                                <input type="checkbox" id="pop-filter-critical">
-                                <span class="checkmark"></span>
-                                <span style="color: #ff3838; font-weight: 600;">Critical Severity</span>&nbsp;<span style="color: var(--text-muted); font-size: 0.78rem;">(CVSS 9.0+)</span>
-                            </label>
-                            <label class="filter-checkbox">
-                                <input type="checkbox" id="pop-filter-hide-low-info">
-                                <span class="checkmark"></span>
-                                <span style="color: #70a1ff; font-weight: 600;">Hide Low &amp; Info</span>&nbsp;<span style="color: var(--text-muted); font-size: 0.78rem;">(Noise Reduction)</span>
-                            </label>
-                            <label class="filter-checkbox">
-                                <input type="checkbox" id="pop-filter-nuclei-only">
-                                <span class="checkmark"></span>
-                                <span style="color: #c084fc; font-weight: 600;">Nuclei Findings Only</span>&nbsp;<span style="color: var(--text-muted); font-size: 0.78rem;">(Templates)</span>
-                            </label>
-                            <label class="filter-checkbox">
-                                <input type="checkbox" id="pop-filter-with-pocs">
-                                <span class="checkmark"></span>
-                                <span style="color: #00d2d3; font-weight: 600;">Verified Public PoCs</span>&nbsp;<span style="color: var(--text-muted); font-size: 0.78rem;">(ExploitDB / GitHub)</span>
-                            </label>
-                            <label class="filter-checkbox" style="border-top: 1px solid rgba(255, 255, 255, 0.08); padding-top: 0.5rem; margin-top: 0.2rem;">
-                                <input type="checkbox" id="pop-filter-services-only">
-                                <span class="checkmark"></span>
-                                <span style="color: #2ed573; font-weight: 600;">Exposed Services</span>&nbsp;<span style="color: var(--text-muted); font-size: 0.78rem;">(All Branches)</span>
-                            </label>
-                            <label class="filter-checkbox">
-                                <input type="checkbox" id="pop-filter-verified-services">
-                                <span class="checkmark"></span>
-                                <span style="color: #26de81; font-weight: 600;">Verified Active Services</span>&nbsp;<span style="color: var(--text-muted); font-size: 0.78rem;">(Masscan / HTTP)</span>
-                            </label>
-                            <label class="filter-checkbox">
-                                <input type="checkbox" id="pop-filter-vuln-services">
-                                <span class="checkmark"></span>
-                                <span style="color: #eb4d4b; font-weight: 600;">Vulnerable Services</span>&nbsp;<span style="color: var(--text-muted); font-size: 0.78rem;">(Direct Findings)</span>
-                            </label>
-                        </div>
-                    </div>
-
-                    <!-- Export Popover -->
-                    <div id="export-popover" class="toolbar-popover hidden" style="display: none; width: 220px; background: rgba(30, 30, 45, 0.95); border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.5); border: 1px solid #444; padding: 6px; backdrop-filter: blur(5px);">
-                        <div style="display: flex; flex-direction: column; gap: 4px;">
-                            <button class="export-dropdown-item" id="pop-export-item-json" style="background: transparent; border: none; padding: 10px; border-radius: 6px; color: #fff; display: flex; align-items: center; gap: 10px; cursor: pointer; text-align: left; transition: background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.1)'" onmouseout="this.style.background='transparent'">
-                                <i data-lucide="file-code-2" class="ui-icon export-item-icon" style="color: #00f0ff;"></i>
-                                <div class="export-item-text" style="display: flex; flex-direction: column; line-height: 1.2;">
-                                    <span class="export-item-title" style="font-weight: 600; font-size: 0.85rem;">JSON</span>
-                                    <span class="export-item-desc" style="font-size: 0.7rem; color: #888;">Structured scan results</span>
-                                </div>
-                            </button>
-                            <button class="export-dropdown-item" id="pop-export-item-md" style="background: transparent; border: none; padding: 10px; border-radius: 6px; color: #fff; display: flex; align-items: center; gap: 10px; cursor: pointer; text-align: left; transition: background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.1)'" onmouseout="this.style.background='transparent'">
-                                <i data-lucide="file-text" class="ui-icon export-item-icon" style="color: #4ecdc4;"></i>
-                                <div class="export-item-text" style="display: flex; flex-direction: column; line-height: 1.2;">
-                                    <span class="export-item-title" style="font-weight: 600; font-size: 0.85rem;">Markdown</span>
-                                    <span class="export-item-desc" style="font-size: 0.7rem; color: #888;">Executive documentation</span>
-                                </div>
-                            </button>
-                            <button class="export-dropdown-item" id="pop-export-item-html" style="background: transparent; border: none; padding: 10px; border-radius: 6px; color: #fff; display: flex; align-items: center; gap: 10px; cursor: pointer; text-align: left; transition: background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.1)'" onmouseout="this.style.background='transparent'">
-                                <i data-lucide="globe" class="ui-icon export-item-icon" style="color: #f59e0b;"></i>
-                                <div class="export-item-text" style="display: flex; flex-direction: column; line-height: 1.2;">
-                                    <span class="export-item-title" style="font-weight: 600; font-size: 0.85rem;">HTML</span>
-                                    <span class="export-item-desc" style="font-size: 0.7rem; color: #888;">Interactive browser report</span>
-                                </div>
-                            </button>
-                            <button class="export-dropdown-item" id="pop-export-item-csv" style="background: transparent; border: none; padding: 10px; border-radius: 6px; color: #fff; display: flex; align-items: center; gap: 10px; cursor: pointer; text-align: left; transition: background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.1)'" onmouseout="this.style.background='transparent'">
-                                <i data-lucide="file-spreadsheet" class="ui-icon export-item-icon" style="color: #2ecc71;"></i>
-                                <div class="export-item-text" style="display: flex; flex-direction: column; line-height: 1.2;">
-                                    <span class="export-item-title" style="font-weight: 600; font-size: 0.85rem;">CSV</span>
-                                    <span class="export-item-desc" style="font-size: 0.7rem; color: #888;">Spreadsheet data format</span>
-                                </div>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-                <div id="spacebar-pan-hint" class="spacebar-pan-hint"><i data-lucide="hand" class="ui-icon" style="width: 14px; height: 14px; vertical-align: middle;"></i> Pan Mode (Spacebar or Right-Click held) - Drag to move view</div>
-                <div id="cy" class="cytoscape-graph"></div>
-                
-                <!-- Floating Graph Actions & Layout (Left side) -->
-                <div class="floating-controls" id="floating-controls">
-                    <div class="floating-actions-group">
-                        <button id="btn-float-fit" class="floating-btn" title="Fit to Screen" aria-label="Fit Graph"><i data-lucide="maximize-2" class="ui-icon"></i></button>
-                        <button id="btn-float-reset" class="floating-btn" title="Reset Zoom" aria-label="Reset Zoom"><i data-lucide="rotate-ccw" class="ui-icon"></i></button>
-                        <button id="btn-float-relayout" class="floating-btn" title="Re-layout Graph" aria-label="Re-layout Graph"><i data-lucide="refresh-cw" class="ui-icon"></i></button>
-                    </div>
-                    <div class="floating-layout-wrapper">
-                        <select id="layout-select" class="floating-layout-select" aria-label="Select Graph Layout" title="Select Layout">
-                            <option value="hierarchical-topdown" selected>Hierarchical (Top-Down)</option>
-                            <option value="hierarchical-leftright">Hierarchical (Left-Right)</option>
-                            <option value="cose">Force-Directed</option>
-                            <option value="concentric">Concentric</option>
-                            <option value="grid">Grid</option>
-                        </select>
-                    </div>
-                </div>
-
-                <div class="graph-loading" id="graph-loading">
-                    <div class="spinner"></div>
-                    <p>Loading EASM graph data...</p>
-                </div>
-            </main>
-        </div>
-
-        <!-- Inspector Backdrop for Mobile/Tablet -->
-        <div id="inspector-backdrop" class="drawer-backdrop"></div>
-
-        <!-- Inspector Drawer -->
-        <div class="inspector-drawer" id="inspector-drawer">
-            <div class="inspector-header">
-                <h3 id="inspector-title">Asset Inspector</h3>
-                <button class="close-btn" id="close-inspector" aria-label="Close Inspector"><i data-lucide="x" class="ui-icon"></i></button>
-            </div>
-            <div class="inspector-content" id="inspector-content">
-                <p>Click on any node in the graph to inspect its properties...</p>
-            </div>
-        </div>
-
-        <!-- Inventory Drawer Backdrop for Mobile/Tablet -->
-        <div id="inventory-backdrop" class="drawer-backdrop"></div>
-
-        <!-- Inventory Drawer (Bottom) -->
-        <div class="inventory-drawer" id="inventory-drawer" style="position: absolute; bottom: -100vh; left: 0; right: 0; height: 50vh; background: var(--bg-card); z-index: 1000; transition: bottom 0.3s cubic-bezier(0.16, 1, 0.3, 1); display: flex; flex-direction: column; border-top: 1px solid var(--border-color); box-shadow: 0 -10px 30px rgba(0,0,0,0.5);">
-            <!-- Resize Handle -->
-            <div id="inventory-resizer" style="height: 12px; width: 100%; cursor: ns-resize; position: absolute; top: -6px; left: 0; z-index: 1001; background: transparent; display: flex; justify-content: center; align-items: center;" title="Drag to resize">
-                <div style="width: 40px; height: 4px; background: rgba(255,255,255,0.2); border-radius: 4px;"></div>
-            </div>
-            
-            <div class="inventory-header" style="display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; border-bottom: 1px solid rgba(255, 255, 255, 0.08); background: var(--bg-header);">
-                <div style="display: flex; align-items: center; gap: 15px;">
-                    <h3 style="margin: 0; display: flex; align-items: center; gap: 8px; font-size: 1rem;"><i data-lucide="table" class="ui-icon" style="color: var(--cyan-accent);"></i> Asset Inventory Details</h3>
-                    <div style="position: relative; display: flex; align-items: center;">
-                        <i data-lucide="search" style="position: absolute; left: 8px; width: 14px; height: 14px; color: var(--text-muted);"></i>
-                        <input type="text" id="inventory-search" placeholder="Search assets..." style="background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.1); color: #fff; padding: 6px 12px 6px 28px; border-radius: 4px; font-size: 0.8rem; width: 250px; outline: none; transition: border-color 0.2s;" onfocus="this.style.borderColor='var(--cyan-accent)'" onblur="this.style.borderColor='rgba(255,255,255,0.1)'" onkeyup="window.renderInventoryTable()">
-                    </div>
-                </div>
-                <button class="close-btn" id="close-inventory-drawer" aria-label="Close Inventory" style="background: transparent; border: none; cursor: pointer; color: var(--text-muted); transition: color 0.2s;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='var(--text-muted)'"><i data-lucide="x" class="ui-icon"></i></button>
-            </div>
-            <div class="inventory-content" style="flex: 1; padding: 0; overflow: auto; background: var(--bg-secondary);">
-                <table style="width: 100%; border-collapse: collapse; text-align: left; color: var(--text-primary); font-size: 0.85rem; font-family: var(--font-mono);">
-                    <thead style="position: sticky; top: 0; z-index: 10;">
-                        <tr style="background: rgba(30, 30, 45, 0.95); backdrop-filter: blur(5px); color: var(--text-muted); border-bottom: 1px solid rgba(255,255,255,0.1);">
-                            <th onclick="window.sortInventory('value')" style="padding: 12px 20px; font-weight: 600; text-transform: uppercase; font-size: 0.75rem; cursor: pointer; user-select: none; transition: color 0.2s;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color=''">Asset <i data-lucide="arrow-up-down" style="width:12px; height:12px; display:inline-block; margin-left:4px; opacity:0.5; vertical-align: middle;"></i></th>
-                            <th onclick="window.sortInventory('type')" style="padding: 12px; font-weight: 600; text-transform: uppercase; font-size: 0.75rem; cursor: pointer; user-select: none; transition: color 0.2s;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color=''">Type <i data-lucide="arrow-up-down" style="width:12px; height:12px; display:inline-block; margin-left:4px; opacity:0.5; vertical-align: middle;"></i></th>
-                            <th onclick="window.sortInventory('services')" style="padding: 12px; font-weight: 600; text-transform: uppercase; font-size: 0.75rem; cursor: pointer; user-select: none; transition: color 0.2s;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color=''">Ports / Services <i data-lucide="arrow-up-down" style="width:12px; height:12px; display:inline-block; margin-left:4px; opacity:0.5; vertical-align: middle;"></i></th>
-                            <th onclick="window.sortInventory('vulnerabilities')" style="padding: 12px; font-weight: 600; text-transform: uppercase; font-size: 0.75rem; cursor: pointer; user-select: none; transition: color 0.2s;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color=''">Vulnerabilities (CVEs) <i data-lucide="arrow-up-down" style="width:12px; height:12px; display:inline-block; margin-left:4px; opacity:0.5; vertical-align: middle;"></i></th>
-                            <th style="padding: 12px; font-weight: 600; text-transform: uppercase; font-size: 0.75rem;">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <!-- Placeholder row replaced dynamically -->
-                    </tbody>
-                </table>
-            </div>
-        </div>
-
-        <!-- Targets Drawer Backdrop for Mobile/Tablet -->
-        <div id="targets-backdrop" class="drawer-backdrop"></div>
-        
-        <!-- Target Management Drawer (Right) -->
-        <div class="targets-drawer" id="targets-drawer">
-            <div class="targets-drawer-header">
-                <div class="targets-header-title">
-                    <i data-lucide="crosshair" class="ui-icon targets-header-icon"></i>
-                    <h3>Target Management</h3>
-                    <span class="targets-counter" id="targets-header-count">0 Targets</span>
-                </div>
-                <div class="targets-header-actions">
-                    <button class="close-btn" id="close-targets-drawer" aria-label="Close Targets Panel"><i data-lucide="x" class="ui-icon"></i></button>
-                </div>
-            </div>
-
-            <!-- Drawer Navigation Tabs -->
-            <div class="targets-drawer-tabs">
-                <button type="button" class="drawer-tab-btn active" data-tab="targets-tab">
-                    <i data-lucide="crosshair" class="tab-icon"></i>
-                    <span>Active Targeting</span>
-                </button>
-                <button type="button" class="drawer-tab-btn" data-tab="logs-tab">
-                    <i data-lucide="terminal" class="tab-icon"></i>
-                    <span>Execution Logs</span>
-                </button>
-            </div>
-
-            <div class="targets-drawer-content">
-
-                <!-- TAB 1: Active Targeting (Split View) -->
-                <div class="drawer-tab-pane active" id="tab-pane-targets" style="display: flex; flex: 1; min-height: 0;">
-                    <div style="display: flex; flex-direction: row; gap: 20px; flex: 1; min-height: 0;">
-                        <!-- Left Column: Marked Targets -->
-                        <div style="flex: 0 0 38%; display: flex; flex-direction: column; min-height: 0;">
-                            <div class="targets-section" style="flex: 1; display: flex; flex-direction: column; margin-bottom: 0; min-height: 0;">
-                                <div class="targets-section-title logs-header-row">
-                                    <div class="logs-title-left">
-                                        <i data-lucide="crosshair" class="ui-icon"></i>
-                                        <span>Marked Targets</span>
-                                    </div>
-                                    <button id="btn-clear-all-targets" class="btn-clear-logs" title="Remove all targets from list">
-                                        <i data-lucide="trash-2" class="ui-icon"></i>
-                                        <span>Clear All</span>
-                                    </button>
-                                </div>
-                                <div id="targets-list-container" class="targets-list-container" style="flex: 1; overflow-y: auto;">
-                                    <div class="targets-empty-state" id="targets-empty-state">
-                                        <i data-lucide="crosshair" class="empty-icon"></i>
-                                        <p>No IP targets marked yet.</p>
-                                        <span class="empty-hint">Right-click any IP Address or Organization node on the graph and select <strong>"Set as Target"</strong> to add.</span>
-                                    </div>
-                                    <div id="targets-items-list" class="targets-items-list"></div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Right Column: Masscan & Nuclei Configs -->
-                        <div style="flex: 1; display: flex; flex-direction: column; min-height: 0; background: rgba(0,0,0,0.15); border-radius: 8px; border: 1px solid rgba(255,255,255,0.05); padding: 15px; overflow-y: auto; ">
-                            <!-- Sub-tabs -->
-                            <div style="display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px; flex-shrink: 0;">
-                                <button type="button" class="sub-tab-btn active" data-subtab="masscan-config" style="background: rgba(0,240,255,0.1); border: 1px solid #00f0ff; color: #00f0ff; padding: 6px 12px; border-radius: 6px; cursor: pointer; display: flex; align-items: center; gap: 6px; font-size: 0.85rem;">
-                                    <i data-lucide="server" style="width: 14px; height: 14px;"></i> Masscan
+</div>
+<!-- Search Popover -->
+<div class="toolbar-popover hidden" id="search-popover" style="display: none; width: 350px; max-width: calc(100vw - 40px); background: rgba(30, 30, 45, 0.95); border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.5); border: 1px solid #444; padding: 5px; backdrop-filter: blur(5px);">
+<div class="search-group" style="margin: 0; background: transparent; border: none; box-shadow: none;">
+<i class="ui-icon search-asset-icon" data-lucide="search"></i>
+<input class="search-input" id="search-input" placeholder="Search nodes (IP, domain, CVE, port...)" style="background: rgba(0,0,0,0.2); color: #fff; outline: none; border: none;" type="text"/>
+<button aria-label="Clear Search" class="clear-btn" id="clear-search"><i class="ui-icon" data-lucide="x"></i></button>
+</div>
+</div>
+<!-- Filters Popover -->
+<div class="toolbar-popover hidden" id="filters-popover" style="display: none; width: 280px; background: rgba(30, 30, 45, 0.95); border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.5); border: 1px solid #444; padding: 12px; backdrop-filter: blur(5px);">
+<div class="filter-group" style="display: flex; flex-direction: column;">
+<label class="filter-checkbox filter-3d-matrix-item" style="border-bottom: 1px solid rgba(140, 82, 255, 0.25); padding-bottom: 0.7rem; margin-bottom: 0.2rem;">
+<input id="pop-filter-3d-matrix" type="checkbox"/>
+<span class="checkmark"></span>
+<span style="color: #00e5ff; font-weight: 600;">3D Risk Matrix</span> <span style="color: var(--text-muted); font-size: 0.78rem;">(Active + Threat + Impact)</span>
+</label>
+<label class="filter-checkbox">
+<input id="pop-filter-kev" type="checkbox"/>
+<span class="checkmark"></span>
+<span style="color: #ff4757; font-weight: 600;">CISA KEV</span> <span style="color: var(--text-muted); font-size: 0.78rem;">(Known Exploited)</span>
+</label>
+<label class="filter-checkbox">
+<input id="pop-filter-high-epss" type="checkbox"/>
+<span class="checkmark"></span>
+<span style="color: #ffa502; font-weight: 600;">High EPSS</span> <span style="color: var(--text-muted); font-size: 0.78rem;">(&gt;50% Probability)</span>
+</label>
+<label class="filter-checkbox">
+<input id="pop-filter-critical" type="checkbox"/>
+<span class="checkmark"></span>
+<span style="color: #ff3838; font-weight: 600;">Critical Severity</span> <span style="color: var(--text-muted); font-size: 0.78rem;">(CVSS 9.0+)</span>
+</label>
+<label class="filter-checkbox">
+<input id="pop-filter-hide-low-info" type="checkbox"/>
+<span class="checkmark"></span>
+<span style="color: #70a1ff; font-weight: 600;">Hide Low &amp; Info</span> <span style="color: var(--text-muted); font-size: 0.78rem;">(Noise Reduction)</span>
+</label>
+<label class="filter-checkbox">
+<input id="pop-filter-nuclei-only" type="checkbox"/>
+<span class="checkmark"></span>
+<span style="color: #c084fc; font-weight: 600;">Nuclei Findings Only</span> <span style="color: var(--text-muted); font-size: 0.78rem;">(Templates)</span>
+</label>
+<label class="filter-checkbox">
+<input id="pop-filter-with-pocs" type="checkbox"/>
+<span class="checkmark"></span>
+<span style="color: #00d2d3; font-weight: 600;">Verified Public PoCs</span> <span style="color: var(--text-muted); font-size: 0.78rem;">(ExploitDB / GitHub)</span>
+</label>
+<label class="filter-checkbox" style="border-top: 1px solid rgba(255, 255, 255, 0.08); padding-top: 0.5rem; margin-top: 0.2rem;">
+<input id="pop-filter-services-only" type="checkbox"/>
+<span class="checkmark"></span>
+<span style="color: #2ed573; font-weight: 600;">Exposed Services</span> <span style="color: var(--text-muted); font-size: 0.78rem;">(All Branches)</span>
+</label>
+<label class="filter-checkbox">
+<input id="pop-filter-verified-services" type="checkbox"/>
+<span class="checkmark"></span>
+<span style="color: #26de81; font-weight: 600;">Verified Active Services</span> <span style="color: var(--text-muted); font-size: 0.78rem;">(Masscan / HTTP)</span>
+</label>
+<label class="filter-checkbox">
+<input id="pop-filter-vuln-services" type="checkbox"/>
+<span class="checkmark"></span>
+<span style="color: #eb4d4b; font-weight: 600;">Vulnerable Services</span> <span style="color: var(--text-muted); font-size: 0.78rem;">(Direct Findings)</span>
+</label>
+</div>
+</div>
+<!-- Export Popover -->
+</div><div class="canvas-toolbar" id="canvas-toolbar-right" style="position: absolute; top: 20px; right: 20px; z-index: 100; display: flex; flex-direction: column; gap: 8px; flex-wrap: wrap; align-items: flex-end;"><div class="segmented-toolbar" style="display: flex; background: rgba(25, 27, 38, 0.95); border: 1px solid var(--border-color); border-radius: 6px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.5); backdrop-filter: blur(10px);"><button aria-label="Toggle Export" id="btn-toggle-export" style="background: transparent; border: none; padding: 8px 16px; color: var(--text-white); cursor: pointer; display: flex; align-items: center; gap: 6px; font-size: 0.85rem; transition: all 0.2s; border-right: 1px solid var(--border-color);">
+<i class="ui-icon" data-lucide="download"></i> Export
+                        </button><button aria-label="Import JSON" id="btn-import-db" style="background: transparent; border: none; padding: 8px 16px; color: var(--text-white); cursor: pointer; display: flex; align-items: center; gap: 6px; font-size: 0.85rem; transition: all 0.2s;">
+<i class="ui-icon" data-lucide="upload"></i> Import
+                        </button><input accept=".json" id="import-json-input" style="display: none;" type="file"/></div><div class="toolbar-popover hidden" id="export-popover" style="display: none; width: 220px; background: rgba(30, 30, 45, 0.95); border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.5); border: 1px solid #444; padding: 6px; backdrop-filter: blur(5px);">
+<div style="display: flex; flex-direction: column; gap: 4px;">
+<button class="export-dropdown-item" id="pop-export-item-json" onmouseout="this.style.background='transparent'" onmouseover="this.style.background='rgba(255,255,255,0.1)'" style="background: transparent; border: none; padding: 10px; border-radius: 6px; color: #fff; display: flex; align-items: center; gap: 10px; cursor: pointer; text-align: left; transition: background 0.2s;">
+<i class="ui-icon export-item-icon" data-lucide="file-code-2" style="color: #00f0ff;"></i>
+<div class="export-item-text" style="display: flex; flex-direction: column; line-height: 1.2;">
+<span class="export-item-title" style="font-weight: 600; font-size: 0.85rem;">JSON</span>
+<span class="export-item-desc" style="font-size: 0.7rem; color: #888;">Structured scan results</span>
+</div>
+</button>
+<button class="export-dropdown-item" id="pop-export-item-md" onmouseout="this.style.background='transparent'" onmouseover="this.style.background='rgba(255,255,255,0.1)'" style="background: transparent; border: none; padding: 10px; border-radius: 6px; color: #fff; display: flex; align-items: center; gap: 10px; cursor: pointer; text-align: left; transition: background 0.2s;">
+<i class="ui-icon export-item-icon" data-lucide="file-text" style="color: #4ecdc4;"></i>
+<div class="export-item-text" style="display: flex; flex-direction: column; line-height: 1.2;">
+<span class="export-item-title" style="font-weight: 600; font-size: 0.85rem;">Markdown</span>
+<span class="export-item-desc" style="font-size: 0.7rem; color: #888;">Executive documentation</span>
+</div>
+</button>
+<button class="export-dropdown-item" id="pop-export-item-html" onmouseout="this.style.background='transparent'" onmouseover="this.style.background='rgba(255,255,255,0.1)'" style="background: transparent; border: none; padding: 10px; border-radius: 6px; color: #fff; display: flex; align-items: center; gap: 10px; cursor: pointer; text-align: left; transition: background 0.2s;">
+<i class="ui-icon export-item-icon" data-lucide="globe" style="color: #f59e0b;"></i>
+<div class="export-item-text" style="display: flex; flex-direction: column; line-height: 1.2;">
+<span class="export-item-title" style="font-weight: 600; font-size: 0.85rem;">HTML</span>
+<span class="export-item-desc" style="font-size: 0.7rem; color: #888;">Interactive browser report</span>
+</div>
+</button>
+<button class="export-dropdown-item" id="pop-export-item-csv" onmouseout="this.style.background='transparent'" onmouseover="this.style.background='rgba(255,255,255,0.1)'" style="background: transparent; border: none; padding: 10px; border-radius: 6px; color: #fff; display: flex; align-items: center; gap: 10px; cursor: pointer; text-align: left; transition: background 0.2s;">
+<i class="ui-icon export-item-icon" data-lucide="file-spreadsheet" style="color: #2ecc71;"></i>
+<div class="export-item-text" style="display: flex; flex-direction: column; line-height: 1.2;">
+<span class="export-item-title" style="font-weight: 600; font-size: 0.85rem;">CSV</span>
+<span class="export-item-desc" style="font-size: 0.7rem; color: #888;">Spreadsheet data format</span>
+</div>
+</button>
+</div>
+</div></div>
+<div class="spacebar-pan-hint" id="spacebar-pan-hint"><i class="ui-icon" data-lucide="hand" style="width: 14px; height: 14px; vertical-align: middle;"></i> Pan Mode (Spacebar or Right-Click held) - Drag to move view</div>
+<div class="cytoscape-graph" id="cy"></div>
+<!-- Floating Graph Actions & Layout (Left side) -->
+<div class="floating-controls" id="floating-controls">
+<div class="floating-actions-group">
+<button aria-label="Fit Graph" class="floating-btn" id="btn-float-fit" title="Fit to Screen"><i class="ui-icon" data-lucide="maximize-2"></i></button>
+<button aria-label="Reset Zoom" class="floating-btn" id="btn-float-reset" title="Reset Zoom"><i class="ui-icon" data-lucide="rotate-ccw"></i></button>
+<button aria-label="Re-layout Graph" class="floating-btn" id="btn-float-relayout" title="Re-layout Graph"><i class="ui-icon" data-lucide="refresh-cw"></i></button>
+</div>
+<div class="floating-layout-wrapper">
+<select aria-label="Select Graph Layout" class="floating-layout-select" id="layout-select" title="Select Layout">
+<option selected="" value="hierarchical-topdown">Hierarchical (Top-Down)</option>
+<option value="hierarchical-leftright">Hierarchical (Left-Right)</option>
+<option value="cose">Force-Directed</option>
+<option value="concentric">Concentric</option>
+<option value="grid">Grid</option>
+</select>
+</div>
+</div>
+<div class="graph-loading" id="graph-loading">
+<div class="spinner"></div>
+<p>Loading EASM graph data...</p>
+</div>
+</main>
+</div>
+<!-- Inspector Backdrop for Mobile/Tablet -->
+<div class="drawer-backdrop" id="inspector-backdrop"></div>
+<!-- Inspector Drawer -->
+<div class="inspector-drawer" id="inspector-drawer">
+<div class="inspector-header">
+<h3 id="inspector-title">Asset Inspector</h3>
+<button aria-label="Close Inspector" class="close-btn" id="close-inspector"><i class="ui-icon" data-lucide="x"></i></button>
+</div>
+<div class="inspector-content" id="inspector-content">
+<p>Click on any node in the graph to inspect its properties...</p>
+</div>
+</div>
+<!-- Inventory Drawer Backdrop for Mobile/Tablet -->
+<div class="drawer-backdrop" id="inventory-backdrop"></div>
+<!-- Inventory Drawer (Bottom) -->
+<div class="inventory-drawer" id="inventory-drawer" style="position: absolute; bottom: -100vh; left: 0; right: 0; height: 50vh; background: var(--bg-card); z-index: 1000; transition: bottom 0.3s cubic-bezier(0.16, 1, 0.3, 1); display: flex; flex-direction: column; border-top: 1px solid var(--border-color); box-shadow: 0 -10px 30px rgba(0,0,0,0.5);">
+<!-- Resize Handle -->
+<div id="inventory-resizer" style="height: 12px; width: 100%; cursor: ns-resize; position: absolute; top: -6px; left: 0; z-index: 1001; background: transparent; display: flex; justify-content: center; align-items: center;" title="Drag to resize">
+<div style="width: 40px; height: 4px; background: rgba(255,255,255,0.2); border-radius: 4px;"></div>
+</div>
+<div class="inventory-header" style="display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; border-bottom: 1px solid rgba(255, 255, 255, 0.08); background: var(--bg-header);">
+<div style="display: flex; align-items: center; gap: 15px;">
+<h3 style="margin: 0; display: flex; align-items: center; gap: 8px; font-size: 1rem;"><i class="ui-icon" data-lucide="table" style="color: var(--cyan-accent);"></i> Asset Inventory Details</h3>
+<div style="position: relative; display: flex; align-items: center;">
+<i data-lucide="search" style="position: absolute; left: 8px; width: 14px; height: 14px; color: var(--text-muted);"></i>
+<input id="inventory-search" onblur="this.style.borderColor='rgba(255,255,255,0.1)'" onfocus="this.style.borderColor='var(--cyan-accent)'" onkeyup="window.renderInventoryTable()" placeholder="Search assets..." style="background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.1); color: #fff; padding: 6px 12px 6px 28px; border-radius: 4px; font-size: 0.8rem; width: 250px; outline: none; transition: border-color 0.2s;" type="text"/>
+</div>
+</div>
+<button aria-label="Close Inventory" class="close-btn" id="close-inventory-drawer" onmouseout="this.style.color='var(--text-muted)'" onmouseover="this.style.color='#fff'" style="background: transparent; border: none; cursor: pointer; color: var(--text-muted); transition: color 0.2s;"><i class="ui-icon" data-lucide="x"></i></button>
+</div>
+<div class="inventory-content" style="flex: 1; padding: 0; overflow: auto; background: var(--bg-secondary);">
+<table style="width: 100%; border-collapse: collapse; text-align: left; color: var(--text-primary); font-size: 0.85rem; font-family: var(--font-mono);">
+<thead style="position: sticky; top: 0; z-index: 10;">
+<tr style="background: rgba(30, 30, 45, 0.95); backdrop-filter: blur(5px); color: var(--text-muted); border-bottom: 1px solid rgba(255,255,255,0.1);">
+<th onclick="window.sortInventory('value')" onmouseout="this.style.color=''" onmouseover="this.style.color='#fff'" style="padding: 12px 20px; font-weight: 600; text-transform: uppercase; font-size: 0.75rem; cursor: pointer; user-select: none; transition: color 0.2s;">Asset <i data-lucide="arrow-up-down" style="width:12px; height:12px; display:inline-block; margin-left:4px; opacity:0.5; vertical-align: middle;"></i></th>
+<th onclick="window.sortInventory('type')" onmouseout="this.style.color=''" onmouseover="this.style.color='#fff'" style="padding: 12px; font-weight: 600; text-transform: uppercase; font-size: 0.75rem; cursor: pointer; user-select: none; transition: color 0.2s;">Type <i data-lucide="arrow-up-down" style="width:12px; height:12px; display:inline-block; margin-left:4px; opacity:0.5; vertical-align: middle;"></i></th>
+<th onclick="window.sortInventory('services')" onmouseout="this.style.color=''" onmouseover="this.style.color='#fff'" style="padding: 12px; font-weight: 600; text-transform: uppercase; font-size: 0.75rem; cursor: pointer; user-select: none; transition: color 0.2s;">Ports / Services <i data-lucide="arrow-up-down" style="width:12px; height:12px; display:inline-block; margin-left:4px; opacity:0.5; vertical-align: middle;"></i></th>
+<th onclick="window.sortInventory('vulnerabilities')" onmouseout="this.style.color=''" onmouseover="this.style.color='#fff'" style="padding: 12px; font-weight: 600; text-transform: uppercase; font-size: 0.75rem; cursor: pointer; user-select: none; transition: color 0.2s;">Vulnerabilities (CVEs) <i data-lucide="arrow-up-down" style="width:12px; height:12px; display:inline-block; margin-left:4px; opacity:0.5; vertical-align: middle;"></i></th>
+<th style="padding: 12px; font-weight: 600; text-transform: uppercase; font-size: 0.75rem;">Actions</th>
+</tr>
+</thead>
+<tbody>
+<!-- Placeholder row replaced dynamically -->
+</tbody>
+</table>
+</div>
+</div>
+<!-- Targets Drawer Backdrop for Mobile/Tablet -->
+<div class="drawer-backdrop" id="targets-backdrop"></div>
+<!-- Target Management Drawer (Right) -->
+<div class="targets-drawer" id="targets-drawer">
+<div class="targets-drawer-header">
+<div class="targets-header-title">
+<i class="ui-icon targets-header-icon" data-lucide="crosshair"></i>
+<h3>Target Management</h3>
+<span class="targets-counter" id="targets-header-count">0 Targets</span>
+</div>
+<div class="targets-header-actions">
+<button aria-label="Close Targets Panel" class="close-btn" id="close-targets-drawer"><i class="ui-icon" data-lucide="x"></i></button>
+</div>
+</div>
+<!-- Drawer Navigation Tabs -->
+<div class="targets-drawer-tabs">
+<button class="drawer-tab-btn active" data-tab="targets-tab" type="button">
+<i class="tab-icon" data-lucide="crosshair"></i>
+<span>Active Targeting</span>
+</button>
+<button class="drawer-tab-btn" data-tab="logs-tab" type="button">
+<i class="tab-icon" data-lucide="terminal"></i>
+<span>Execution Logs</span>
+</button>
+</div>
+<div class="targets-drawer-content">
+<!-- TAB 1: Active Targeting (Split View) -->
+<div class="drawer-tab-pane active" id="tab-pane-targets" style="display: flex; flex: 1; min-height: 0;">
+<div style="display: flex; flex-direction: row; gap: 20px; flex: 1; min-height: 0;">
+<!-- Left Column: Marked Targets -->
+<div style="flex: 0 0 38%; display: flex; flex-direction: column; min-height: 0;">
+<div class="targets-section" style="flex: 1; display: flex; flex-direction: column; margin-bottom: 0; min-height: 0;">
+<div class="targets-section-title logs-header-row">
+<div class="logs-title-left">
+<i class="ui-icon" data-lucide="crosshair"></i>
+<span>Marked Targets</span>
+</div>
+<button class="btn-clear-logs" id="btn-clear-all-targets" title="Remove all targets from list">
+<i class="ui-icon" data-lucide="trash-2"></i>
+<span>Clear All</span>
+</button>
+</div>
+<div class="targets-list-container" id="targets-list-container" style="flex: 1; overflow-y: auto;">
+<div class="targets-empty-state" id="targets-empty-state">
+<i class="empty-icon" data-lucide="crosshair"></i>
+<p>No IP targets marked yet.</p>
+<span class="empty-hint">Right-click any IP Address or Organization node on the graph and select <strong>"Set as Target"</strong> to add.</span>
+</div>
+<div class="targets-items-list" id="targets-items-list"></div>
+</div>
+</div>
+</div>
+<!-- Right Column: Masscan & Nuclei Configs -->
+<div style="flex: 1; display: flex; flex-direction: column; min-height: 0; background: rgba(0,0,0,0.15); border-radius: 8px; border: 1px solid rgba(255,255,255,0.05); padding: 15px; overflow-y: auto; ">
+<!-- Sub-tabs -->
+<div style="display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px; flex-shrink: 0;">
+<button class="sub-tab-btn active" data-subtab="masscan-config" style="background: rgba(0,240,255,0.1); border: 1px solid #00f0ff; color: #00f0ff; padding: 6px 12px; border-radius: 6px; cursor: pointer; display: flex; align-items: center; gap: 6px; font-size: 0.85rem;" type="button">
+<i data-lucide="server" style="width: 14px; height: 14px;"></i> Masscan
                                 </button>
-                                <button type="button" class="sub-tab-btn" data-subtab="nuclei-config" style="background: transparent; border: 1px solid transparent; color: #aaa; padding: 6px 12px; border-radius: 6px; cursor: pointer; display: flex; align-items: center; gap: 6px; font-size: 0.85rem;">
-                                    <i data-lucide="shield-alert" style="width: 14px; height: 14px;"></i> Nuclei
+<button class="sub-tab-btn" data-subtab="nuclei-config" style="background: transparent; border: 1px solid transparent; color: #aaa; padding: 6px 12px; border-radius: 6px; cursor: pointer; display: flex; align-items: center; gap: 6px; font-size: 0.85rem;" type="button">
+<i data-lucide="shield-alert" style="width: 14px; height: 14px;"></i> Nuclei
                                 </button>
-                            </div>
-
-                            <div id="masscan-config" class="sub-tab-content">
-
-                    <div class="targets-global-actions" style="margin-bottom: 20px;">
-                        <button id="btn-scan-all-targets" class="btn-primary-action scan-all-btn" title="Run Active Port Scan on all targets" style="width: 100%;">
-                            <i data-lucide="server" class="ui-icon"></i>
-                            <span>Scan Targets</span>
-                        </button>
-                    </div>
-
-                    <div class="targets-section config-section">
-                        <div class="targets-section-title">
-                            <i data-lucide="settings-2" class="ui-icon"></i>
-                            <span>Port Discovery Parameters</span>
-                        </div>
-                        
-                        <div class="form-group">
-                            <label for="input-custom-ports" class="form-label">Custom Ports Specification:</label>
-                            <input type="text" id="input-custom-ports" class="drawer-text-input" placeholder="e.g. -p21-25,80,443,3306,8080 or --top-ports 50" value="--top-ports 100">
-                            <div class="preset-buttons" style="margin-top: 8px; display: flex; gap: 8px; flex-wrap: wrap;">
-                                <button type="button" class="drawer-btn preset-btn active" data-preset="top100" data-value="--top-ports 100" style="padding: 4px 8px; font-size: 0.8em; flex: 1;">Top 100</button>
-                                <button type="button" class="drawer-btn preset-btn" data-preset="web" data-value="-p80,443,8080,8443,8000,8888,9000,9443" style="padding: 4px 8px; font-size: 0.8em; flex: 1;">Top Web</button>
-                                <button type="button" class="drawer-btn preset-btn" data-preset="all" data-value="-p0-65535" style="padding: 4px 8px; font-size: 0.8em; flex: 1;">All Ports (65535)</button>
-                            </div>
-                        </div>
-
-                        <!-- Performance / Rate Slider -->
-                        <div class="form-group">
-                            <div class="slider-header">
-                                <label for="input-scan-rate" class="form-label">Scan Rate (Packets/sec):</label>
-                                <span id="scan-rate-display" class="rate-value-badge">1000 pps</span>
-                            </div>
-                            <input type="range" id="input-scan-rate" min="100" max="10000" step="100" value="1000" class="drawer-range-slider">
-                            <div class="slider-ticks">
-                                <span>100</span>
-                                <span>1000</span>
-                                <span>5000</span>
-                                <span>10000</span>
-                            </div>
-                        </div>
-
-                        <!-- Checkboxes -->
-                        <div class="form-group checkboxes-group">
-                            <label class="drawer-checkbox-label">
-                                <input type="checkbox" id="chk-scan-pn" checked>
-                                <span class="custom-checkbox"></span>
-                                <span>-Pn (Disable ping / host discovery)</span>
-                            </label>
-                            <label class="drawer-checkbox-label">
-                                <input type="checkbox" id="chk-scan-banners" checked>
-                                <span class="custom-checkbox"></span>
-                                <span>--banners (Banner grabbing & service detection)</span>
-                            </label>
-                        </div>
-
-                        <!-- Extra Parameters -->
-                        <div class="form-group">
-                            <label for="input-extra-flags" class="form-label">Custom Flags / Extra Parameters:</label>
-                            <input type="text" id="input-extra-flags" class="drawer-text-input" placeholder="e.g. --adapter-ip 192.168.1.50">
-                        </div>
-                    </div>
-
-                            </div>
-
-                            <div id="nuclei-config" class="sub-tab-content" style="display: none;">
-
-                    <div class="targets-global-actions" style="margin-bottom: 20px;">
-                        <button id="btn-run-all-nuclei" class="btn-primary-action btn-nuclei-action" title="Run Nuclei vulnerability scan on all targets" style="width: 100%;">
-                            <i data-lucide="shield-alert" class="ui-icon"></i>
-                            <span>Run Nuclei on All Targets</span>
-                        </button>
-                    </div>
-
-                    <!-- Severity Selection -->
-                    <div class="targets-section">
-                        <div class="targets-section-title">
-                            <i data-lucide="alert-triangle" class="ui-icon"></i>
-                            <span>Vulnerability Severity Filter</span>
-                        </div>
-                        <div class="form-group checkboxes-group">
-                            <label class="drawer-checkbox-label sev-critical">
-                                <input type="checkbox" id="chk-nuclei-sev-critical" checked>
-                                <span class="custom-checkbox custom-checkbox-red"></span>
-                                <span class="sev-tag-label sev-critical-text">Critical</span>
-                            </label>
-                            <label class="drawer-checkbox-label sev-high">
-                                <input type="checkbox" id="chk-nuclei-sev-high" checked>
-                                <span class="custom-checkbox custom-checkbox-orange"></span>
-                                <span class="sev-tag-label sev-high-text">High</span>
-                            </label>
-                            <label class="drawer-checkbox-label sev-medium">
-                                <input type="checkbox" id="chk-nuclei-sev-medium">
-                                <span class="custom-checkbox custom-checkbox-yellow"></span>
-                                <span class="sev-tag-label sev-medium-text">Medium</span>
-                            </label>
-                            <label class="drawer-checkbox-label sev-low">
-                                <input type="checkbox" id="chk-nuclei-sev-low">
-                                <span class="custom-checkbox custom-checkbox-blue"></span>
-                                <span class="sev-tag-label sev-low-text">Low</span>
-                            </label>
-                            <label class="drawer-checkbox-label sev-info">
-                                <input type="checkbox" id="chk-nuclei-sev-info">
-                                <span class="custom-checkbox custom-checkbox-slate"></span>
-                                <span class="sev-tag-label sev-info-text">Info</span>
-                            </label>
-                        </div>
-                    </div>
-
-                    <!-- Template Tags Presets & Custom Tags -->
-                    <div class="targets-section">
-                        <div class="targets-section-title">
-                            <i data-lucide="tags" class="ui-icon"></i>
-                            <span>Template Tags Selection</span>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Preset Tags:</label>
-                            <div class="nuclei-tags-grid">
-                                <label class="tag-chip-label">
-                                    <input type="checkbox" class="chk-nuclei-tag" value="cve" checked>
-                                    <span class="tag-chip">cve</span>
-                                </label>
-                                <label class="tag-chip-label">
-                                    <input type="checkbox" class="chk-nuclei-tag" value="exposure">
-                                    <span class="tag-chip">exposure</span>
-                                </label>
-                                <label class="tag-chip-label">
-                                    <input type="checkbox" class="chk-nuclei-tag" value="panel">
-                                    <span class="tag-chip">panel</span>
-                                </label>
-                                <label class="tag-chip-label">
-                                    <input type="checkbox" class="chk-nuclei-tag" value="default-credentials">
-                                    <span class="tag-chip">default-credentials</span>
-                                </label>
-                                <label class="tag-chip-label">
-                                    <input type="checkbox" class="chk-nuclei-tag" value="misconfig">
-                                    <span class="tag-chip">misconfig</span>
-                                </label>
-                                <label class="tag-chip-label">
-                                    <input type="checkbox" class="chk-nuclei-tag" value="takeover">
-                                    <span class="tag-chip">takeover</span>
-                                </label>
-                            </div>
-                        </div>
-
-                        <div class="form-group">
-                            <label for="input-nuclei-custom-tags" class="form-label">Additional Custom Tags (comma-separated):</label>
-                            <input type="text" id="input-nuclei-custom-tags" class="drawer-text-input" placeholder="e.g. ssl, rce, lfi, tech">
-                        </div>
-                    </div>
-
-                    <!-- Performance Controls -->
-                    <div class="targets-section">
-                        <div class="targets-section-title">
-                            <i data-lucide="gauge" class="ui-icon"></i>
-                            <span>Performance Controls</span>
-                        </div>
-                        <div class="nuclei-perf-grid">
-                            <div class="form-group">
-                                <label for="input-nuclei-rate-limit" class="form-label">Rate Limit (-rl):</label>
-                                <input type="number" id="input-nuclei-rate-limit" class="drawer-text-input" value="150" min="10" max="2000" step="10">
-                                <span class="input-hint">req/sec</span>
-                            </div>
-                            <div class="form-group">
-                                <label for="input-nuclei-concurrency" class="form-label">Concurrency (-c):</label>
-                                <input type="number" id="input-nuclei-concurrency" class="drawer-text-input" value="25" min="1" max="200" step="5">
-                                <span class="input-hint">parallel templates</span>
-                            </div>
-                        </div>
-                        <div class="form-group">
-                            <label for="input-nuclei-custom-flags" class="form-label">Extra Nuclei CLI Flags:</label>
-                            <input type="text" id="input-nuclei-custom-flags" class="drawer-text-input" placeholder="e.g. -retries 2 -timeout 10">
-                        </div>
-                    </div>
-
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- TAB 2: Execution Logs -->
-                <div class="drawer-tab-pane" id="tab-pane-logs" style="display: none; flex: 1; min-height: 0;">
-                    <div class="targets-section logs-section" style="flex: 1; display: flex; flex-direction: column; margin-bottom: 0; min-height: 0;">
-                        <div class="targets-section-title logs-header-row">
-                            <div class="logs-title-left">
-                                <i data-lucide="terminal" class="ui-icon"></i>
-                                <span>Scan Execution Stream</span>
-                            </div>
-                            <button id="btn-clear-scan-logs" class="btn-clear-logs" title="Clear console logs">
-                                <i data-lucide="eraser" class="ui-icon"></i>
-                                <span>Clear</span>
-                            </button>
-                        </div>
-                        <div class="scan-live-console" id="scan-live-console" style="flex: 1; overflow-y: auto;">
-                            <div class="console-line info">[System] Ready to scan targets and vulnerabilities.</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Custom Node Right-Click Context Menu -->
-        <div id="cy-context-menu" class="cy-context-menu"></div>
-    </div>
-
-    <!-- Delete Database Confirmation Modal -->
-    <div class="modal-backdrop" id="delete-db-modal" style="display: none;">
-        <div class="modal-dialog delete-db-modal-dialog">
-            <div class="modal-header">
-                <div class="modal-title-row">
-                    <i data-lucide="alert-triangle" class="ui-icon modal-danger-icon" style="color: #ef4444;"></i>
-                    <h3>Delete Database</h3>
-                </div>
-                <button type="button" class="modal-close-btn" id="btn-close-delete-db-modal" aria-label="Close">
-                    <i data-lucide="x" class="ui-icon"></i>
-                </button>
-            </div>
-            <div class="modal-body">
-                <p>Are you sure you want to delete database <strong id="delete-db-target-name" style="color: var(--text-white);"></strong>?</p>
-                <p class="modal-warning-text" style="color: var(--text-muted); font-size: 0.82rem; margin-top: 0.5rem; line-height: 1.4;">
+</div>
+<div class="sub-tab-content" id="masscan-config">
+<div class="targets-global-actions" style="margin-bottom: 20px;">
+<button class="btn-primary-action scan-all-btn" id="btn-scan-all-targets" style="width: 100%;" title="Run Active Port Scan on all targets">
+<i class="ui-icon" data-lucide="server"></i>
+<span>Scan Targets</span>
+</button>
+</div>
+<div class="targets-section config-section">
+<div class="targets-section-title">
+<i class="ui-icon" data-lucide="settings-2"></i>
+<span>Port Discovery Parameters</span>
+</div>
+<div class="form-group">
+<label class="form-label" for="input-custom-ports">Custom Ports Specification:</label>
+<input class="drawer-text-input" id="input-custom-ports" placeholder="e.g. -p21-25,80,443,3306,8080 or --top-ports 50" type="text" value="--top-ports 100"/>
+<div class="preset-buttons" style="margin-top: 8px; display: flex; gap: 8px; flex-wrap: wrap;">
+<button class="drawer-btn preset-btn active" data-preset="top100" data-value="--top-ports 100" style="padding: 4px 8px; font-size: 0.8em; flex: 1;" type="button">Top 100</button>
+<button class="drawer-btn preset-btn" data-preset="web" data-value="-p80,443,8080,8443,8000,8888,9000,9443" style="padding: 4px 8px; font-size: 0.8em; flex: 1;" type="button">Top Web</button>
+<button class="drawer-btn preset-btn" data-preset="all" data-value="-p0-65535" style="padding: 4px 8px; font-size: 0.8em; flex: 1;" type="button">All Ports (65535)</button>
+</div>
+</div>
+<!-- Performance / Rate Slider -->
+<div class="form-group">
+<div class="slider-header">
+<label class="form-label" for="input-scan-rate">Scan Rate (Packets/sec):</label>
+<span class="rate-value-badge" id="scan-rate-display">1000 pps</span>
+</div>
+<input class="drawer-range-slider" id="input-scan-rate" max="10000" min="100" step="100" type="range" value="1000"/>
+<div class="slider-ticks">
+<span>100</span>
+<span>1000</span>
+<span>5000</span>
+<span>10000</span>
+</div>
+</div>
+<!-- Checkboxes -->
+<div class="form-group checkboxes-group">
+<label class="drawer-checkbox-label">
+<input checked="" id="chk-scan-pn" type="checkbox"/>
+<span class="custom-checkbox"></span>
+<span>-Pn (Disable ping / host discovery)</span>
+</label>
+<label class="drawer-checkbox-label">
+<input checked="" id="chk-scan-banners" type="checkbox"/>
+<span class="custom-checkbox"></span>
+<span>--banners (Banner grabbing &amp; service detection)</span>
+</label>
+</div>
+<!-- Extra Parameters -->
+<div class="form-group">
+<label class="form-label" for="input-extra-flags">Custom Flags / Extra Parameters:</label>
+<input class="drawer-text-input" id="input-extra-flags" placeholder="e.g. --adapter-ip 192.168.1.50" type="text"/>
+</div>
+</div>
+</div>
+<div class="sub-tab-content" id="nuclei-config" style="display: none;">
+<div class="targets-global-actions" style="margin-bottom: 20px;">
+<button class="btn-primary-action btn-nuclei-action" id="btn-run-all-nuclei" style="width: 100%;" title="Run Nuclei vulnerability scan on all targets">
+<i class="ui-icon" data-lucide="shield-alert"></i>
+<span>Run Nuclei on All Targets</span>
+</button>
+</div>
+<!-- Severity Selection -->
+<div class="targets-section">
+<div class="targets-section-title">
+<i class="ui-icon" data-lucide="alert-triangle"></i>
+<span>Vulnerability Severity Filter</span>
+</div>
+<div class="form-group checkboxes-group">
+<label class="drawer-checkbox-label sev-critical">
+<input checked="" id="chk-nuclei-sev-critical" type="checkbox"/>
+<span class="custom-checkbox custom-checkbox-red"></span>
+<span class="sev-tag-label sev-critical-text">Critical</span>
+</label>
+<label class="drawer-checkbox-label sev-high">
+<input checked="" id="chk-nuclei-sev-high" type="checkbox"/>
+<span class="custom-checkbox custom-checkbox-orange"></span>
+<span class="sev-tag-label sev-high-text">High</span>
+</label>
+<label class="drawer-checkbox-label sev-medium">
+<input id="chk-nuclei-sev-medium" type="checkbox"/>
+<span class="custom-checkbox custom-checkbox-yellow"></span>
+<span class="sev-tag-label sev-medium-text">Medium</span>
+</label>
+<label class="drawer-checkbox-label sev-low">
+<input id="chk-nuclei-sev-low" type="checkbox"/>
+<span class="custom-checkbox custom-checkbox-blue"></span>
+<span class="sev-tag-label sev-low-text">Low</span>
+</label>
+<label class="drawer-checkbox-label sev-info">
+<input id="chk-nuclei-sev-info" type="checkbox"/>
+<span class="custom-checkbox custom-checkbox-slate"></span>
+<span class="sev-tag-label sev-info-text">Info</span>
+</label>
+</div>
+</div>
+<!-- Template Tags Presets & Custom Tags -->
+<div class="targets-section">
+<div class="targets-section-title">
+<i class="ui-icon" data-lucide="tags"></i>
+<span>Template Tags Selection</span>
+</div>
+<div class="form-group">
+<label class="form-label">Preset Tags:</label>
+<div class="nuclei-tags-grid">
+<label class="tag-chip-label">
+<input checked="" class="chk-nuclei-tag" type="checkbox" value="cve"/>
+<span class="tag-chip">cve</span>
+</label>
+<label class="tag-chip-label">
+<input class="chk-nuclei-tag" type="checkbox" value="exposure"/>
+<span class="tag-chip">exposure</span>
+</label>
+<label class="tag-chip-label">
+<input class="chk-nuclei-tag" type="checkbox" value="panel"/>
+<span class="tag-chip">panel</span>
+</label>
+<label class="tag-chip-label">
+<input class="chk-nuclei-tag" type="checkbox" value="default-credentials"/>
+<span class="tag-chip">default-credentials</span>
+</label>
+<label class="tag-chip-label">
+<input class="chk-nuclei-tag" type="checkbox" value="misconfig"/>
+<span class="tag-chip">misconfig</span>
+</label>
+<label class="tag-chip-label">
+<input class="chk-nuclei-tag" type="checkbox" value="takeover"/>
+<span class="tag-chip">takeover</span>
+</label>
+</div>
+</div>
+<div class="form-group">
+<label class="form-label" for="input-nuclei-custom-tags">Additional Custom Tags (comma-separated):</label>
+<input class="drawer-text-input" id="input-nuclei-custom-tags" placeholder="e.g. ssl, rce, lfi, tech" type="text"/>
+</div>
+</div>
+<!-- Performance Controls -->
+<div class="targets-section">
+<div class="targets-section-title">
+<i class="ui-icon" data-lucide="gauge"></i>
+<span>Performance Controls</span>
+</div>
+<div class="nuclei-perf-grid">
+<div class="form-group">
+<label class="form-label" for="input-nuclei-rate-limit">Rate Limit (-rl):</label>
+<input class="drawer-text-input" id="input-nuclei-rate-limit" max="2000" min="10" step="10" type="number" value="150"/>
+<span class="input-hint">req/sec</span>
+</div>
+<div class="form-group">
+<label class="form-label" for="input-nuclei-concurrency">Concurrency (-c):</label>
+<input class="drawer-text-input" id="input-nuclei-concurrency" max="200" min="1" step="5" type="number" value="25"/>
+<span class="input-hint">parallel templates</span>
+</div>
+</div>
+<div class="form-group">
+<label class="form-label" for="input-nuclei-custom-flags">Extra Nuclei CLI Flags:</label>
+<input class="drawer-text-input" id="input-nuclei-custom-flags" placeholder="e.g. -retries 2 -timeout 10" type="text"/>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- TAB 2: Execution Logs -->
+<div class="drawer-tab-pane" id="tab-pane-logs" style="display: none; flex: 1; min-height: 0;">
+<div class="targets-section logs-section" style="flex: 1; display: flex; flex-direction: column; margin-bottom: 0; min-height: 0;">
+<div class="targets-section-title logs-header-row">
+<div class="logs-title-left">
+<i class="ui-icon" data-lucide="terminal"></i>
+<span>Scan Execution Stream</span>
+</div>
+<button class="btn-clear-logs" id="btn-clear-scan-logs" title="Clear console logs">
+<i class="ui-icon" data-lucide="eraser"></i>
+<span>Clear</span>
+</button>
+</div>
+<div class="scan-live-console" id="scan-live-console" style="flex: 1; overflow-y: auto;">
+<div class="console-line info">[System] Ready to scan targets and vulnerabilities.</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Custom Node Right-Click Context Menu -->
+<div class="cy-context-menu" id="cy-context-menu"></div>
+</div>
+<!-- Delete Database Confirmation Modal -->
+<div class="modal-backdrop" id="delete-db-modal" style="display: none;">
+<div class="modal-dialog delete-db-modal-dialog">
+<div class="modal-header">
+<div class="modal-title-row">
+<i class="ui-icon modal-danger-icon" data-lucide="alert-triangle" style="color: #ef4444;"></i>
+<h3>Delete Database</h3>
+</div>
+<button aria-label="Close" class="modal-close-btn" id="btn-close-delete-db-modal" type="button">
+<i class="ui-icon" data-lucide="x"></i>
+</button>
+</div>
+<div class="modal-body">
+<p>Are you sure you want to delete database <strong id="delete-db-target-name" style="color: var(--text-white);"></strong>?</p>
+<p class="modal-warning-text" style="color: var(--text-muted); font-size: 0.82rem; margin-top: 0.5rem; line-height: 1.4;">
                     This will permanently remove the SQLite file and all associated asset topology findings. This action cannot be undone.
                 </p>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="action-btn modal-cancel-btn" id="btn-cancel-delete-db">Cancel</button>
-                <button type="button" class="action-btn modal-danger-btn" id="btn-confirm-delete-db" style="background: #dc2626; border-color: #ef4444; color: #fff;">
-                    <i data-lucide="trash-2" class="ui-icon" style="width: 14px; height: 14px;"></i>
-                    <span>Delete Database</span>
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Delete Asset Confirmation Modal -->
-    <div class="modal-backdrop" id="delete-asset-modal" style="display: none;">
-        <div class="modal-dialog delete-db-modal-dialog">
-            <div class="modal-header">
-                <div class="modal-title-row">
-                    <i data-lucide="alert-triangle" class="ui-icon modal-danger-icon" style="color: #ef4444;"></i>
-                    <h3>Delete Asset</h3>
-                </div>
-                <button type="button" class="modal-close-btn" id="btn-close-delete-asset-modal" aria-label="Close">
-                    <i data-lucide="x" class="ui-icon"></i>
-                </button>
-            </div>
-            <div class="modal-body">
-                <p>Are you sure you want to delete <strong id="delete-asset-target-name" style="color: var(--text-white);"></strong> from the database?</p>
-                <div id="delete-asset-impact-container" style="background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.05); border-radius: 6px; padding: 12px; margin-top: 15px;">
-                    <p style="margin: 0 0 10px 0; font-size: 0.85rem; color: #ccc;">This action will also permanently destroy:</p>
-                    <ul id="delete-asset-impact-list" style="margin: 0; padding-left: 20px; font-size: 0.85rem; color: #ef4444; line-height: 1.6;">
-                        <li>Loading impact data...</li>
-                    </ul>
-                </div>
-                <p class="modal-warning-text" style="color: var(--text-muted); font-size: 0.82rem; margin-top: 15px; line-height: 1.4;">
+</div>
+<div class="modal-footer">
+<button class="action-btn modal-cancel-btn" id="btn-cancel-delete-db" type="button">Cancel</button>
+<button class="action-btn modal-danger-btn" id="btn-confirm-delete-db" style="background: #dc2626; border-color: #ef4444; color: #fff;" type="button">
+<i class="ui-icon" data-lucide="trash-2" style="width: 14px; height: 14px;"></i>
+<span>Delete Database</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Delete Asset Confirmation Modal -->
+<div class="modal-backdrop" id="delete-asset-modal" style="display: none;">
+<div class="modal-dialog delete-db-modal-dialog">
+<div class="modal-header">
+<div class="modal-title-row">
+<i class="ui-icon modal-danger-icon" data-lucide="alert-triangle" style="color: #ef4444;"></i>
+<h3>Delete Asset</h3>
+</div>
+<button aria-label="Close" class="modal-close-btn" id="btn-close-delete-asset-modal" type="button">
+<i class="ui-icon" data-lucide="x"></i>
+</button>
+</div>
+<div class="modal-body">
+<p>Are you sure you want to delete <strong id="delete-asset-target-name" style="color: var(--text-white);"></strong> from the database?</p>
+<div id="delete-asset-impact-container" style="background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.05); border-radius: 6px; padding: 12px; margin-top: 15px;">
+<p style="margin: 0 0 10px 0; font-size: 0.85rem; color: #ccc;">This action will also permanently destroy:</p>
+<ul id="delete-asset-impact-list" style="margin: 0; padding-left: 20px; font-size: 0.85rem; color: #ef4444; line-height: 1.6;">
+<li>Loading impact data...</li>
+</ul>
+</div>
+<p class="modal-warning-text" style="color: var(--text-muted); font-size: 0.82rem; margin-top: 15px; line-height: 1.4;">
                     This action cannot be undone and will affect all reports and graphs.
                 </p>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="action-btn modal-cancel-btn" id="btn-cancel-delete-asset">Cancel</button>
-                <button type="button" class="action-btn modal-danger-btn" id="btn-confirm-delete-asset" style="background: #dc2626; border-color: #ef4444; color: #fff;">
-                    <i data-lucide="trash-2" class="ui-icon" style="width: 14px; height: 14px;"></i>
-                    <span>Delete</span>
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <script src="/static/js/api.js?v=10"></script>
-    <script src="/static/js/graph.js?v=96"></script>
-    
-    <script>
+</div>
+<div class="modal-footer">
+<button class="action-btn modal-cancel-btn" id="btn-cancel-delete-asset" type="button">Cancel</button>
+<button class="action-btn modal-danger-btn" id="btn-confirm-delete-asset" style="background: #dc2626; border-color: #ef4444; color: #fff;" type="button">
+<i class="ui-icon" data-lucide="trash-2" style="width: 14px; height: 14px;"></i>
+<span>Delete</span>
+</button>
+</div>
+</div>
+</div>
+<script src="/static/js/api.js?v=10"></script>
+<script src="/static/js/graph.js?v=96"></script>
+<script>
         // Debug logging & icon initialization
         console.log('ReconHound Dashboard loaded');
         console.log('Cytoscape available:', typeof cytoscape !== 'undefined');
@@ -730,31 +674,28 @@
             });
         });
     </script>
-
-    <!-- Floating Assets Modal -->
-    <div id="floating-assets-modal" class="modal" style="display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 450px; max-width: 90vw; max-height: 85vh; background: #1e1e2d; border: 1px solid #333; border-radius: 8px; z-index: 10000; box-shadow: 0 10px 30px rgba(0,0,0,0.5); flex-direction: column;">
-        <div style="padding: 15px; border-bottom: 1px solid #333; display: flex; justify-content: space-between; align-items: center; background: #252536; border-radius: 8px 8px 0 0;">
-            <h3 style="margin: 0; color: #fff; font-size: 1.1rem; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-                <i data-lucide="compass" style="width: 18px; height: 18px; color: #00f0ff;"></i> Explore Assets
+<!-- Floating Assets Modal -->
+<div class="modal" id="floating-assets-modal" style="display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 450px; max-width: 90vw; max-height: 85vh; background: #1e1e2d; border: 1px solid #333; border-radius: 8px; z-index: 10000; box-shadow: 0 10px 30px rgba(0,0,0,0.5); flex-direction: column;">
+<div style="padding: 15px; border-bottom: 1px solid #333; display: flex; justify-content: space-between; align-items: center; background: #252536; border-radius: 8px 8px 0 0;">
+<h3 style="margin: 0; color: #fff; font-size: 1.1rem; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+<i data-lucide="compass" style="width: 18px; height: 18px; color: #00f0ff;"></i> Explore Assets
             </h3>
-            <button id="close-floating-assets" style="background: none; border: none; color: #999; cursor: pointer; font-size: 1.5rem; line-height: 1;">&times;</button>
-        </div>
-        <div style="padding: 15px; border-bottom: 1px solid #333; display: flex; gap: 10px; background: #2a2a3c;">
-            <button onclick="window.dashboard.selectAllLeads()" style="flex: 1; padding: 8px; background: rgba(0, 240, 255, 0.15); color: #00f0ff; border: 1px solid rgba(0, 240, 255, 0.3); border-radius: 4px; cursor: pointer; font-weight: bold;">Expand All Assets</button>
-            <button onclick="window.dashboard.deselectAllLeads()" style="flex: 1; padding: 8px; background: rgba(255, 255, 255, 0.05); color: #ccc; border: 1px solid #444; border-radius: 4px; cursor: pointer;">Collapse All</button>
-        </div>
-        <div style="padding: 10px 15px; border-bottom: 1px solid #333; background: #1e1e2d;">
-            <input type="text" id="explore-assets-search" placeholder="Search assets by name or IP..." onkeyup="window.dashboard.filterExploreLeads(this.value)" style="width: 100%; box-sizing: border-box; padding: 8px 12px; background: #252536; border: 1px solid #444; border-radius: 4px; color: #fff; font-size: 0.9rem;">
-        </div>
-        <div id="floating-assets-content" style="padding: 15px; overflow-y: auto; flex: 1;">
-            <div id="asset-list" class="asset-list">
-                <div class="asset-loading">Fetching assets...</div>
-            </div>
-        </div>
-    </div>
-
-
-    <script>
+<button id="close-floating-assets" style="background: none; border: none; color: #999; cursor: pointer; font-size: 1.5rem; line-height: 1;">×</button>
+</div>
+<div style="padding: 15px; border-bottom: 1px solid #333; display: flex; gap: 10px; background: #2a2a3c;">
+<button onclick="window.dashboard.selectAllLeads()" style="flex: 1; padding: 8px; background: rgba(0, 240, 255, 0.15); color: #00f0ff; border: 1px solid rgba(0, 240, 255, 0.3); border-radius: 4px; cursor: pointer; font-weight: bold;">Expand All Assets</button>
+<button onclick="window.dashboard.deselectAllLeads()" style="flex: 1; padding: 8px; background: rgba(255, 255, 255, 0.05); color: #ccc; border: 1px solid #444; border-radius: 4px; cursor: pointer;">Collapse All</button>
+</div>
+<div style="padding: 10px 15px; border-bottom: 1px solid #333; background: #1e1e2d;">
+<input id="explore-assets-search" onkeyup="window.dashboard.filterExploreLeads(this.value)" placeholder="Search assets by name or IP..." style="width: 100%; box-sizing: border-box; padding: 8px 12px; background: #252536; border: 1px solid #444; border-radius: 4px; color: #fff; font-size: 0.9rem;" type="text"/>
+</div>
+<div id="floating-assets-content" style="padding: 15px; overflow-y: auto; flex: 1;">
+<div class="asset-list" id="asset-list">
+<div class="asset-loading">Fetching assets...</div>
+</div>
+</div>
+</div>
+<script>
         document.addEventListener('DOMContentLoaded', () => {
             const logoutBtn = document.getElementById('btn-logout');
             if (logoutBtn) {
@@ -778,8 +719,7 @@
             }
         });
     </script>
-
-    <script>
+<script>
         document.addEventListener('DOMContentLoaded', () => {
             const btnInventory = document.getElementById('btn-toggle-inventory');
             const drawerInventory = document.getElementById('inventory-drawer');
@@ -1146,6 +1086,5 @@
             }
         });
     </script>
-
 </body>
 </html>

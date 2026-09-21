@@ -5,17 +5,17 @@
 
 <div align="center">
 
-<pre style="font-family: 'JetBrains Mono', monospace; display: inline-block; text-align: left; background: transparent; border: none; font-size: 14px; line-height: 1.1; color: #00f0ff;">
+<pre style="font-family: 'JetBrains Mono', monospace; display: inline-block; text-align: left; background: transparent; border: none; font-size: 10px; line-height: 1.2; color: #00f0ff;">
 ⠀⠀⠀⠀⡀⠀⠀⠀⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
 ⠀⠀⠀⠀⣷⠀⠀⢰⣷⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
 ⠀⠀⠀⠀⣿⣧⠀⣼⣿⣇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
 ⠀⠀⠀⢸⣿⣿⡆⠘⣿⣿⣆⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
 ⠀⠀⠀⣸⣿⣿⣿⡄⠙⠛⠋⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
-⠀⠀⠀⣿⣿⣿⣿⣷⡀⣿⣿⣿⣿⠿⠿⢿⣄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀   RECONHOUND DAEMON
-⠀⠀⢰⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣶⣄⡀⢻⣿⣿⣿⠟⢿⣿⠛⣦⡀⢻⣿⡇⠀   ==================================
-⠀⠀⢸⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⠛⣶⡞⠻⣶⠛⢻⡄⠹⠀⠀   [✓] Attack Surface Dashboard UI
-⠀⠀⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣷⣿⣷⣾⣿⣶⣿⣿⠆⠀⠀   [✓] Threat Tracking Engine
-⠀⢠⣿⣿⣿⡄⢹⣿⣿⣿⣿⣿⣿⣿⣿⣿⣏⣉⣉⣉⣉⣉⣉⣉⣉⣉⡉⠀⠀⠀   Usage: reconexec hound start
+⠀⠀⠀⣿⣿⣿⣿⣷⡀⣿⣿⣿⣿⠿⠿⢿⣄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⢰⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣶⣄⡀⢻⣿⣿⣿⠟⢿⣿⠛⣦⡀⢻⣿⡇⠀
+⠀⠀⢸⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⠛⣶⡞⠻⣶⠛⢻⡄⠹⠀⠀
+⠀⠀⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣷⣿⣷⣾⣿⣶⣿⣿⠆⠀⠀
+⠀⢠⣿⣿⣿⡄⢹⣿⣿⣿⣿⣿⣿⣿⣿⣿⣏⣉⣉⣉⣉⣉⣉⣉⣉⣉⡉⠀⠀⠀
 ⠀⢸⣿⣿⣿⣷⡀⠻⠿⠿⠿⠿⠿⠿⠿⠿⠿⠿⠿⠿⠿⠿⠿⠿⠿⠿⠃⠀⠀⠀
 ⠀⣿⣿⣿⣿⣿⣷⣶⣶⣶⣶⣶⡄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
 ⠀⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀

@@ -5,11 +5,11 @@
 
 <div align="center">
 
-<div align="left" style="margin: 1.5rem auto 2rem auto; width: 100%; max-width: 800px; border-radius: 8px;">
+<div align="center" style="margin: 1.5rem auto 2rem auto; width: 100%; max-width: max-content; border-radius: 8px; text-align: left;">
 <div style="background: #161b22; padding: 12px 16px; border-bottom: 1px solid #30363d; border-radius: 8px 8px 0 0; display: flex; align-items: center; justify-content: space-between;">
     <span style="color: #8b949e; font-size: 13px; font-family: monospace;">🖥️ reconx hound start</span>
 </div>
-<pre style="overflow-x: auto; font-size: 13px; line-height: 1.15; font-family: 'JetBrains Mono', 'Fira Code', Consolas, monospace; background: #0d1117; color: #c9d1d9; padding: 24px; border-radius: 0 0 8px 8px; border: 1px solid #30363d; border-top: none; margin: 0; display: flex; justify-content: center;"><code><span style="color: #c084fc;">⠀⠀⠀⠀⡀⠀⠀⠀⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+<pre style="overflow-x: auto; font-size: 13px; line-height: 1.15; font-family: 'JetBrains Mono', 'Fira Code', Consolas, monospace; background: #0d1117; color: #c9d1d9; padding: 24px; border-radius: 0 0 8px 8px; border: 1px solid #30363d; border-top: none; margin: 0; text-align: left;"><code><span style="color: #c084fc;">⠀⠀⠀⠀⡀⠀⠀⠀⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
 ⠀⠀⠀⠀⣷⠀⠀⢰⣷⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
 ⠀⠀⠀⠀⣿⣧⠀⣼⣿⣇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
 ⠀⠀⠀⢸⣿⣿⡆⠘⣿⣿⣆⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀

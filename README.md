@@ -1,4 +1,4 @@
-<h1 align="center">ReconHound - Attack Surface Management</h1>
+<h1 align="center">ReconHound - Advanced Passive Recon Like a Boss</h1>
 
 <div align="center">
 

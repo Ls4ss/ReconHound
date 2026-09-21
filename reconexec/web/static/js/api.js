@@ -25,8 +25,8 @@ class APIClient {
 
             if (!response.ok) {
                 if (response.status === 401) {
-                    if (window.location.pathname !== '/login') {
-                        window.location.href = '/login';
+                    if (true) {
+                        window.location.href = '/';
                     }
                     throw new Error("Session expired");
                 }
@@ -223,7 +223,7 @@ class SessionManager {
                         if (typeof window.showToast === 'function') {
                             window.showToast('error', 'Session expired. Please login again.');
                         }
-                        setTimeout(() => window.location.href = '/login', 2000);
+                        setTimeout(() => window.location.href = '/', 2000);
                     }
                 } else {
                     console.log('[SessionManager] JWT Session refreshed successfully (Sliding Session)');
@@ -236,6 +236,6 @@ class SessionManager {
 }
 
 // Initialize session manager
-if (window.location.pathname !== '/login') {
+if (true) {
     window.sessionManager = new SessionManager();
 }

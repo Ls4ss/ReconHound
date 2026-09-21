@@ -1,4 +1,7 @@
-<h1 align="center">ReconHound - Advanced Passive Recon Like a Boss</h1>
+<h1 align="center">
+  ReconHound<br>
+  <sub style="font-size: 18px;">Advanced Passive Recon Like a Boss</sub>
+</h1>
 
 <div align="center">
 

@@ -51,10 +51,10 @@ The platform consists of two main components:
 
 ```bash
 # 1. Download and install from PyPI
-pip install reconexec
+pip install reconhound
 
 # 2. Run the automated setup routine
-reconx config-check --setup
+reconx config setup
 
 # 3. Explore commands
 reconx --help
@@ -68,14 +68,14 @@ reconx --help
 
 ```bash
 # Recon a single IP or CIDR Subnet
-reconx recon 142.250.191.68
-reconx recon 142.250.191.0/24
+reconx all 142.250.191.68
+reconx all 142.250.191.0/24
 
 # Recon a Domain (Subdomains + Reverse WHOIS + Infrastructure)
-reconx recon spacex.com
+reconx all spacex.com
 
 # Recon a Batch Target List from File
-reconx recon targets.txt
+reconx all targets.txt
 
 # Fetch Threat Intelligence for a specific CVE
 reconx intel CVE-2021-44228

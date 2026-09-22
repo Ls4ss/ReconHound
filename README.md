@@ -106,12 +106,14 @@ ReconHound/
 │   ├── data/                # Central Scan Data Directory
 │   │   └── dbs/             # Persistent SQLite Attack Surface Databases (.sqlite)
 │   ├── modules/             # Plug-and-Play Intelligence Collectors
+│   │   ├── base.py          # Abstract Base Class for Recon Modules
 │   │   ├── crtsh.py         # Certificate Transparency Subdomain Enumeration
 │   │   ├── securitytrails.py# SecurityTrails Historical OSINT
 │   │   ├── reverse_whois.py # Reverse WHOIS (Hybrid WhoisFreaks + Free Fallback)
 │   │   ├── shodan.py        # Shodan Host, DNS, Range & Query Scanner
 │   │   ├── censys.py        # Censys Platform API v3 Asset & Host Intelligence
 │   │   ├── alienvault.py    # OTX Threat Attribution & Passive DNS
+│   │   ├── zone_transfer.py # DNS Zone Transfer (AXFR) Analyzer
 │   │   ├── masscan.py       # High-Speed Active Port Scanner
 │   │   ├── nuclei.py        # Asynchronous Nuclei Vulnerability Scanner Engine
 │   │   ├── nvd.py           # NVD 2.0 (CVSS/CWE) + EPSS Probability + CISA KEV

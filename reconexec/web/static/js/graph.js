@@ -3075,6 +3075,7 @@ class EASMDashboard {
             if (cbPop) cbPop.addEventListener('change', handleChange);
         };
 
+        setupFilterSync('filter-show-root', 'pop-filter-show-root', 'showRoot');
         setupFilterSync('filter-3d-matrix', 'pop-filter-3d-matrix', 'matrix3d');
         setupFilterSync('filter-kev', 'pop-filter-kev', 'kev');
         setupFilterSync('filter-high-epss', 'pop-filter-high-epss', 'highEpss');
@@ -3468,7 +3469,8 @@ class EASMDashboard {
         if (!this.cy) return;
 
         const hasVulnFilters = this.filters.matrix3d || this.filters.kev || this.filters.highEpss || this.filters.critical || this.filters.hideLowInfo || this.filters.nucleiOnly || this.filters.withPocs;
-        const isGlobalFilterActive = Boolean(this.searchTerm || hasVulnFilters);
+        const isSearchOrVulnFilterActive = Boolean(this.searchTerm || hasVulnFilters);
+        const isGlobalFilterActive = Boolean(isSearchOrVulnFilterActive || this.filters.showRoot);
 
         if (!isGlobalFilterActive && (!this.visibleLeadNodes || this.visibleLeadNodes.size === 0)) {
             this.cy.nodes().hide();
@@ -3485,7 +3487,7 @@ class EASMDashboard {
             
             targetSet.add(nodeId);
             const nodeType = startNode.data('type');
-            const shouldTrace = (pId) => isGlobalFilterActive || !this.visibleLeadNodes || this.visibleLeadNodes.has(pId);
+            const shouldTrace = (pId) => isSearchOrVulnFilterActive || !this.visibleLeadNodes || this.visibleLeadNodes.has(pId);
 
             if (nodeType === 'vulnerability' || nodeType === 'exploit') {
                 startNode.incomers('node').forEach(parent => {
@@ -3550,7 +3552,7 @@ class EASMDashboard {
 
             startNode.outgoers('node').forEach(child => {
                 const cId = child.id();
-                if (isGlobalFilterActive || !this.visibleLeadNodes || this.visibleLeadNodes.has(cId)) {
+                if (isSearchOrVulnFilterActive || !this.visibleLeadNodes || this.visibleLeadNodes.has(cId)) {
                     targetSet.add(cId);
                     addAllDescendants(child, targetSet, visited);
                 }
@@ -3640,7 +3642,7 @@ class EASMDashboard {
         const nodesToKeep = new Set();
         
         this.cy.nodes().forEach(node => {
-            if (isGlobalFilterActive || !this.visibleLeadNodes || this.visibleLeadNodes.has(node.id())) {
+            if (isSearchOrVulnFilterActive || !this.visibleLeadNodes || this.visibleLeadNodes.has(node.id())) {
                 nodesToKeep.add(node.id());
             }
         });
@@ -3692,8 +3694,12 @@ class EASMDashboard {
             vulnNodes.forEach(id => nodesToKeep.add(id));
         }
 
-        // Forced target_root visibility removed for strict BloodHound style
-        // to allow isolating only the searched node without the root always appearing.
+        // Target Root visibility toggle
+        if (this.filters.showRoot) {
+            this.cy.nodes('[type="target"], [is_root="true"]').forEach(node => {
+                nodesToKeep.add(node.id());
+            });
+        }
 
         this.cy.nodes().forEach(node => {
             if (!nodesToKeep.has(node.id())) node.hide();

@@ -40,7 +40,7 @@ def create_app(db_path: str = None) -> FastAPI:
     app = FastAPI(
         title="ReconExec EASM Dashboard",
         description="Interactive External Attack Surface Management Dashboard",
-        version="3.0.0"
+        version="3.1.0"
     )
     
     # Add CORS middleware
@@ -141,7 +141,7 @@ def create_app(db_path: str = None) -> FastAPI:
         return {
             "status": "healthy",
             "database": app.state.db_path,
-            "version": "3.0.0"
+            "version": "3.1.0"
         }
     
     return app

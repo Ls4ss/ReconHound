@@ -1375,20 +1375,29 @@ class EASMDashboard {
     }
 
     async selectAllLeads() {
+        this.expandedCanvasNodes = this.expandedCanvasNodes || new Set();
         this.cy.nodes().forEach(node => {
             this.expandedCanvasNodes.add(node.id());
         });
+        
+        const modal = document.getElementById('floating-assets-modal');
+        if (modal) modal.style.display = 'none';
+        
+        this.applyLeadFilter({ relayout: true });
+        
         if (typeof this.showToast === 'function') {
             this.showToast('success', 'All assets expanded on canvas');
         }
-        this.applyLeadFilter({ relayout: true });
     }
 
     async deselectAllLeads() {
+        this.expandedCanvasNodes = this.expandedCanvasNodes || new Set();
         this.expandedCanvasNodes.clear();
         if (typeof this.showToast === 'function') {
             this.showToast('info', 'Canvas collapsed to root targets');
         }
+        const modal = document.getElementById('floating-assets-modal');
+        if (modal) modal.style.display = 'none';
         this.applyLeadFilter({ relayout: true });
     }
     filterExploreLeads(query) {
@@ -1409,6 +1418,8 @@ class EASMDashboard {
 
     applyLeadFilter(options = {}) {
         if (!this.cy) return;
+        console.log("DEBUG A (start):", this.cy.nodes(':visible').length);
+        if (!this.cy) return;
 
         // Get selected asset IDs
         const selectedLeadIds = Array.from(this.selectedLeads);
@@ -1425,6 +1436,7 @@ class EASMDashboard {
         // Show all nodes and edges for filtering pass
         this.cy.nodes().show();
         this.cy.edges().show();
+        console.log("DEBUG B (after show all):", this.cy.nodes(':visible').length);
 
         // First pass: Find all selected asset nodes
         selectedLeadIds.forEach(assetId => {
@@ -1446,19 +1458,23 @@ class EASMDashboard {
 
         // Expansion Pass: Iteratively show 1-hop descendants/ancestors of explicitly expanded nodes
         this.expandedCanvasNodes = this.expandedCanvasNodes || new Set();
+        
+        // Any explicitly expanded node is also directly visible (eliminating strict target dependency)
+        this.expandedCanvasNodes.forEach(nodeId => {
+            visibleNodes.add(nodeId);
+        });
+
         const processExpansions = () => {
             let addedNew = false;
             this.expandedCanvasNodes.forEach(nodeId => {
-                if (visibleNodes.has(nodeId)) {
-                    const node = this.cy.getElementById(nodeId);
-                    if (node.length) {
-                        node.neighborhood('node').forEach(neighbor => {
-                            if (!visibleNodes.has(neighbor.id())) {
-                                visibleNodes.add(neighbor.id());
-                                addedNew = true;
-                            }
-                        });
-                    }
+                const node = this.cy.getElementById(nodeId);
+                if (node.length) {
+                    node.neighborhood('node').forEach(neighbor => {
+                        if (!visibleNodes.has(neighbor.id())) {
+                            visibleNodes.add(neighbor.id());
+                            addedNew = true;
+                        }
+                    });
                 }
             });
             return addedNew;
@@ -1480,6 +1496,7 @@ class EASMDashboard {
                 node.show();
             }
         });
+        console.log("DEBUG C (after Fourth pass):", this.cy.nodes(':visible').length, "visibleNodes size =", visibleNodes.size);
 
         // Hide edges unless BOTH endpoints are visible
         this.cy.edges().forEach(edge => {
@@ -1493,7 +1510,8 @@ class EASMDashboard {
         });
 
         // Apply other filters on top of asset filter
-        this.applyFilters();
+        this.applyFilters(options);
+        console.log("DEBUG D (after applyFilters):", this.cy.nodes(':visible').length);
 
         // Frame visible elements smoothly without recalculating layout positions (unless relayout was explicitly requested)
         if (visibleNodes.size > 0) {
@@ -3380,13 +3398,13 @@ class EASMDashboard {
         document.body.removeChild(a);
     }
 
-    applyFilters() {
+    applyFilters(options = {}) {
         if (!this.cy) return;
 
         const hasVulnFilters = this.filters.matrix3d || this.filters.kev || this.filters.highEpss || this.filters.critical || this.filters.hideLowInfo || this.filters.nucleiOnly || this.filters.withPocs;
         const isGlobalFilterActive = Boolean(this.searchTerm || hasVulnFilters);
 
-        if (!isGlobalFilterActive && this.selectedLeads.size === 0) {
+        if (!isGlobalFilterActive && (!this.visibleLeadNodes || this.visibleLeadNodes.size === 0)) {
             this.cy.nodes().hide();
             this.cy.edges().hide();
             return;
@@ -3636,7 +3654,7 @@ class EASMDashboard {
             });
 
             // If global filter is active, we almost certainly want to relayout to accommodate newly revealed ancestors
-            if (hasUnpositionedNodes || isGlobalFilterActive) {
+            if (hasUnpositionedNodes || isGlobalFilterActive || options.relayout === true) {
                 this._hasRunInitialLayout = true;
                 const layoutSelect = document.getElementById('layout-select');
                 let layoutName = layoutSelect ? layoutSelect.value : this.getAvailableLayout();
@@ -4421,6 +4439,677 @@ class EASMDashboard {
                 ` : ''}
                 ${exploitsSection}
             `;
+        } else if (rawType === 'domain' || rawType === 'subdomain' || rawType === 'target' || rawType === 'target_root' || rawType === 'network') {
+            const riskMetricsHtml = this.renderRiskMetricsAccordion(data, elements);
+            let sectionTitle = 'Domain Information';
+            if (rawType === 'target' || rawType === 'target_root') sectionTitle = 'Primary Query Target';
+            if (rawType === 'network') sectionTitle = 'Organization / Network Cluster';
+
+            let fileTargetsHtml = '';
+            if ((rawType === 'target' || rawType === 'target_root') && Array.isArray(data.targets_list) && data.targets_list.length > 0) {
+                const targetsBadgeList = data.targets_list.map((t, idx) => `
+                    <div style="display: flex; align-items: center; justify-content: space-between; padding: 4px 8px; margin-bottom: 3px; background: rgba(0, 212, 255, 0.06); border: 1px solid rgba(0, 212, 255, 0.18); border-radius: 4px; font-family: monospace; font-size: 0.82rem;">
+                        <span style="color: #00d4ff; font-weight: 500;">${t}</span>
+                        <span style="color: #64748b; font-size: 0.72rem;">#${idx + 1}</span>
+                    </div>
+                `).join('');
+
+                fileTargetsHtml = `
+                    <div class="risk-accordion-group" style="margin-top: 0.75rem; margin-bottom: 0.5rem;">
+                        <div class="risk-accordion-header" onclick="window.dashboard.toggleRiskAccordion(this)">
+                            <div class="risk-accordion-title">
+                                <i data-lucide="list" class="accordion-icon ui-icon"></i>
+                                <span>Input Targets List</span>
+                            </div>
+                            <div class="risk-accordion-status" style="display: flex; flex-wrap: wrap; align-items: center; gap: 6px; justify-content: flex-end;">
+                                <button type="button" class="risk-focus-btn" style="margin: 0; padding: 2px 7px; font-size: 0.75rem; background: rgba(0, 212, 255, 0.2); color: #00d4ff; border-color: rgba(0, 212, 255, 0.4);" onclick="event.stopPropagation(); window.dashboard.copyTextList(${JSON.stringify(data.targets_list).replace(/"/g, '&quot;')}, this)"><i data-lucide="copy" class="badge-icon"></i></button>
+                                <span class="risk-pill-counter" style="color: #00d4ff; background: rgba(0,212,255,0.15); border-color: rgba(0,212,255,0.4);">${data.targets_list.length}</span>
+                                <i data-lucide="chevron-down" class="accordion-chevron ui-icon"></i>
+                            </div>
+                        </div>
+                        <div class="risk-accordion-body" style="display: none; max-height: 220px; overflow-y: auto; padding: 8px 6px;">
+                            ${targetsBadgeList}
+                        </div>
+                    </div>
+                `;
+            }
+
+            // Root Target: Enumerated Domains, Enumerated Subdomains, and CLI Audit Logs
+            let rootDomainsAccordionHtml = '';
+            let rootSubdomainsAccordionHtml = '';
+            let rootIpsAccordionHtml = '';
+            let rootScanLogsAccordionHtml = '';
+
+            if (rawType === 'target' || rawType === 'target_root' || data.is_root === true) {
+                const allDoms = Array.isArray(data.all_domains) ? data.all_domains : [];
+                if (allDoms.length > 0) {
+                    const domNames = allDoms.map(d => d.name);
+                    const allMarked = domNames.length > 0 && domNames.every(name => this.isTargetMarked(name));
+                    const domListHtml = allDoms.map(d => {
+                        const isMarked = this.isTargetMarked(d.name);
+                        return `
+                            <div class="root-domain-item" data-domain="${(d.name || '').toLowerCase()}" style="display: flex; align-items: center; justify-content: space-between; padding: 5px 8px; margin-bottom: 4px; background: rgba(0, 180, 216, 0.08); border: 1px solid rgba(0, 180, 216, 0.25); border-radius: 4px; font-family: monospace; font-size: 0.8rem;">
+                                <span style="color: #00b4d8; font-weight: 600; word-break: break-all;">${d.name}</span>
+                                <div style="display: flex; gap: 4px; align-items: center;">
+                                    <button type="button" class="risk-focus-btn" style="margin: 0; padding: 2px 6px; font-size: 0.72rem; color: ${isMarked ? '#ef4444' : '#00f0ff'}; border-color: ${isMarked ? '#ef4444' : 'rgba(0, 240, 255, 0.4)'}; background: ${isMarked ? 'rgba(239, 68, 68, 0.15)' : 'rgba(0, 240, 255, 0.15)'};" onclick="window.dashboard.toggleTargetMark('${d.name}')" title="${isMarked ? 'Remove Target' : 'Set as Target (FQDN)'}">
+                                        <i data-lucide="crosshair" style="width: 10px; height: 10px;"></i>
+                                    </button>
+                                    <button type="button" class="risk-focus-btn" style="margin: 0; padding: 2px 6px; font-size: 0.72rem; color: #00b4d8; border-color: rgba(0, 180, 216, 0.4); background: rgba(0, 180, 216, 0.15);" onclick="event.stopPropagation(); window.dashboard.copyTextList('${d.name}', this)" title="Copy Domain">
+                                        <i data-lucide="copy" style="width: 10px; height: 10px;"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        `;
+                    }).join('');
+
+                    rootDomainsAccordionHtml = `
+                        <div class="risk-accordion-group" style="margin-top: 0.75rem; margin-bottom: 0.5rem;">
+                            <div class="risk-accordion-header" onclick="window.dashboard.toggleRiskAccordion(this)">
+                                <div class="risk-accordion-title">
+                                    <i data-lucide="globe" class="accordion-icon ui-icon"></i>
+                                    <span>Enumerated Domains (${allDoms.length})</span>
+                                </div>
+                                <div class="risk-accordion-status" style="display: flex; flex-wrap: wrap; align-items: center; gap: 6px; justify-content: flex-end;">
+                                    <button type="button" class="risk-focus-btn" style="margin: 0; padding: 2px 7px; font-size: 0.75rem; color: ${allMarked ? '#ef4444' : '#00f0ff'}; border-color: ${allMarked ? '#ef4444' : 'rgba(0, 240, 255, 0.4)'}; background: ${allMarked ? 'rgba(239, 68, 68, 0.15)' : 'rgba(0, 240, 255, 0.15)'};" onclick="event.stopPropagation(); window.dashboard.${allMarked ? 'removeTargetsBulk' : 'setTargetsBulk'}(${JSON.stringify(domNames).replace(/"/g, '&quot;')})" title="${allMarked ? 'Remove all from Targets' : 'Set all items as Target'}"><i data-lucide="crosshair" class="badge-icon"></i></button>
+                                    <button type="button" class="risk-focus-btn" style="margin: 0; padding: 2px 7px; font-size: 0.75rem; background: rgba(0, 180, 216, 0.2); color: #00b4d8; border-color: rgba(0, 180, 216, 0.4);" onclick="event.stopPropagation(); window.dashboard.copyTextList(${JSON.stringify(domNames).replace(/"/g, '&quot;')}, this)"><i data-lucide="copy" class="badge-icon"></i></button>
+                                    <span class="risk-pill-counter" style="color: #00b4d8; background: rgba(0, 180, 216, 0.15); border-color: rgba(0, 180, 216, 0.4);">${allDoms.length}</span>
+                                    <i data-lucide="chevron-down" class="accordion-chevron ui-icon"></i>
+                                </div>
+                            </div>
+                            <div class="risk-accordion-body" style="display: none; max-height: 250px; overflow-y: auto; padding: 8px 6px;">
+                                <div style="margin-bottom: 6px;">
+                                    <input type="text" placeholder="Filter domains..." oninput="window.dashboard.filterRootDomains(this.value)" style="width: 100%; box-sizing: border-box; padding: 4px 8px; font-size: 0.78rem; background: #0f172a; border: 1px solid #334155; border-radius: 4px; color: #f8fafc;">
+                                </div>
+                                <div id="root-domains-list-container">
+                                    ${domListHtml}
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }
+
+                const allSubs = Array.isArray(data.all_subdomains) ? data.all_subdomains : [];
+                if (allSubs.length > 0) {
+                    const subNames = allSubs.map(s => s.name);
+                    const allMarked = subNames.length > 0 && subNames.every(name => this.isTargetMarked(name));
+                    const subListHtml = allSubs.map(s => {
+                        const isMarked = this.isTargetMarked(s.name);
+                        const ipsBadges = (s.resolved_ips || s.ips || []).map(ipObj => {
+                            const ipStr = typeof ipObj === 'string' ? ipObj : (ipObj.ip || '');
+                            if (!ipStr) return '';
+                            return `<span style="font-family: monospace; font-size: 0.7rem; color: #93c5fd; background: rgba(59, 130, 246, 0.15); border: 1px solid rgba(59, 130, 246, 0.3); border-radius: 3px; padding: 1px 4px;">${ipStr}</span>`;
+                        }).join('');
+
+                        return `
+                            <div class="root-subdomain-item" data-subdomain="${(s.name || '').toLowerCase()}" style="display: flex; flex-direction: column; gap: 4px; padding: 6px 8px; margin-bottom: 5px; background: rgba(78, 205, 196, 0.07); border: 1px solid rgba(78, 205, 196, 0.22); border-radius: 4px;">
+                                <div style="display: flex; align-items: center; justify-content: space-between;">
+                                    <span style="font-family: monospace; font-size: 0.8rem; color: #4ecdc4; font-weight: 600; word-break: break-all;">${s.name}</span>
+                                <div style="display: flex; gap: 4px; align-items: center;">
+                                    <button type="button" class="risk-focus-btn" style="margin: 0; padding: 2px 6px; font-size: 0.72rem; color: ${isMarked ? '#ef4444' : '#00f0ff'}; border-color: ${isMarked ? '#ef4444' : 'rgba(0, 240, 255, 0.4)'}; background: ${isMarked ? 'rgba(239, 68, 68, 0.15)' : 'rgba(0, 240, 255, 0.15)'};" onclick="window.dashboard.toggleTargetMark('${s.name}')" title="${isMarked ? 'Remove Target' : 'Set as Target (FQDN)'}">
+                                        <i data-lucide="crosshair" style="width: 10px; height: 10px;"></i>
+                                    </button>
+                                    <button type="button" class="risk-focus-btn" style="margin: 0; padding: 2px 6px; font-size: 0.72rem; color: #4ecdc4; border-color: rgba(78, 205, 196, 0.4); background: rgba(78, 205, 196, 0.15);" onclick="event.stopPropagation(); window.dashboard.copyTextList('${s.name}', this)" title="Copy Subdomain">
+                                        <i data-lucide="copy" style="width: 10px; height: 10px;"></i>
+                                    </button>
+                                </div>
+                                </div>
+                                ${ipsBadges ? `<div style="display: flex; flex-wrap: wrap; gap: 3px; align-items: center;">${ipsBadges}</div>` : ''}
+                            </div>
+                        `;
+                    }).join('');
+
+                    rootSubdomainsAccordionHtml = `
+                        <div class="risk-accordion-group" style="margin-top: 0.75rem; margin-bottom: 0.5rem;">
+                            <div class="risk-accordion-header" onclick="window.dashboard.toggleRiskAccordion(this)">
+                                <div class="risk-accordion-title">
+                                    <i data-lucide="globe" class="accordion-icon ui-icon"></i>
+                                    <span>Enumerated Subdomains (${allSubs.length})</span>
+                                </div>
+                                <div class="risk-accordion-status" style="display: flex; flex-wrap: wrap; align-items: center; gap: 6px; justify-content: flex-end;">
+                                    <button type="button" class="risk-focus-btn" style="margin: 0; padding: 2px 7px; font-size: 0.75rem; color: ${allMarked ? '#ef4444' : '#00f0ff'}; border-color: ${allMarked ? '#ef4444' : 'rgba(0, 240, 255, 0.4)'}; background: ${allMarked ? 'rgba(239, 68, 68, 0.15)' : 'rgba(0, 240, 255, 0.15)'};" onclick="event.stopPropagation(); window.dashboard.${allMarked ? 'removeTargetsBulk' : 'setTargetsBulk'}(${JSON.stringify(subNames).replace(/"/g, '&quot;')})" title="${allMarked ? 'Remove all from Targets' : 'Set all items as Target'}"><i data-lucide="crosshair" class="badge-icon"></i></button>
+                                    <button type="button" class="risk-focus-btn" style="margin: 0; padding: 2px 7px; font-size: 0.75rem; background: rgba(78, 205, 196, 0.2); color: #4ecdc4; border-color: rgba(78, 205, 196, 0.4);" onclick="event.stopPropagation(); window.dashboard.copyTextList(${JSON.stringify(subNames).replace(/"/g, '&quot;')}, this)"><i data-lucide="copy" class="badge-icon"></i></button>
+                                    <span class="risk-pill-counter" style="color: #4ecdc4; background: rgba(78, 205, 196, 0.15); border-color: rgba(78, 205, 196, 0.4);">${allSubs.length}</span>
+                                    <i data-lucide="chevron-down" class="accordion-chevron ui-icon"></i>
+                                </div>
+                            </div>
+                            <div class="risk-accordion-body" style="display: none; max-height: 280px; overflow-y: auto; padding: 8px 6px;">
+                                <div style="margin-bottom: 6px;">
+                                    <input type="text" placeholder="Filter subdomains..." oninput="window.dashboard.filterRootSubdomains(this.value)" style="width: 100%; box-sizing: border-box; padding: 4px 8px; font-size: 0.78rem; background: #0f172a; border: 1px solid #334155; border-radius: 4px; color: #f8fafc;">
+                                </div>
+                                <div id="root-subdomains-list-container">
+                                    ${subListHtml}
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }
+
+                const allIps = Array.isArray(data.all_ips) ? data.all_ips : [];
+                if (allIps.length > 0) {
+                    const ipStrings = allIps.map(item => item.ip);
+                    const allMarked = ipStrings.length > 0 && ipStrings.every(ip => this.isTargetMarked(ip));
+                    const ipListHtml = allIps.map(item => {
+                        const isMarked = this.isTargetMarked(item.ip);
+                        const fqdnsBadges = (item.fqdns || []).slice(0, 3).map(f => `
+                            <span style="font-family: monospace; font-size: 0.68rem; color: #4ecdc4; background: rgba(78, 205, 196, 0.12); border: 1px solid rgba(78, 205, 196, 0.25); border-radius: 3px; padding: 1px 4px;">${f}</span>
+                        `).join('');
+                        const extraFqdns = (item.fqdn_count || 0) > 3 ? `<span style="font-size: 0.68rem; color: #94a3b8;">+${item.fqdn_count - 3}</span>` : '';
+
+                        return `
+                            <div class="root-ip-item" data-ip="${(item.ip || '').toLowerCase()}" data-org="${(item.org || '').toLowerCase()}" style="display: flex; flex-direction: column; gap: 4px; padding: 6px 8px; margin-bottom: 5px; background: rgba(59, 130, 246, 0.08); border: 1px solid rgba(59, 130, 246, 0.25); border-radius: 4px;">
+                                <div style="display: flex; align-items: center; justify-content: space-between;">
+                                    <div style="display: flex; align-items: center; gap: 6px;">
+                                        <span style="font-family: monospace; font-size: 0.82rem; color: #60a5fa; font-weight: bold;">${item.ip}</span>
+                                        ${item.country && item.country !== 'Unknown' ? `<span style="font-size: 0.7rem; color: #94a3b8;">(${item.country})</span>` : ''}
+                                    </div>
+                                <div style="display: flex; gap: 4px; align-items: center;">
+                                    <button type="button" class="risk-focus-btn" style="margin: 0; padding: 2px 6px; font-size: 0.72rem; color: ${isMarked ? '#ef4444' : '#00f0ff'}; border-color: ${isMarked ? '#ef4444' : 'rgba(0, 240, 255, 0.4)'}; background: ${isMarked ? 'rgba(239, 68, 68, 0.15)' : 'rgba(0, 240, 255, 0.15)'};" onclick="window.dashboard.toggleTargetMark('${item.ip}')" title="${isMarked ? 'Remove Target' : 'Set as Target (IP)'}">
+                                        <i data-lucide="crosshair" style="width: 10px; height: 10px;"></i>
+                                    </button>
+                                    <button type="button" class="risk-focus-btn" style="margin: 0; padding: 2px 6px; font-size: 0.72rem; color: #60a5fa; border-color: rgba(59, 130, 246, 0.4); background: rgba(59, 130, 246, 0.15);" onclick="event.stopPropagation(); window.dashboard.copyTextList('${item.ip}', this)" title="Copy IP">
+                                        <i data-lucide="copy" style="width: 10px; height: 10px;"></i>
+                                    </button>
+                                </div>
+                                </div>
+                                ${item.org && item.org !== 'Unknown' ? `<div style="font-size: 0.72rem; color: #cbd5e1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">🏢 ${this.escapeHtml(item.org)}</div>` : ''}
+                                ${fqdnsBadges ? `<div style="display: flex; flex-wrap: wrap; gap: 3px; align-items: center;">${fqdnsBadges} ${extraFqdns}</div>` : ''}
+                            </div>
+                        `;
+                    }).join('');
+
+                    rootIpsAccordionHtml = `
+                        <div class="risk-accordion-group" style="margin-top: 0.75rem; margin-bottom: 0.5rem;">
+                            <div class="risk-accordion-header" onclick="window.dashboard.toggleRiskAccordion(this)">
+                                <div class="risk-accordion-title">
+                                    <i data-lucide="server" class="accordion-icon ui-icon" style="color: #60a5fa;"></i>
+                                    <span>Enumerated Host IPs (${allIps.length})</span>
+                                </div>
+                                <div class="risk-accordion-status" style="display: flex; flex-wrap: wrap; align-items: center; gap: 6px; justify-content: flex-end;">
+                                    <button type="button" class="risk-focus-btn" style="margin: 0; padding: 2px 7px; font-size: 0.75rem; color: ${allMarked ? '#ef4444' : '#00f0ff'}; border-color: ${allMarked ? '#ef4444' : 'rgba(0, 240, 255, 0.4)'}; background: ${allMarked ? 'rgba(239, 68, 68, 0.15)' : 'rgba(0, 240, 255, 0.15)'};" onclick="event.stopPropagation(); window.dashboard.${allMarked ? 'removeTargetsBulk' : 'setTargetsBulk'}(${JSON.stringify(ipStrings).replace(/"/g, '&quot;')})" title="${allMarked ? 'Remove all from Targets' : 'Set all items as Target'}"><i data-lucide="crosshair" class="badge-icon"></i></button>
+                                    <button type="button" class="risk-focus-btn" style="margin: 0; padding: 2px 7px; font-size: 0.75rem; background: rgba(59, 130, 246, 0.2); color: #60a5fa; border-color: rgba(59, 130, 246, 0.4);" onclick="event.stopPropagation(); window.dashboard.copyTextList(${JSON.stringify(ipStrings).replace(/"/g, '&quot;')}, this)"><i data-lucide="copy" class="badge-icon"></i></button>
+                                    <span class="risk-pill-counter" style="color: #60a5fa; background: rgba(59, 130, 246, 0.15); border-color: rgba(59, 130, 246, 0.4);">${allIps.length}</span>
+                                    <i data-lucide="chevron-down" class="accordion-chevron ui-icon"></i>
+                                </div>
+                            </div>
+                            <div class="risk-accordion-body" style="display: none; max-height: 280px; overflow-y: auto; padding: 8px 6px;">
+                                <div style="margin-bottom: 6px;">
+                                    <input type="text" placeholder="Filter IPs or org..." oninput="window.dashboard.filterRootIps(this.value)" style="width: 100%; box-sizing: border-box; padding: 4px 8px; font-size: 0.78rem; background: #0f172a; border: 1px solid #334155; border-radius: 4px; color: #f8fafc;">
+                                </div>
+                                <div id="root-ips-list-container">
+                                    ${ipListHtml}
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }
+
+                // CLI Execution Logs & Audit Trail Accordion for Root Target (REMOVED)
+            }
+
+            let subdomainsAccordionHtml = '';
+            if (rawType === 'domain' || rawType === 'subdomain') {
+                let relatedSubs = Array.isArray(data.related_subdomains) ? data.related_subdomains : [];
+
+                if (relatedSubs.length > 0) {
+                    const subNamesList = relatedSubs.map(s => s.name || s.label || s.id.replace(/^(dom_|sub_)/, ''));
+                    const allMarked = subNamesList.length > 0 && subNamesList.every(name => this.isTargetMarked(name));
+                    const subListHtml = relatedSubs.map((sub) => {
+                        const subName = sub.name || sub.label || sub.id.replace(/^(dom_|sub_)/, '');
+                        const isMarked = this.isTargetMarked(subName);
+                        const ipsBadges = (sub.resolved_ips || sub.ips || []).map(ipObj => {
+                            const ipStr = typeof ipObj === 'string' ? ipObj : (ipObj.ip || '');
+                            if (!ipStr) return '';
+                            return `<span style="font-family: monospace; font-size: 0.68rem; color: #93c5fd; background: rgba(59, 130, 246, 0.15); border: 1px solid rgba(59, 130, 246, 0.3); border-radius: 3px; padding: 1px 4px;">${ipStr}</span>`;
+                        }).join('');
+
+                        return `
+                            <div class="domain-subdomain-item" data-subdomain="${(subName || '').toLowerCase()}" style="display: flex; flex-direction: column; gap: 4px; padding: 6px 8px; margin-bottom: 5px; background: rgba(78, 205, 196, 0.07); border: 1px solid rgba(78, 205, 196, 0.22); border-radius: 4px;">
+                                <div style="display: flex; align-items: center; justify-content: space-between;">
+                                    <span style="font-family: monospace; font-size: 0.8rem; color: #4ecdc4; font-weight: 600; word-break: break-all;">${subName}</span>
+                                <div style="display: flex; gap: 4px; align-items: center;">
+                                    <button type="button" class="risk-focus-btn" style="margin: 0; padding: 2px 6px; font-size: 0.72rem; color: ${isMarked ? '#ef4444' : '#00f0ff'}; border-color: ${isMarked ? '#ef4444' : 'rgba(0, 240, 255, 0.4)'}; background: ${isMarked ? 'rgba(239, 68, 68, 0.15)' : 'rgba(0, 240, 255, 0.15)'};" onclick="window.dashboard.toggleTargetMark('${subName}')" title="${isMarked ? 'Remove Target' : 'Set as Target (FQDN)'}">
+                                        <i data-lucide="crosshair" style="width: 10px; height: 10px;"></i>
+                                    </button>
+                                    <button type="button" class="risk-focus-btn" style="margin: 0; padding: 2px 6px; font-size: 0.72rem; color: #4ecdc4; border-color: rgba(78, 205, 196, 0.4); background: rgba(78, 205, 196, 0.15);" onclick="event.stopPropagation(); window.dashboard.copyTextList('${subName}', this)" title="Copy Subdomain">
+                                        <i data-lucide="copy" style="width: 10px; height: 10px;"></i>
+                                    </button>
+                                </div>
+                                </div>
+                                ${ipsBadges ? `<div style="display: flex; flex-wrap: wrap; gap: 3px; align-items: center;">${ipsBadges}</div>` : ''}
+                            </div>
+                        `;
+                    }).join('');
+
+                    const accordionTitle = rawType === 'subdomain' ? 'Child Subdomains' : 'Related Subdomains';
+                    subdomainsAccordionHtml = `
+                        <div class="risk-accordion-group" style="margin-top: 0.75rem; margin-bottom: 0.5rem;">
+                            <div class="risk-accordion-header" onclick="window.dashboard.toggleRiskAccordion(this)">
+                                <div class="risk-accordion-title">
+                                    <i data-lucide="globe" class="accordion-icon ui-icon"></i>
+                                    <span>${accordionTitle} (${relatedSubs.length})</span>
+                                </div>
+                                <div class="risk-accordion-status" style="display: flex; flex-wrap: wrap; align-items: center; gap: 6px; justify-content: flex-end;">
+                                    <button type="button" class="risk-focus-btn" style="margin: 0; padding: 2px 7px; font-size: 0.75rem; color: ${allMarked ? '#ef4444' : '#00f0ff'}; border-color: ${allMarked ? '#ef4444' : 'rgba(0, 240, 255, 0.4)'}; background: ${allMarked ? 'rgba(239, 68, 68, 0.15)' : 'rgba(0, 240, 255, 0.15)'};" onclick="event.stopPropagation(); window.dashboard.${allMarked ? 'removeTargetsBulk' : 'setTargetsBulk'}(${JSON.stringify(subNamesList).replace(/"/g, '&quot;')})" title="${allMarked ? 'Remove all from Targets' : 'Set all items as Target'}"><i data-lucide="crosshair" class="badge-icon"></i></button>
+                                    <button type="button" class="risk-focus-btn" style="margin: 0; padding: 2px 7px; font-size: 0.75rem; background: rgba(78, 205, 196, 0.2); color: #4ecdc4; border-color: rgba(78, 205, 196, 0.4);" onclick="event.stopPropagation(); window.dashboard.copyTextList(${JSON.stringify(subNamesList).replace(/"/g, '&quot;')}, this)"><i data-lucide="copy" class="badge-icon"></i></button>
+                                    <span class="risk-pill-counter" style="color: #4ecdc4; background: rgba(78, 205, 196, 0.15); border-color: rgba(78, 205, 196, 0.4);">${relatedSubs.length}</span>
+                                    <i data-lucide="chevron-down" class="accordion-chevron ui-icon"></i>
+                                </div>
+                            </div>
+                            <div class="risk-accordion-body" style="display: none; max-height: 250px; overflow-y: auto; padding: 8px 6px;">
+                                <div style="margin-bottom: 6px;">
+                                    <input type="text" placeholder="Filter related subdomains..." oninput="window.dashboard.filterDomainSubdomains(this.value)" style="width: 100%; box-sizing: border-box; padding: 4px 8px; font-size: 0.78rem; background: #0f172a; border: 1px solid #334155; border-radius: 4px; color: #f8fafc;">
+                                </div>
+                                <div id="domain-subdomains-list-container">
+                                    ${subListHtml}
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }
+            }
+
+            let resolvedIpsHtml = '';
+            let historicalIpsHtml = '';
+            if (rawType === 'domain' || rawType === 'subdomain') {
+                const resolvedIps = data.resolved_ips || [];
+
+                if (resolvedIps.length > 0) {
+                    const ipsBadges = resolvedIps.map(item => {
+                        const isMarked = this.markedTargets.has(item.ip);
+                        const targetColor = isMarked ? '#ef4444' : '#93c5fd';
+                        const targetBg = isMarked ? 'rgba(239, 68, 68, 0.25)' : 'rgba(59, 130, 246, 0.25)';
+                        return `
+                        <span style="display: inline-flex; align-items: center; gap: 4px; padding: 2px 6px; background: rgba(59, 130, 246, 0.15); border: 1px solid rgba(59, 130, 246, 0.3); border-radius: 4px; font-family: monospace; font-size: 0.8rem; color: #60a5fa; margin-right: 4px; margin-bottom: 2px;">
+                            ${item.ip}
+                            <button type="button" class="risk-focus-btn" style="margin: 0; padding: 1px 4px; font-size: 0.65rem; background: ${targetBg}; color: ${targetColor}; border: none; border-radius: 2px; cursor: pointer;" onclick="event.stopPropagation(); window.dashboard.toggleTargetMark('${item.ip}')" title="${isMarked ? 'Remove Target' : 'Set as Target (IP)'}"><i data-lucide="crosshair" style="width: 10px; height: 10px;"></i></button>
+                            <button type="button" class="risk-focus-btn" style="margin: 0; padding: 1px 4px; font-size: 0.65rem; background: rgba(59, 130, 246, 0.25); color: #93c5fd; border: none; border-radius: 2px; cursor: pointer;" onclick="event.stopPropagation(); window.dashboard.focusNode('${item.id}')" title="Focus IP in graph"><i data-lucide="focus" style="width: 10px; height: 10px;"></i></button>
+                        </span>
+                        `;
+                    }).join('');
+
+                    resolvedIpsHtml = `
+                    <div class="risk-accordion-group" style="margin-top: 0.75rem; margin-bottom: 0.5rem;">
+                        <div class="risk-accordion-header" onclick="window.dashboard.toggleRiskAccordion(this)">
+                            <div class="risk-accordion-title">
+                                <i data-lucide="server" class="accordion-icon ui-icon" style="color: #60a5fa;"></i>
+                                <span>${resolvedIps.length === 1 ? 'Resolved IP' : 'Resolved IPs'} (${resolvedIps.length})</span>
+                            </div>
+                            <div class="risk-accordion-status" style="display: flex; flex-wrap: wrap; align-items: center; gap: 6px; justify-content: flex-end;">
+                                <i data-lucide="chevron-down" class="accordion-chevron ui-icon"></i>
+                            </div>
+                        </div>
+                        <div class="risk-accordion-body" style="display: none; max-height: 250px; overflow-y: auto; padding: 8px 6px;">
+                            <div style="display: flex; flex-wrap: wrap; gap: 4px; align-items: center;">${ipsBadges}</div>
+                        </div>
+                    </div>`;
+                } else {
+                    resolvedIpsHtml = `
+                    <div class="property">
+                        <span class="key">Resolved IPs:</span>
+                        <span class="value" style="color: #94a3b8; font-style: italic;">Unresolved / None</span>
+                    </div>`;
+                }
+                
+                const historicalIps = Array.isArray(data.historical_ips) ? data.historical_ips : [];
+                if (historicalIps.length > 0) {
+                    const histBadges = historicalIps.map(item => {
+                        const isMarked = this.markedTargets.has(item.ip);
+                        const targetColor = isMarked ? '#ef4444' : '#94a3b8';
+                        const targetBg = isMarked ? 'rgba(239, 68, 68, 0.25)' : 'rgba(148, 163, 184, 0.15)';
+                        return `
+                        <span style="display: inline-flex; align-items: center; gap: 4px; padding: 2px 6px; background: rgba(148, 163, 184, 0.1); border: 1px solid rgba(148, 163, 184, 0.3); border-radius: 4px; font-family: monospace; font-size: 0.8rem; color: #94a3b8; margin-right: 4px; margin-bottom: 2px; text-decoration: line-through;">
+                            ${item.ip}
+                            <button type="button" class="risk-focus-btn" style="margin: 0; padding: 1px 4px; font-size: 0.65rem; background: ${targetBg}; color: ${targetColor}; border: none; border-radius: 2px; cursor: pointer;" onclick="event.stopPropagation(); window.dashboard.toggleTargetMark('${item.ip}')" title="${isMarked ? 'Remove Target' : 'Set as Target (IP)'}"><i data-lucide="crosshair" style="width: 10px; height: 10px;"></i></button>
+                            <button type="button" class="risk-focus-btn" style="margin: 0; padding: 1px 4px; font-size: 0.65rem; background: rgba(148, 163, 184, 0.15); color: #94a3b8; border: none; border-radius: 2px; cursor: pointer;" onclick="event.stopPropagation(); window.dashboard.focusNode('${item.id}')" title="Focus IP in graph"><i data-lucide="focus" style="width: 10px; height: 10px;"></i></button>
+                        </span>
+                        `;
+                    }).join('');
+                    
+                    historicalIpsHtml = `
+                    <div class="risk-accordion-group" style="margin-top: 0.75rem; margin-bottom: 0.5rem;">
+                        <div class="risk-accordion-header" onclick="window.dashboard.toggleRiskAccordion(this)">
+                            <div class="risk-accordion-title">
+                                <i data-lucide="history" class="accordion-icon ui-icon" style="color: #94a3b8;"></i>
+                                <span style="color: #94a3b8;">Historical IPs (${historicalIps.length})</span>
+                            </div>
+                            <div class="risk-accordion-status" style="display: flex; flex-wrap: wrap; align-items: center; gap: 6px; justify-content: flex-end;">
+                                <i data-lucide="chevron-down" class="accordion-chevron ui-icon"></i>
+                            </div>
+                        </div>
+                        <div class="risk-accordion-body" style="display: none; max-height: 250px; overflow-y: auto; padding: 8px 6px;">
+                            <div style="display: flex; flex-wrap: wrap; gap: 4px; align-items: center;">${histBadges}</div>
+                        </div>
+                    </div>`;
+                }
+            }
+
+            let mainPropertiesHtml = '';
+            if (rawType === 'network') {
+                mainPropertiesHtml = `
+                <div class="property" style="flex-direction: column; align-items: flex-start;">
+                    <span class="key">Organization:</span>
+                    <div>
+                        <span class="value">${data.org || data.name || data.label}</span>
+                        ${renderSourceTags(data.sources)}
+                    </div>
+                </div>
+                ${data.asn ? `
+                <div class="property">
+                    <span class="key">Autonomous System (ASN):</span>
+                    <span class="value" style="color: #60a5fa; font-weight: 600; font-family: monospace;">${data.asn}</span>
+                </div>` : ''}`;
+            } else {
+                mainPropertiesHtml = `
+                <div class="property" style="flex-direction: column; align-items: flex-start;">
+                    <span class="key">${(rawType === 'target' || rawType === 'target_root') ? 'Target Query:' : 'Domain / Host:'}</span>
+                    <div>
+                        <span class="value">${data.name || data.label}</span>
+                        ${renderSourceTags(data.sources)}
+                    </div>
+                </div>
+                ${resolvedIpsHtml}
+                ${historicalIpsHtml}`;
+            }
+
+            html = `
+                <h4>${sectionTitle}</h4>
+                ${mainPropertiesHtml}
+                ${fileTargetsHtml}
+                ${rootDomainsAccordionHtml}
+                ${rootSubdomainsAccordionHtml}
+                ${rootIpsAccordionHtml}
+                ${rootScanLogsAccordionHtml}
+                ${subdomainsAccordionHtml}
+                ${riskMetricsHtml}
+            `;
+        } else if (rawType === 'ip') {
+            const riskMetricsHtml = this.renderRiskMetricsAccordion(data, elements);
+            const ipVal = String(data.ip || data.label || data.name || data.id || '').replace(/^ip_/, '').trim();
+            const isMarked = this.isTargetMarked(ipVal);
+
+            let cityHtml = '';
+            if (data.city || data.region_code) {
+                const cityRegion = [data.city, data.region_code].filter(Boolean).join(', ');
+                cityHtml = `
+                <div class="property">
+                    <span class="key">City / State:</span>
+                    <span class="value">${cityRegion}</span>
+                </div>`;
+            }
+
+            let geoHtml = '';
+            const lat = (data.latitude !== null && data.latitude !== undefined && data.latitude !== '') ? Number(data.latitude) : null;
+            const lon = (data.longitude !== null && data.longitude !== undefined && data.longitude !== '') ? Number(data.longitude) : null;
+            if (lat !== null && lon !== null && !isNaN(lat) && !isNaN(lon)) {
+                const mapsUrl = `https://www.google.com/maps?q=${lat},${lon}`;
+                geoHtml = `
+                <div class="property">
+                    <span class="key">Geolocation:</span>
+                    <span class="value" style="display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap;">
+                        <span>${lat.toFixed(4)}, ${lon.toFixed(4)}</span>
+                        <a href="${mapsUrl}" target="_blank" rel="noopener noreferrer" style="display: inline-flex; align-items: center; gap: 0.25rem; font-size: 0.72rem; color: #00d4ff; background: rgba(0, 212, 255, 0.1); border: 1px solid rgba(0, 212, 255, 0.3); border-radius: 4px; padding: 0.15rem 0.45rem; text-decoration: none; transition: all 0.2s;" onmouseover="this.style.background='rgba(0,212,255,0.2)'" onmouseout="this.style.background='rgba(0,212,255,0.1)'">
+                            <i data-lucide="map-pin" style="width: 11px; height: 11px;"></i> Map
+                        </a>
+                    </span>
+                </div>`;
+            }
+
+            // Collect all resolving domains/subdomains for this IP (from graph edges and direct node metadata)
+            const resolvingDomains = [];
+            const seenFqdns = new Set();
+
+            // 1. From direct fqdns array in node data
+            if (Array.isArray(data.fqdns)) {
+                data.fqdns.forEach(fqdn => {
+                    const fClean = String(fqdn || '').trim();
+                    if (fClean && !seenFqdns.has(fClean.toLowerCase())) {
+                        seenFqdns.add(fClean.toLowerCase());
+                        resolvingDomains.push({ id: null, name: fClean, type: 'subdomain' });
+                    }
+                });
+            }
+
+            // 2. From cytoscape graph incomers (if present)
+            if (this.cy) {
+                const ipNode = this.cy.getElementById(data.id);
+                if (ipNode.length > 0) {
+                    ipNode.incomers('node[type="subdomain"], node[type="domain"]').forEach(dNode => {
+                        const dData = dNode.data();
+                        const dName = (dData.name || dData.label || '').trim();
+                        if (dName) {
+                            const lower = dName.toLowerCase();
+                            const existing = resolvingDomains.find(r => r.name.toLowerCase() === lower);
+                            if (existing) {
+                                existing.id = dNode.id();
+                                existing.type = dData.type;
+                            } else if (!seenFqdns.has(lower)) {
+                                seenFqdns.add(lower);
+                                resolvingDomains.push({ id: dNode.id(), name: dName, type: dData.type });
+                            }
+                        }
+                    });
+                }
+            }
+            if (resolvingDomains.length === 0 && elements && elements.edges) {
+                const inEdges = this.inEdges ? (this.inEdges.get(data.id) || []) : [];
+                inEdges.forEach(edgeData => {
+                    if (['RESOLVES_TO', 'IPS_HISTORY', 'HOSTS_IP', 'CONTAINS_IP'].includes(edgeData.label)) {
+                        const srcData = this.nodeIndex ? this.nodeIndex.get(edgeData.source) : null;
+                        if (srcData && (srcData.type === 'domain' || srcData.type === 'subdomain')) {
+                            const dName = srcData.name || srcData.label;
+                            if (dName && !seenFqdns.has(dName.toLowerCase())) {
+                                seenFqdns.add(dName.toLowerCase());
+                                resolvingDomains.push({ id: edgeData.source, name: dName, type: srcData.type });
+                            }
+                        }
+                    }
+                });
+            }
+
+            let resolvingDomainsHtml = '';
+            if (resolvingDomains.length > 0) {
+                const totalFqdns = resolvingDomains.length;
+                const showSearch = totalFqdns > 5;
+                const searchHtml = showSearch ? `
+                    <div style="margin-bottom: 6px;">
+                        <input type="text" id="ip-fqdn-filter-input" placeholder="🔍 Filter ${totalFqdns} FQDNs / Virtual Hosts..." 
+                            style="width: 100%; padding: 4px 8px; background: rgba(0,0,0,0.35); border: 1px solid rgba(78, 205, 196, 0.3); border-radius: 4px; color: #fff; font-size: 0.75rem; outline: none;"
+                            oninput="window.dashboard.filterIpFqdnList(this.value)"
+                        />
+                    </div>
+                ` : '';
+
+                const actionToolbar = `
+                    <div style="display: flex; gap: 6px; margin-bottom: 6px; flex-wrap: wrap;">
+                        <button type="button" class="btn btn-secondary btn-sm" style="padding: 2px 8px; font-size: 0.72rem; border-radius: 4px; display: inline-flex; align-items: center; gap: 4px; background: rgba(255,255,255,0.06); color: #fff; border: 1px solid rgba(255,255,255,0.15);" onclick="window.dashboard.copyFqdnsList('${data.id}', this)">
+                            <i data-lucide="copy" style="width: 12px; height: 12px;"></i> Copy All (${totalFqdns})
+                        </button>
+                        <button type="button" class="btn btn-secondary btn-sm" style="padding: 2px 8px; font-size: 0.72rem; border-radius: 4px; display: inline-flex; align-items: center; gap: 4px; background: rgba(0,240,255,0.1); color: #00f0ff; border: 1px solid rgba(0,240,255,0.3);" onclick="window.dashboard.targetAllIpFqdns('${data.id}')">
+                            <i data-lucide="crosshair" style="width: 12px; height: 12px;"></i> Target All FQDNs
+                        </button>
+                    </div>
+                `;
+
+                const domBadges = resolvingDomains.map(item => {
+                    const isTarget = this.isTargetMarked(item.name);
+                    const targetBtnStyle = isTarget 
+                        ? 'background: rgba(0, 240, 255, 0.25); color: #00f0ff; border-color: #00f0ff;' 
+                        : 'background: rgba(255, 255, 255, 0.05); color: var(--text-muted); border-color: rgba(255, 255, 255, 0.15);';
+                    const targetBtnText = isTarget ? 'Targeted' : 'Target';
+
+                    const focusBtn = item.id ? `
+                        <button type="button" class="risk-focus-btn" style="margin: 0; padding: 2px 5px; font-size: 0.68rem; background: rgba(78, 205, 196, 0.2); color: #4ecdc4; border-color: rgba(78, 205, 196, 0.4); border-radius: 3px; border: 1px solid;" onclick="event.stopPropagation(); window.dashboard.focusNode('${item.id}')" title="Focus domain in graph">
+                            <i data-lucide="focus" style="width: 10px; height: 10px;"></i>
+                        </button>
+                    ` : '';
+
+                    return `
+                    <div class="ip-fqdn-item" data-fqdn="${(item.name || "").toLowerCase()}" style="display: flex; align-items: center; justify-content: space-between; padding: 4px 6px; margin-bottom: 3px; background: rgba(78, 205, 196, 0.06); border: 1px solid rgba(78, 205, 196, 0.2); border-radius: 4px; font-family: monospace; font-size: 0.76rem;">
+                        <span style="color: #4ecdc4; font-weight: 500; word-break: break-all; margin-right: 6px;">${item.name}</span>
+                        <div style="display: flex; align-items: center; gap: 4px; flex-shrink: 0;">
+                            ${focusBtn}
+                            <button type="button" style="margin: 0; padding: 2px 6px; font-size: 0.68rem; border-radius: 3px; border: 1px solid; cursor: pointer; transition: all 0.2s; ${targetBtnStyle}" onclick="event.stopPropagation(); window.dashboard.toggleTargetMark('${item.name}')" title="Toggle as target">
+                                ${targetBtnText}
+                            </button>
+                            <button type="button" style="margin: 0; padding: 2px 6px; font-size: 0.68rem; background: rgba(255,255,255,0.08); color: #cbd5e1; border: 1px solid rgba(255,255,255,0.2); border-radius: 3px; cursor: pointer;" onclick="event.stopPropagation(); window.dashboard.copyTextList('${item.name}', this);" title="Copy FQDN">
+                                <i data-lucide="copy" style="width: 10px; height: 10px;"></i>
+                            </button>
+                        </div>
+                    </div>
+                `}).join('');
+
+                resolvingDomainsHtml = `
+                <div class="risk-accordion-group" style="margin-top: 0.75rem; margin-bottom: 0.5rem;">
+                    <div class="risk-accordion-header" onclick="window.dashboard.toggleRiskAccordion(this)">
+                        <div class="risk-accordion-title">
+                            <i data-lucide="globe" class="accordion-icon ui-icon" style="color: #4ecdc4;"></i>
+                            <span style="color: #4ecdc4;">Associated FQDNs &amp; VHosts</span>
+                        </div>
+                        <div class="risk-accordion-status" style="display: flex; flex-wrap: wrap; align-items: center; gap: 6px; justify-content: flex-end;">
+                            <span class="risk-pill-counter" style="color: #4ecdc4; background: rgba(78, 205, 196, 0.15); border-color: rgba(78, 205, 196, 0.4);">${totalFqdns}</span>
+                            <i data-lucide="chevron-down" class="accordion-chevron ui-icon"></i>
+                        </div>
+                    </div>
+                    <div class="risk-accordion-body" style="display: none; max-height: 280px; overflow-y: auto; padding: 8px 6px;">
+                        <div style="margin-bottom: 8px; display: flex; flex-direction: column; gap: 6px;">
+                            ${actionToolbar}
+                            ${searchHtml}
+                        </div>
+                        <div id="ip-fqdn-list-container">
+                            ${domBadges}
+                        </div>
+                    </div>
+                </div>`;
+            }
+
+            html = `
+                <h4>IP Address Information</h4>
+                <div class="property" style="flex-direction: column; align-items: flex-start;">
+                    <span class="key">IP Address:</span>
+                    <div>
+                        <span class="value">${data.ip || ipVal}</span>
+                        ${renderSourceTags(data.sources)}
+                    </div>
+                </div>
+                ${resolvingDomainsHtml}
+                <div class="property">
+                    <span class="key">Organization:</span>
+                    <span class="value">${data.org || 'Unknown'}</span>
+                </div>
+                ${cityHtml}
+                <div class="property">
+                    <span class="key">Country:</span>
+                    <span class="value">${data.country || 'Unknown'}</span>
+                </div>
+                ${geoHtml}
+                <div class="property">
+                    <span class="key">ASN:</span>
+                    <span class="value">${data.asn || 'Unknown'}</span>
+                </div>
+                ${riskMetricsHtml}
+            `;
+        } else if (rawType === 'service' || rawType === 'http' || rawType === 'https') {
+            let urlHtml = '';
+            let hostHtml = '';
+            let displayUrl = data.url;
+            let host = '';
+            
+            try {
+                const bannerStr = String(data.banner || '').toLowerCase();
+                const serviceStr = String(data.service || '').toLowerCase();
+                const productStr = String(data.product || '').toLowerCase();
+                const isHttpService = bannerStr.includes('http') || serviceStr.includes('http') || productStr.includes('http') || rawType === 'http' || rawType === 'https';
+
+                if (elements && Array.isArray(elements.edges) && Array.isArray(elements.nodes)) {
+                    const edge = elements.edges.find(e => e && e.data && e.data.target === data.id);
+                    if (edge) {
+                        const parentNode = elements.nodes.find(n => n && n.data && n.data.id === edge.data.source);
+                        if (parentNode && parentNode.data) {
+                            host = parentNode.data.ip || parentNode.data.name || parentNode.data.label || parentNode.data.id || '';
+                        }
+                    }
+                }
+
+                if (host) {
+                    hostHtml = `
+                    <div class="property">
+                        <span class="key">Host:</span>
+                        <span class="value">${host}</span>
+                    </div>`;
+                }
+
+                // Generate URL strictly for services that have wildcard *http* in banner/service
+                if (!displayUrl && isHttpService && host) {
+                    const isHttps = data.ssl || rawType === 'https' || serviceStr.includes('https') || bannerStr.includes('https') || [443, 8443].includes(parseInt(data.port));
+                    const scheme = isHttps ? 'https' : 'http';
+                    if (data.port) {
+                        const portSuffix = ((scheme === 'http' && data.port == 80) || (scheme === 'https' && data.port == 443)) ? '' : `:${data.port}`;
+                        displayUrl = `${scheme}://${host}${portSuffix}`;
+                    }
+                }
+
+                if (isHttpService && displayUrl) {
+                    urlHtml = `
+                    <div class="property">
+                        <span class="key">URL:</span>
+                        <span class="value"><a href="${displayUrl}" target="_blank" style="color: #00d4ff; text-decoration: underline; word-break: break-all;">${displayUrl}</a></span>
+                    </div>`;
+                }
+            } catch (err) {
+                console.error("Error generating service details HTML:", err);
+            }
+
+            const riskMetricsHtml = this.renderRiskMetricsAccordion(data, elements);
+
+            html = `
+                <h4>Service Information</h4>
+                ${hostHtml}
+                <div class="property">
+                    <span class="key">Port:</span>
+                    <span class="value">${data.port}/${data.protocol}</span>
+                </div>
+                ${urlHtml}
+                <div class="property">
+                    <span class="key">Service:</span>
+                    <span class="value">${data.service || 'Unknown'}</span>
+                </div>
+                <div class="property">
+                    <span class="key">Product:</span>
+                    <span class="value">${data.product || 'Unknown'}</span>
+                </div>
+                <div class="property">
+                    <span class="key">Version:</span>
+                    <span class="value">${data.version || 'Unknown'}</span>
+                </div>
+                <div class="property">
+                    <span class="key">SSL/TLS:</span>
+                    <span class="value">${data.ssl ? 'Yes' : 'No'}</span>
+                </div>
+                ${(data.verified_active || data.is_active_scan) ? `
+                <div class="property">
+                    <span class="key">Verification Status:</span>
+                    <span class="value"><span class="badge-verified-active"><i data-lucide="check-circle" style="width: 12px; height: 12px;"></i> Confirmed Active</span></span>
+                </div>
+                ` : `
+                <div class="property">
+                    <span class="key">Verification Status:</span>
+                    <span class="value"><span class="badge-unverified"><i data-lucide="clock" style="width: 12px; height: 12px;"></i> Passive (Awaiting Active Confirmation)</span></span>
+                </div>
+                `}
+                ${Array.isArray(data.sources) && data.sources.length > 0 ? `
+                <div class="property">
+                    <span class="key">Sources:</span>
+                    <span class="value">${data.sources.join(', ')}</span>
+                </div>
+                ` : ''}
+                ${data.banner ? `
+                <div class="property banner-property" style="flex-direction: column; align-items: flex-start; gap: 0.25rem;">
+                    <span class="key" style="margin-bottom: 0.2rem;">Banner:</span>
+                    <pre class="service-banner-preview" style="background: rgba(15, 23, 42, 0.95); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 6px; padding: 0.5rem 0.65rem; font-family: var(--font-mono, monospace); font-size: 0.76rem; color: #38bdf8; white-space: pre-wrap; word-break: break-all; max-height: 120px; overflow-y: auto; width: 100%; margin: 0;">${this.escapeHtml(data.banner)}</pre>
+                </div>
+                ` : ''}
+                ${riskMetricsHtml}
+            `;
         } else {
             // Generic Fallback for any other node types
             const riskMetricsHtml = this.renderRiskMetricsAccordion(data, elements);
@@ -4473,6 +5162,11 @@ class EASMDashboard {
         const menu = document.getElementById('cy-context-menu');
         if (!menu) return;
 
+        const visibleNodeCount = this.cy ? this.cy.nodes(':visible').length : 0;
+        const isGraphExpanded = visibleNodeCount > 0;
+        const expandAllLabel = isGraphExpanded ? 'Collapse All' : 'Expand All Assets';
+        const expandAllIcon = isGraphExpanded ? 'minimize' : 'maximize';
+
         // Build HTML for core context menu
         menu.innerHTML = `
             <div class="cy-context-menu-header" style="justify-content: center; background: rgba(15, 23, 42, 0.95); border-bottom: 1px solid rgba(255,255,255,0.05); border-radius: 6px 6px 0 0; padding: 10px;">
@@ -4487,8 +5181,8 @@ class EASMDashboard {
             <div class="cy-context-menu-divider"></div>
 
             <button type="button" class="cy-context-menu-item ctx-collapse-btn" data-action-id="ctx-action-expand-all">
-                <i data-lucide="layers" class="ui-icon" style="color: #4ecdc4;"></i>
-                <span style="color: #f8fafc;">Target All Assets</span>
+                <i data-lucide="${expandAllIcon}" class="ui-icon" style="color: #4ecdc4;"></i>
+                <span style="color: #f8fafc;">${expandAllLabel}</span>
             </button>
 
             <button type="button" class="cy-context-menu-item ctx-collapse-btn" data-action-id="ctx-action-fit-graph">
@@ -4508,7 +5202,11 @@ class EASMDashboard {
                     const modal = document.getElementById('floating-assets-modal');
                     if (modal) modal.style.display = 'flex';
                 } else if (actId === 'ctx-action-expand-all') {
-                    this.selectAllLeads();
+                    if (isGraphExpanded) {
+                        this.deselectAllLeads();
+                    } else {
+                        this.selectAllLeads();
+                    }
                 } else if (actId === 'ctx-action-fit-graph') {
                     if (this.cy) this.cy.fit(null, 50);
                 }
@@ -4552,6 +5250,11 @@ class EASMDashboard {
         const collapseActions = [];
 
         if (nodeId === 'target_root') {
+            const visibleNodeCount = this.cy ? this.cy.nodes(':visible').length : 0;
+            const isGraphExpanded = visibleNodeCount > 0;
+            const expandAllLabel = isGraphExpanded ? 'Collapse All' : 'Expand All Assets';
+            const expandAllIcon = isGraphExpanded ? 'minimize' : 'maximize';
+
             collapseActions.push({
                 id: 'ctx-action-explore-assets',
                 label: 'Explore Assets...',
@@ -4565,13 +5268,18 @@ class EASMDashboard {
                     }
                 }
             });
+            
             collapseActions.push({
                 id: 'ctx-action-expand-all',
-                label: 'Target All Assets',
-                icon: 'layers',
+                label: expandAllLabel,
+                icon: expandAllIcon,
                 disabled: false,
                 action: () => {
-                    this.selectAllLeads();
+                    if (isGraphExpanded) {
+                        this.deselectAllLeads();
+                    } else {
+                        this.selectAllLeads();
+                    }
                     this.hideContextMenu();
                 }
             });

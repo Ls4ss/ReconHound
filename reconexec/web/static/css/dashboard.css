@@ -3913,6 +3913,7 @@ html, body {
     display: flex; 
     flex-direction: column; 
     justify-content: center;
+    align-items: flex-end;
 }
 
 .custom-brand-title {
@@ -3941,7 +3942,7 @@ html, body {
 .custom-brand-subtitle {
     margin-top: 4px; 
     line-height: 1; 
-    text-align: left;
+    text-align: right;
     font-size: 0.75rem;
     color: var(--text-muted);
 }

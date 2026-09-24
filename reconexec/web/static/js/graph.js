@@ -1374,14 +1374,47 @@ class EASMDashboard {
         this.applyLeadFilter({ relayout: true });
     }
 
+    toggleExpandAllAssets() {
+        if (!this.cy) return;
+        const visibleCount = this.cy.nodes(':visible').length;
+        // If there are visible nodes (other than target_root which might be hidden anyway), we collapse.
+        // Actually target_root is mostly hidden now in strict BloodHound style.
+        if (visibleCount > 0) {
+            this.deselectAllLeads();
+        } else {
+            this.selectAllLeads();
+        }
+    }
+
+    updateExpandAllButton() {
+        const btn = document.getElementById('btn-toggle-expand-all');
+        if (!btn || !this.cy) return;
+        
+        const visibleCount = this.cy.nodes(':visible').length;
+        if (visibleCount > 0) {
+            btn.innerHTML = '<i data-lucide="minimize" style="width: 14px; height: 14px;"></i> Collapse All';
+            btn.style.background = 'rgba(255, 255, 255, 0.05)';
+            btn.style.color = '#ccc';
+            btn.style.border = '1px solid #444';
+        } else {
+            btn.innerHTML = '<i data-lucide="maximize" style="width: 14px; height: 14px;"></i> Expand All';
+            btn.style.background = 'rgba(0, 240, 255, 0.15)';
+            btn.style.color = '#00f0ff';
+            btn.style.border = '1px solid rgba(0, 240, 255, 0.3)';
+        }
+        if (window.lucide) window.lucide.createIcons();
+    }
+
     async selectAllLeads() {
         this.expandedCanvasNodes = this.expandedCanvasNodes || new Set();
+        this.explicitVisibleNodes = new Set(); // Clear explicit show on Expand All
+        this.hiddenCanvasNodes = new Set(); // Clear explicit hides on Expand All
+        
         this.cy.nodes().forEach(node => {
             this.expandedCanvasNodes.add(node.id());
         });
         
-        const modal = document.getElementById('floating-assets-modal');
-        if (modal) modal.style.display = 'none';
+        // No modal to close anymore
         
         this.applyLeadFilter({ relayout: true });
         
@@ -1390,14 +1423,37 @@ class EASMDashboard {
         }
     }
 
+    expandNode(nodeId) {
+        this.explicitVisibleNodes = this.explicitVisibleNodes || new Set();
+        this.hiddenCanvasNodes = this.hiddenCanvasNodes || new Set();
+        
+        this.explicitVisibleNodes.add(nodeId);
+        this.hiddenCanvasNodes.delete(nodeId);
+        
+        this.applyLeadFilter({ relayout: true });
+        if (window.renderInventoryTable) window.renderInventoryTable();
+    }
+    
+    collapseNode(nodeId) {
+        this.explicitVisibleNodes = this.explicitVisibleNodes || new Set();
+        this.expandedCanvasNodes = this.expandedCanvasNodes || new Set();
+        this.hiddenCanvasNodes = this.hiddenCanvasNodes || new Set();
+        
+        this.explicitVisibleNodes.delete(nodeId);
+        this.expandedCanvasNodes.delete(nodeId);
+        this.hiddenCanvasNodes.add(nodeId);
+        
+        this.applyLeadFilter({ relayout: true });
+        if (window.renderInventoryTable) window.renderInventoryTable();
+    }
+
     async deselectAllLeads() {
         this.expandedCanvasNodes = this.expandedCanvasNodes || new Set();
         this.expandedCanvasNodes.clear();
         if (typeof this.showToast === 'function') {
             this.showToast('info', 'Canvas collapsed to root targets');
         }
-        const modal = document.getElementById('floating-assets-modal');
-        if (modal) modal.style.display = 'none';
+        // No modal to close anymore
         this.applyLeadFilter({ relayout: true });
     }
     filterExploreLeads(query) {
@@ -1458,6 +1514,12 @@ class EASMDashboard {
 
         // Expansion Pass: Iteratively show 1-hop descendants/ancestors of explicitly expanded nodes
         this.expandedCanvasNodes = this.expandedCanvasNodes || new Set();
+        this.explicitVisibleNodes = this.explicitVisibleNodes || new Set();
+        
+        // Nodes explicitly injected via Inventory (no auto-neighborhood)
+        this.explicitVisibleNodes.forEach(nodeId => {
+            visibleNodes.add(nodeId);
+        });
         
         // Any explicitly expanded node is also directly visible (eliminating strict target dependency)
         this.expandedCanvasNodes.forEach(nodeId => {
@@ -1483,6 +1545,13 @@ class EASMDashboard {
         let expanding = true;
         while(expanding) {
             expanding = processExpansions();
+        }
+        
+        // Remove explicitly hidden nodes from visible set
+        if (this.hiddenCanvasNodes) {
+            this.hiddenCanvasNodes.forEach(hiddenId => {
+                visibleNodes.delete(hiddenId);
+            });
         }
 
         // Store currently scoped visible asset nodes
@@ -1512,6 +1581,9 @@ class EASMDashboard {
         // Apply other filters on top of asset filter
         this.applyFilters(options);
         console.log("DEBUG D (after applyFilters):", this.cy.nodes(':visible').length);
+        
+        // Update the Expand All / Collapse All toggle button
+        this.updateExpandAllButton();
 
         // Frame visible elements smoothly without recalculating layout positions (unless relayout was explicitly requested)
         if (visibleNodes.size > 0) {
@@ -1654,10 +1726,10 @@ class EASMDashboard {
                         'border-width': '2px',
                         'border-style': 'dotted',
                         'border-color': '#8c52ff',
-                        'background-image': 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiM4YzUyZmYiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIiBjbGFzcz0ibHVjaWRlIGx1Y2lkZS1yYWRhciI+PHBhdGggZD0iTTE5LjA3IDQuOTNBMTAgMTAgMCAwIDAgNi45OSAzLjM0Ii8+PHBhdGggZD0iTTQgNmguMDEiLz48cGF0aCBkPSJNMi4yOSA5LjYyQTEwIDEwIDAgMSAwIDIxLjMxIDguMzUiLz48cGF0aCBkPSJNMTYuMjQgNy43NkE2IDYgMCAxIDAgOC4yMyAxNi42NyIvPjxwYXRoIGQ9Ik0xMiAxOGguMDEiLz48cGF0aCBkPSJNMTcuOTkgMTEuNjZBNiA2IDAgMCAxIDE1Ljc3IDE2LjY3Ii8+PGNpcmNsZSBjeD0iMTIiIGN5PSIxMiIgcj0iMiIvPjxwYXRoIGQ9Im0xMy40MSAxMC41OSA1LjY2LTUuNjYiLz48L3N2Zz4=',
-                        'background-fit': 'none',
-                        'background-width': '65%',
-                        'background-height': '65%',
+                        'background-image': '/static/img/ReconHound-bg.png',
+                        'background-fit': 'contain',
+                        'background-width': '80%',
+                        'background-height': '80%',
                         'background-position-x': '50%',
                         'background-position-y': '50%',
                         'background-opacity': 1
@@ -3017,12 +3089,6 @@ class EASMDashboard {
 
 
         // Inspector close button
-        const closeFloatingLeads = document.getElementById('close-floating-assets');
-        if (closeFloatingLeads) {
-            closeFloatingLeads.addEventListener('click', () => {
-                document.getElementById('floating-assets-modal').style.display = 'none';
-            });
-        }
 
         const closeInspectorBtn = document.getElementById('close-inspector');
         if (closeInspectorBtn) {
@@ -3407,6 +3473,7 @@ class EASMDashboard {
         if (!isGlobalFilterActive && (!this.visibleLeadNodes || this.visibleLeadNodes.size === 0)) {
             this.cy.nodes().hide();
             this.cy.edges().hide();
+            if (typeof this.updateExpandAllButton === 'function') this.updateExpandAllButton();
             return;
         }
 
@@ -4491,10 +4558,7 @@ class EASMDashboard {
                             <div class="root-domain-item" data-domain="${(d.name || '').toLowerCase()}" style="display: flex; align-items: center; justify-content: space-between; padding: 5px 8px; margin-bottom: 4px; background: rgba(0, 180, 216, 0.08); border: 1px solid rgba(0, 180, 216, 0.25); border-radius: 4px; font-family: monospace; font-size: 0.8rem;">
                                 <span style="color: #00b4d8; font-weight: 600; word-break: break-all;">${d.name}</span>
                                 <div style="display: flex; gap: 4px; align-items: center;">
-                                    <button type="button" class="risk-focus-btn" style="margin: 0; padding: 2px 6px; font-size: 0.72rem; color: ${isMarked ? '#ef4444' : '#00f0ff'}; border-color: ${isMarked ? '#ef4444' : 'rgba(0, 240, 255, 0.4)'}; background: ${isMarked ? 'rgba(239, 68, 68, 0.15)' : 'rgba(0, 240, 255, 0.15)'};" onclick="window.dashboard.toggleTargetMark('${d.name}')" title="${isMarked ? 'Remove Target' : 'Set as Target (FQDN)'}">
-                                        <i data-lucide="crosshair" style="width: 10px; height: 10px;"></i>
-                                    </button>
-                                    <button type="button" class="risk-focus-btn" style="margin: 0; padding: 2px 6px; font-size: 0.72rem; color: #00b4d8; border-color: rgba(0, 180, 216, 0.4); background: rgba(0, 180, 216, 0.15);" onclick="event.stopPropagation(); window.dashboard.copyTextList('${d.name}', this)" title="Copy Domain">
+                                                                        <button type="button" class="risk-focus-btn" style="margin: 0; padding: 2px 6px; font-size: 0.72rem; color: #00b4d8; border-color: rgba(0, 180, 216, 0.4); background: rgba(0, 180, 216, 0.15);" onclick="event.stopPropagation(); window.dashboard.copyTextList('${d.name}', this)" title="Copy Domain">
                                         <i data-lucide="copy" style="width: 10px; height: 10px;"></i>
                                     </button>
                                 </div>
@@ -4510,8 +4574,7 @@ class EASMDashboard {
                                     <span>Enumerated Domains (${allDoms.length})</span>
                                 </div>
                                 <div class="risk-accordion-status" style="display: flex; flex-wrap: wrap; align-items: center; gap: 6px; justify-content: flex-end;">
-                                    <button type="button" class="risk-focus-btn" style="margin: 0; padding: 2px 7px; font-size: 0.75rem; color: ${allMarked ? '#ef4444' : '#00f0ff'}; border-color: ${allMarked ? '#ef4444' : 'rgba(0, 240, 255, 0.4)'}; background: ${allMarked ? 'rgba(239, 68, 68, 0.15)' : 'rgba(0, 240, 255, 0.15)'};" onclick="event.stopPropagation(); window.dashboard.${allMarked ? 'removeTargetsBulk' : 'setTargetsBulk'}(${JSON.stringify(domNames).replace(/"/g, '&quot;')})" title="${allMarked ? 'Remove all from Targets' : 'Set all items as Target'}"><i data-lucide="crosshair" class="badge-icon"></i></button>
-                                    <button type="button" class="risk-focus-btn" style="margin: 0; padding: 2px 7px; font-size: 0.75rem; background: rgba(0, 180, 216, 0.2); color: #00b4d8; border-color: rgba(0, 180, 216, 0.4);" onclick="event.stopPropagation(); window.dashboard.copyTextList(${JSON.stringify(domNames).replace(/"/g, '&quot;')}, this)"><i data-lucide="copy" class="badge-icon"></i></button>
+                                                                        <button type="button" class="risk-focus-btn" style="margin: 0; padding: 2px 7px; font-size: 0.75rem; background: rgba(0, 180, 216, 0.2); color: #00b4d8; border-color: rgba(0, 180, 216, 0.4);" onclick="event.stopPropagation(); window.dashboard.copyTextList(${JSON.stringify(domNames).replace(/"/g, '&quot;')}, this)"><i data-lucide="copy" class="badge-icon"></i></button>
                                     <span class="risk-pill-counter" style="color: #00b4d8; background: rgba(0, 180, 216, 0.15); border-color: rgba(0, 180, 216, 0.4);">${allDoms.length}</span>
                                     <i data-lucide="chevron-down" class="accordion-chevron ui-icon"></i>
                                 </div>
@@ -4545,10 +4608,7 @@ class EASMDashboard {
                                 <div style="display: flex; align-items: center; justify-content: space-between;">
                                     <span style="font-family: monospace; font-size: 0.8rem; color: #4ecdc4; font-weight: 600; word-break: break-all;">${s.name}</span>
                                 <div style="display: flex; gap: 4px; align-items: center;">
-                                    <button type="button" class="risk-focus-btn" style="margin: 0; padding: 2px 6px; font-size: 0.72rem; color: ${isMarked ? '#ef4444' : '#00f0ff'}; border-color: ${isMarked ? '#ef4444' : 'rgba(0, 240, 255, 0.4)'}; background: ${isMarked ? 'rgba(239, 68, 68, 0.15)' : 'rgba(0, 240, 255, 0.15)'};" onclick="window.dashboard.toggleTargetMark('${s.name}')" title="${isMarked ? 'Remove Target' : 'Set as Target (FQDN)'}">
-                                        <i data-lucide="crosshair" style="width: 10px; height: 10px;"></i>
-                                    </button>
-                                    <button type="button" class="risk-focus-btn" style="margin: 0; padding: 2px 6px; font-size: 0.72rem; color: #4ecdc4; border-color: rgba(78, 205, 196, 0.4); background: rgba(78, 205, 196, 0.15);" onclick="event.stopPropagation(); window.dashboard.copyTextList('${s.name}', this)" title="Copy Subdomain">
+                                                                        <button type="button" class="risk-focus-btn" style="margin: 0; padding: 2px 6px; font-size: 0.72rem; color: #4ecdc4; border-color: rgba(78, 205, 196, 0.4); background: rgba(78, 205, 196, 0.15);" onclick="event.stopPropagation(); window.dashboard.copyTextList('${s.name}', this)" title="Copy Subdomain">
                                         <i data-lucide="copy" style="width: 10px; height: 10px;"></i>
                                     </button>
                                 </div>
@@ -4566,8 +4626,7 @@ class EASMDashboard {
                                     <span>Enumerated Subdomains (${allSubs.length})</span>
                                 </div>
                                 <div class="risk-accordion-status" style="display: flex; flex-wrap: wrap; align-items: center; gap: 6px; justify-content: flex-end;">
-                                    <button type="button" class="risk-focus-btn" style="margin: 0; padding: 2px 7px; font-size: 0.75rem; color: ${allMarked ? '#ef4444' : '#00f0ff'}; border-color: ${allMarked ? '#ef4444' : 'rgba(0, 240, 255, 0.4)'}; background: ${allMarked ? 'rgba(239, 68, 68, 0.15)' : 'rgba(0, 240, 255, 0.15)'};" onclick="event.stopPropagation(); window.dashboard.${allMarked ? 'removeTargetsBulk' : 'setTargetsBulk'}(${JSON.stringify(subNames).replace(/"/g, '&quot;')})" title="${allMarked ? 'Remove all from Targets' : 'Set all items as Target'}"><i data-lucide="crosshair" class="badge-icon"></i></button>
-                                    <button type="button" class="risk-focus-btn" style="margin: 0; padding: 2px 7px; font-size: 0.75rem; background: rgba(78, 205, 196, 0.2); color: #4ecdc4; border-color: rgba(78, 205, 196, 0.4);" onclick="event.stopPropagation(); window.dashboard.copyTextList(${JSON.stringify(subNames).replace(/"/g, '&quot;')}, this)"><i data-lucide="copy" class="badge-icon"></i></button>
+                                                                        <button type="button" class="risk-focus-btn" style="margin: 0; padding: 2px 7px; font-size: 0.75rem; background: rgba(78, 205, 196, 0.2); color: #4ecdc4; border-color: rgba(78, 205, 196, 0.4);" onclick="event.stopPropagation(); window.dashboard.copyTextList(${JSON.stringify(subNames).replace(/"/g, '&quot;')}, this)"><i data-lucide="copy" class="badge-icon"></i></button>
                                     <span class="risk-pill-counter" style="color: #4ecdc4; background: rgba(78, 205, 196, 0.15); border-color: rgba(78, 205, 196, 0.4);">${allSubs.length}</span>
                                     <i data-lucide="chevron-down" class="accordion-chevron ui-icon"></i>
                                 </div>
@@ -4603,10 +4662,7 @@ class EASMDashboard {
                                         ${item.country && item.country !== 'Unknown' ? `<span style="font-size: 0.7rem; color: #94a3b8;">(${item.country})</span>` : ''}
                                     </div>
                                 <div style="display: flex; gap: 4px; align-items: center;">
-                                    <button type="button" class="risk-focus-btn" style="margin: 0; padding: 2px 6px; font-size: 0.72rem; color: ${isMarked ? '#ef4444' : '#00f0ff'}; border-color: ${isMarked ? '#ef4444' : 'rgba(0, 240, 255, 0.4)'}; background: ${isMarked ? 'rgba(239, 68, 68, 0.15)' : 'rgba(0, 240, 255, 0.15)'};" onclick="window.dashboard.toggleTargetMark('${item.ip}')" title="${isMarked ? 'Remove Target' : 'Set as Target (IP)'}">
-                                        <i data-lucide="crosshair" style="width: 10px; height: 10px;"></i>
-                                    </button>
-                                    <button type="button" class="risk-focus-btn" style="margin: 0; padding: 2px 6px; font-size: 0.72rem; color: #60a5fa; border-color: rgba(59, 130, 246, 0.4); background: rgba(59, 130, 246, 0.15);" onclick="event.stopPropagation(); window.dashboard.copyTextList('${item.ip}', this)" title="Copy IP">
+                                                                        <button type="button" class="risk-focus-btn" style="margin: 0; padding: 2px 6px; font-size: 0.72rem; color: #60a5fa; border-color: rgba(59, 130, 246, 0.4); background: rgba(59, 130, 246, 0.15);" onclick="event.stopPropagation(); window.dashboard.copyTextList('${item.ip}', this)" title="Copy IP">
                                         <i data-lucide="copy" style="width: 10px; height: 10px;"></i>
                                     </button>
                                 </div>
@@ -4625,8 +4681,7 @@ class EASMDashboard {
                                     <span>Enumerated Host IPs (${allIps.length})</span>
                                 </div>
                                 <div class="risk-accordion-status" style="display: flex; flex-wrap: wrap; align-items: center; gap: 6px; justify-content: flex-end;">
-                                    <button type="button" class="risk-focus-btn" style="margin: 0; padding: 2px 7px; font-size: 0.75rem; color: ${allMarked ? '#ef4444' : '#00f0ff'}; border-color: ${allMarked ? '#ef4444' : 'rgba(0, 240, 255, 0.4)'}; background: ${allMarked ? 'rgba(239, 68, 68, 0.15)' : 'rgba(0, 240, 255, 0.15)'};" onclick="event.stopPropagation(); window.dashboard.${allMarked ? 'removeTargetsBulk' : 'setTargetsBulk'}(${JSON.stringify(ipStrings).replace(/"/g, '&quot;')})" title="${allMarked ? 'Remove all from Targets' : 'Set all items as Target'}"><i data-lucide="crosshair" class="badge-icon"></i></button>
-                                    <button type="button" class="risk-focus-btn" style="margin: 0; padding: 2px 7px; font-size: 0.75rem; background: rgba(59, 130, 246, 0.2); color: #60a5fa; border-color: rgba(59, 130, 246, 0.4);" onclick="event.stopPropagation(); window.dashboard.copyTextList(${JSON.stringify(ipStrings).replace(/"/g, '&quot;')}, this)"><i data-lucide="copy" class="badge-icon"></i></button>
+                                                                        <button type="button" class="risk-focus-btn" style="margin: 0; padding: 2px 7px; font-size: 0.75rem; background: rgba(59, 130, 246, 0.2); color: #60a5fa; border-color: rgba(59, 130, 246, 0.4);" onclick="event.stopPropagation(); window.dashboard.copyTextList(${JSON.stringify(ipStrings).replace(/"/g, '&quot;')}, this)"><i data-lucide="copy" class="badge-icon"></i></button>
                                     <span class="risk-pill-counter" style="color: #60a5fa; background: rgba(59, 130, 246, 0.15); border-color: rgba(59, 130, 246, 0.4);">${allIps.length}</span>
                                     <i data-lucide="chevron-down" class="accordion-chevron ui-icon"></i>
                                 </div>
@@ -4667,10 +4722,7 @@ class EASMDashboard {
                                 <div style="display: flex; align-items: center; justify-content: space-between;">
                                     <span style="font-family: monospace; font-size: 0.8rem; color: #4ecdc4; font-weight: 600; word-break: break-all;">${subName}</span>
                                 <div style="display: flex; gap: 4px; align-items: center;">
-                                    <button type="button" class="risk-focus-btn" style="margin: 0; padding: 2px 6px; font-size: 0.72rem; color: ${isMarked ? '#ef4444' : '#00f0ff'}; border-color: ${isMarked ? '#ef4444' : 'rgba(0, 240, 255, 0.4)'}; background: ${isMarked ? 'rgba(239, 68, 68, 0.15)' : 'rgba(0, 240, 255, 0.15)'};" onclick="window.dashboard.toggleTargetMark('${subName}')" title="${isMarked ? 'Remove Target' : 'Set as Target (FQDN)'}">
-                                        <i data-lucide="crosshair" style="width: 10px; height: 10px;"></i>
-                                    </button>
-                                    <button type="button" class="risk-focus-btn" style="margin: 0; padding: 2px 6px; font-size: 0.72rem; color: #4ecdc4; border-color: rgba(78, 205, 196, 0.4); background: rgba(78, 205, 196, 0.15);" onclick="event.stopPropagation(); window.dashboard.copyTextList('${subName}', this)" title="Copy Subdomain">
+                                                                        <button type="button" class="risk-focus-btn" style="margin: 0; padding: 2px 6px; font-size: 0.72rem; color: #4ecdc4; border-color: rgba(78, 205, 196, 0.4); background: rgba(78, 205, 196, 0.15);" onclick="event.stopPropagation(); window.dashboard.copyTextList('${subName}', this)" title="Copy Subdomain">
                                         <i data-lucide="copy" style="width: 10px; height: 10px;"></i>
                                     </button>
                                 </div>
@@ -4689,8 +4741,7 @@ class EASMDashboard {
                                     <span>${accordionTitle} (${relatedSubs.length})</span>
                                 </div>
                                 <div class="risk-accordion-status" style="display: flex; flex-wrap: wrap; align-items: center; gap: 6px; justify-content: flex-end;">
-                                    <button type="button" class="risk-focus-btn" style="margin: 0; padding: 2px 7px; font-size: 0.75rem; color: ${allMarked ? '#ef4444' : '#00f0ff'}; border-color: ${allMarked ? '#ef4444' : 'rgba(0, 240, 255, 0.4)'}; background: ${allMarked ? 'rgba(239, 68, 68, 0.15)' : 'rgba(0, 240, 255, 0.15)'};" onclick="event.stopPropagation(); window.dashboard.${allMarked ? 'removeTargetsBulk' : 'setTargetsBulk'}(${JSON.stringify(subNamesList).replace(/"/g, '&quot;')})" title="${allMarked ? 'Remove all from Targets' : 'Set all items as Target'}"><i data-lucide="crosshair" class="badge-icon"></i></button>
-                                    <button type="button" class="risk-focus-btn" style="margin: 0; padding: 2px 7px; font-size: 0.75rem; background: rgba(78, 205, 196, 0.2); color: #4ecdc4; border-color: rgba(78, 205, 196, 0.4);" onclick="event.stopPropagation(); window.dashboard.copyTextList(${JSON.stringify(subNamesList).replace(/"/g, '&quot;')}, this)"><i data-lucide="copy" class="badge-icon"></i></button>
+                                                                        <button type="button" class="risk-focus-btn" style="margin: 0; padding: 2px 7px; font-size: 0.75rem; background: rgba(78, 205, 196, 0.2); color: #4ecdc4; border-color: rgba(78, 205, 196, 0.4);" onclick="event.stopPropagation(); window.dashboard.copyTextList(${JSON.stringify(subNamesList).replace(/"/g, '&quot;')}, this)"><i data-lucide="copy" class="badge-icon"></i></button>
                                     <span class="risk-pill-counter" style="color: #4ecdc4; background: rgba(78, 205, 196, 0.15); border-color: rgba(78, 205, 196, 0.4);">${relatedSubs.length}</span>
                                     <i data-lucide="chevron-down" class="accordion-chevron ui-icon"></i>
                                 </div>
@@ -4721,8 +4772,7 @@ class EASMDashboard {
                         return `
                         <span style="display: inline-flex; align-items: center; gap: 4px; padding: 2px 6px; background: rgba(59, 130, 246, 0.15); border: 1px solid rgba(59, 130, 246, 0.3); border-radius: 4px; font-family: monospace; font-size: 0.8rem; color: #60a5fa; margin-right: 4px; margin-bottom: 2px;">
                             ${item.ip}
-                            <button type="button" class="risk-focus-btn" style="margin: 0; padding: 1px 4px; font-size: 0.65rem; background: ${targetBg}; color: ${targetColor}; border: none; border-radius: 2px; cursor: pointer;" onclick="event.stopPropagation(); window.dashboard.toggleTargetMark('${item.ip}')" title="${isMarked ? 'Remove Target' : 'Set as Target (IP)'}"><i data-lucide="crosshair" style="width: 10px; height: 10px;"></i></button>
-                            <button type="button" class="risk-focus-btn" style="margin: 0; padding: 1px 4px; font-size: 0.65rem; background: rgba(59, 130, 246, 0.25); color: #93c5fd; border: none; border-radius: 2px; cursor: pointer;" onclick="event.stopPropagation(); window.dashboard.focusNode('${item.id}')" title="Focus IP in graph"><i data-lucide="focus" style="width: 10px; height: 10px;"></i></button>
+                                                        <button type="button" class="risk-focus-btn" style="margin: 0; padding: 1px 4px; font-size: 0.65rem; background: rgba(59, 130, 246, 0.25); color: #93c5fd; border: none; border-radius: 2px; cursor: pointer;" onclick="event.stopPropagation(); window.dashboard.focusNode('${item.id}')" title="Focus IP in graph"><i data-lucide="focus" style="width: 10px; height: 10px;"></i></button>
                         </span>
                         `;
                     }).join('');
@@ -4759,8 +4809,7 @@ class EASMDashboard {
                         return `
                         <span style="display: inline-flex; align-items: center; gap: 4px; padding: 2px 6px; background: rgba(148, 163, 184, 0.1); border: 1px solid rgba(148, 163, 184, 0.3); border-radius: 4px; font-family: monospace; font-size: 0.8rem; color: #94a3b8; margin-right: 4px; margin-bottom: 2px; text-decoration: line-through;">
                             ${item.ip}
-                            <button type="button" class="risk-focus-btn" style="margin: 0; padding: 1px 4px; font-size: 0.65rem; background: ${targetBg}; color: ${targetColor}; border: none; border-radius: 2px; cursor: pointer;" onclick="event.stopPropagation(); window.dashboard.toggleTargetMark('${item.ip}')" title="${isMarked ? 'Remove Target' : 'Set as Target (IP)'}"><i data-lucide="crosshair" style="width: 10px; height: 10px;"></i></button>
-                            <button type="button" class="risk-focus-btn" style="margin: 0; padding: 1px 4px; font-size: 0.65rem; background: rgba(148, 163, 184, 0.15); color: #94a3b8; border: none; border-radius: 2px; cursor: pointer;" onclick="event.stopPropagation(); window.dashboard.focusNode('${item.id}')" title="Focus IP in graph"><i data-lucide="focus" style="width: 10px; height: 10px;"></i></button>
+                                                        <button type="button" class="risk-focus-btn" style="margin: 0; padding: 1px 4px; font-size: 0.65rem; background: rgba(148, 163, 184, 0.15); color: #94a3b8; border: none; border-radius: 2px; cursor: pointer;" onclick="event.stopPropagation(); window.dashboard.focusNode('${item.id}')" title="Focus IP in graph"><i data-lucide="focus" style="width: 10px; height: 10px;"></i></button>
                         </span>
                         `;
                     }).join('');
@@ -4948,10 +4997,7 @@ class EASMDashboard {
                         <span style="color: #4ecdc4; font-weight: 500; word-break: break-all; margin-right: 6px;">${item.name}</span>
                         <div style="display: flex; align-items: center; gap: 4px; flex-shrink: 0;">
                             ${focusBtn}
-                            <button type="button" style="margin: 0; padding: 2px 6px; font-size: 0.68rem; border-radius: 3px; border: 1px solid; cursor: pointer; transition: all 0.2s; ${targetBtnStyle}" onclick="event.stopPropagation(); window.dashboard.toggleTargetMark('${item.name}')" title="Toggle as target">
-                                ${targetBtnText}
-                            </button>
-                            <button type="button" style="margin: 0; padding: 2px 6px; font-size: 0.68rem; background: rgba(255,255,255,0.08); color: #cbd5e1; border: 1px solid rgba(255,255,255,0.2); border-radius: 3px; cursor: pointer;" onclick="event.stopPropagation(); window.dashboard.copyTextList('${item.name}', this);" title="Copy FQDN">
+                                                        <button type="button" style="margin: 0; padding: 2px 6px; font-size: 0.68rem; background: rgba(255,255,255,0.08); color: #cbd5e1; border: 1px solid rgba(255,255,255,0.2); border-radius: 3px; cursor: pointer;" onclick="event.stopPropagation(); window.dashboard.copyTextList('${item.name}', this);" title="Copy FQDN">
                                 <i data-lucide="copy" style="width: 10px; height: 10px;"></i>
                             </button>
                         </div>
@@ -5199,8 +5245,8 @@ class EASMDashboard {
                 
                 const actId = btn.getAttribute('data-action-id');
                 if (actId === 'ctx-action-explore-assets') {
-                    const modal = document.getElementById('floating-assets-modal');
-                    if (modal) modal.style.display = 'flex';
+                    const btn = document.getElementById('btn-toggle-inventory');
+                    if (btn) btn.click();
                 } else if (actId === 'ctx-action-expand-all') {
                     if (isGraphExpanded) {
                         this.deselectAllLeads();
@@ -5261,11 +5307,9 @@ class EASMDashboard {
                 icon: 'compass',
                 disabled: false,
                 action: () => {
-                    const modal = document.getElementById('floating-assets-modal');
-                    if (modal) {
-                        modal.style.display = 'flex';
-                        this.hideContextMenu();
-                    }
+                    const btn = document.getElementById('btn-toggle-inventory');
+                    if (btn) btn.click();
+                    this.hideContextMenu();
                 }
             });
             

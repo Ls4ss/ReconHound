@@ -30,13 +30,14 @@
 <button aria-label="Toggle Sidebar Menu" class="sidebar-toggle-btn" id="toggle-sidebar" style=" margin-left: -9.5px;" title="Toggle Filters &amp; Controls">
 <i class="ui-icon" data-lucide="menu"></i>
 </button>
-<a class="header-brand logo-title" href="https://lucassouza.io/reconhound" rel="noopener noreferrer" style="text-decoration: none; display: flex; align-items: center; font-family: 'JetBrains Mono', monospace; font-size: 1.5rem; font-weight: 700; color: var(--text-main);" target="_blank" title="Official Documentation">
-<div class="brand-text">
-<h1 class="brand-title" style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+<a class="header-brand logo-title" href="https://lucassouza.io/reconhound" rel="noopener noreferrer" style="text-decoration: none; display: flex; align-items: center; gap: 12px; font-family: 'JetBrains Mono', monospace; font-size: 1.5rem; font-weight: 700; color: var(--text-main);" target="_blank" title="Official Documentation">
+<img src="/static/img/ReconHound-bg.png" alt="ReconHound Logo" style="height: 48px; width: auto; object-fit: contain;">
+<div class="brand-text" style="display: flex; flex-direction: column; justify-content: center;">
+<h1 class="brand-title" style="display: flex; align-items: center; gap: 8px; margin: 0; padding: 0; line-height: 1;">
 <span>Recon<span class="ti-highlight">Hound</span></span>
 <span style="font-size: 0.5em; background: rgba(0, 240, 255, 0.1); color: var(--cyan-accent); border: 1px solid rgba(0, 240, 255, 0.3); padding: 1px 6px; border-radius: 4px; font-weight: bold; font-family: var(--font-mono); letter-spacing: 0.5px;">v3.0.0</span>
 </h1>
-<span class="brand-subtitle">Attack Surface Management</span>
+<span class="brand-subtitle" style="margin-top: 4px; line-height: 1; text-align: left;">Attack Surface Management</span>
 </div>
 </a>
 </div>
@@ -147,7 +148,7 @@
                         </button>
 </div>
 <div><a class="sidebar-docs-link" href="https://lucassouza.io/reconhound" rel="noopener noreferrer" target="_blank"><i class="ui-icon sidebar-docs-icon" data-lucide="book-marked"></i> Official Documentation ↗</a></div>
-<div class="sidebar-powered">Powered by <a href="https://lucassouza.io" rel="noopener noreferrer" target="_blank">Lucas Souza</a></div>
+<div class="sidebar-powered">Powered by <a href="https://lucassouza.io" rel="noopener noreferrer" target="_blank">Ls4ss</a></div>
 </div>
 </aside>
 <!-- Graph Container -->
@@ -317,6 +318,9 @@
 <div style="position: relative; display: flex; align-items: center;">
 <i data-lucide="search" style="position: absolute; left: 8px; width: 14px; height: 14px; color: var(--text-muted);"></i>
 <input id="inventory-search" onblur="this.style.borderColor='rgba(255,255,255,0.1)'" onfocus="this.style.borderColor='var(--cyan-accent)'" onkeyup="window.renderInventoryTable()" placeholder="Search assets..." style="background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.1); color: #fff; padding: 6px 12px 6px 28px; border-radius: 4px; font-size: 0.8rem; width: 250px; outline: none; transition: border-color 0.2s;" type="text"/>
+</div>
+<div style="display: flex; align-items: center; gap: 8px; margin-left: 10px;">
+    <button id="btn-toggle-expand-all" onclick="window.dashboard.toggleExpandAllAssets()" style="padding: 6px 12px; font-size: 0.8rem; background: rgba(0, 240, 255, 0.15); color: #00f0ff; border: 1px solid rgba(0, 240, 255, 0.3); border-radius: 4px; cursor: pointer; display: flex; align-items: center; gap: 6px; font-weight: 500; transition: all 0.2s;" onmouseover="this.style.filter='brightness(1.2)'" onmouseout="this.style.filter='none'"><i data-lucide="maximize" style="width: 14px; height: 14px;"></i> Expand All</button>
 </div>
 </div>
 <button aria-label="Close Inventory" class="close-btn" id="close-inventory-drawer" onmouseout="this.style.color='var(--text-muted)'" onmouseover="this.style.color='#fff'" style="background: transparent; border: none; cursor: pointer; color: var(--text-muted); transition: color 0.2s;"><i class="ui-icon" data-lucide="x"></i></button>
@@ -674,27 +678,6 @@
             });
         });
     </script>
-<!-- Floating Assets Modal -->
-<div class="modal" id="floating-assets-modal" style="display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 450px; max-width: 90vw; max-height: 85vh; background: #1e1e2d; border: 1px solid #333; border-radius: 8px; z-index: 10000; box-shadow: 0 10px 30px rgba(0,0,0,0.5); flex-direction: column;">
-<div style="padding: 15px; border-bottom: 1px solid #333; display: flex; justify-content: space-between; align-items: center; background: #252536; border-radius: 8px 8px 0 0;">
-<h3 style="margin: 0; color: #fff; font-size: 1.1rem; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-<i data-lucide="compass" style="width: 18px; height: 18px; color: #00f0ff;"></i> Explore Assets
-            </h3>
-<button id="close-floating-assets" style="background: none; border: none; color: #999; cursor: pointer; font-size: 1.5rem; line-height: 1;">×</button>
-</div>
-<div style="padding: 15px; border-bottom: 1px solid #333; display: flex; gap: 10px; background: #2a2a3c;">
-<button onclick="window.dashboard.selectAllLeads()" style="flex: 1; padding: 8px; background: rgba(0, 240, 255, 0.15); color: #00f0ff; border: 1px solid rgba(0, 240, 255, 0.3); border-radius: 4px; cursor: pointer; font-weight: bold;">Expand All Assets</button>
-<button onclick="window.dashboard.deselectAllLeads()" style="flex: 1; padding: 8px; background: rgba(255, 255, 255, 0.05); color: #ccc; border: 1px solid #444; border-radius: 4px; cursor: pointer;">Collapse All</button>
-</div>
-<div style="padding: 10px 15px; border-bottom: 1px solid #333; background: #1e1e2d;">
-<input id="explore-assets-search" onkeyup="window.dashboard.filterExploreLeads(this.value)" placeholder="Search assets by name or IP..." style="width: 100%; box-sizing: border-box; padding: 8px 12px; background: #252536; border: 1px solid #444; border-radius: 4px; color: #fff; font-size: 0.9rem;" type="text"/>
-</div>
-<div id="floating-assets-content" style="padding: 15px; overflow-y: auto; flex: 1;">
-<div class="asset-list" id="asset-list">
-<div class="asset-loading">Fetching assets...</div>
-</div>
-</div>
-</div>
 <script>
         document.addEventListener('DOMContentLoaded', () => {
             const logoutBtn = document.getElementById('btn-logout');
@@ -899,10 +882,31 @@
                         const targetColor = isTarget ? '#10b981' : '#64748b';
                         const targetTitle = isTarget ? 'Remove from Targets' : 'Add to Targets';
                         
+                        let cyNode = null;
+                        let nodeId = null;
+                        if (window.dashboard && window.dashboard.cy) {
+                            // Find node safely regardless of backend property mapping
+                            let cyNodes = window.dashboard.cy.nodes().filter(n => {
+                                const d = n.data();
+                                return d.type === type && (d.name === label || d.ip === label || d.label === label);
+                            });
+                            
+                            if (cyNodes.length > 0) {
+                                cyNode = cyNodes[0];
+                                nodeId = cyNode.id();
+                            }
+                        }
+                        
+                        const isExpanded = cyNode && cyNode.visible();
+                        const expandIcon = isExpanded ? 'minimize' : 'maximize';
+                        const expandColor = isExpanded ? '#4ecdc4' : '#64748b';
+                        const expandTitle = isExpanded ? 'Collapse on Canvas' : 'Expand on Canvas';
+                        const expandAction = cyNode ? (isExpanded ? `window.dashboard.collapseNode('${nodeId}')` : `window.dashboard.expandNode('${nodeId}')`) : `console.warn('Node not found in graph')`;
+
                         let targetBadge = `
                             <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-                                <button onclick="window.toggleInventoryTarget('${label}', this)" class="inventory-target-btn" title="${targetTitle}" style="background: transparent; border: none; cursor: pointer; display: flex; align-items: center; justify-content: flex-start; color: ${targetColor}; transition: color 0.2s;">
-                                    <i data-lucide="${targetIcon}" style="width: 18px; height: 18px;"></i>
+                                <button onclick="${expandAction}" class="inventory-expand-btn" title="${expandTitle}" style="background: transparent; border: none; cursor: pointer; display: flex; align-items: center; justify-content: flex-start; color: ${expandColor}; transition: color 0.2s;">
+                                    <i data-lucide="${expandIcon}" style="width: 18px; height: 18px;"></i>
                                 </button>
                                 <button onclick="window.promptDeleteAsset('${type}', '${label}')" class="inventory-delete-btn" title="Delete Asset" style="background: transparent; border: none; cursor: pointer; display: flex; align-items: center; justify-content: flex-start; color: #ef4444; transition: color 0.2s;">
                                     <i data-lucide="trash-2" style="width: 18px; height: 18px;"></i>

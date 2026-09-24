@@ -4,6 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ReconHound - Login</title>
+    <link href="/static/apple-touch-icon.png" rel="apple-touch-icon" sizes="180x180"/>
+    <link href="/static/favicon-32x32.png" rel="icon" sizes="32x32" type="image/png"/>
+    <link href="/static/favicon-16x16.png" rel="icon" sizes="16x16" type="image/png"/>
+    <link href="/static/favicon.ico" rel="shortcut icon"/>
     <!-- Same fonts and base styles as the main app -->
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest"></script>
@@ -180,7 +184,10 @@
 </head>
 <body>
     <div class="login-container">
-        <div class="logo-title">Recon<span>Hound</span></div>
+        <div class="logo-title" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px;">
+            <img src="/static/img/ReconHound-bg.png" alt="Logo" style="height: 96px; width: auto; object-fit: contain;">
+            <div>Recon<span>Hound</span></div>
+        </div>
         
         <div id="error-box" class="error-message"></div>
 

@@ -49,6 +49,14 @@ data/dbs/*.sqlite
 # Temporary AI / Agent scripts
 fix_*.py
 patch_*.py
+*.patch
 update_*.py
 scratch_*.py
 temp_*.py
+
+# Local test scripts & databases
+apps_biolab
+*.db
+reconexec/data/dbs/*.sqlite
+test_*.py
+reconexec/test_*.py

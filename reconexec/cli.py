@@ -470,12 +470,12 @@ def update_command() -> None:
     from reconexec.utils.updater import check_for_updates
     
     print_section_header("Engine & Package Updates")
-    print_info("Checking for ReconExec engine updates from PyPI...")
+    print_info("Checking for ReconHound updates from PyPI...")
     newer_version = check_for_updates(__version__, force=True)
     
     if newer_version:
         console.print(f" [bold yellow]Notice:[/bold yellow] A new release of [bold cyan]ReconExec[/bold cyan] is available ([dim]{__version__}[/dim] -> [bold green]{newer_version}[/bold green])")
-        console.print(" Run [bold white]pip install --break-system-packages --upgrade reconexec[/bold white] to update.\n")
+        console.print(" Run [bold white]pip install --break-system-packages --upgrade reconhound[/bold white] to update.\n")
     else:
         print_success("ReconExec engine is up to date!\n")
         

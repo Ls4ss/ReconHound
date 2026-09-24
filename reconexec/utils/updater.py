@@ -28,7 +28,7 @@ def check_for_updates(current_version: str, force: bool = False) -> Optional[str
 
     try:
         import requests
-        resp = requests.get("https://pypi.org/pypi/reconexec/json", timeout=2.0)
+        resp = requests.get("https://pypi.org/pypi/reconhound/json", timeout=2.0)
         if resp.status_code == 200:
             latest_version = resp.json()["info"]["version"]
             
@@ -62,7 +62,7 @@ def _print_update_warning(current: str, latest: str) -> None:
     from rich.panel import Panel
     console.print(Panel(
         f"[bold yellow]Notice:[/bold yellow] A new release of [bold cyan]ReconExec[/bold cyan] is available ([dim]{current}[/dim] -> [bold green]{latest}[/bold green])\n"
-        f"Run [bold white]pip install --upgrade reconexec[/bold white] to update.",
+        f"Run [bold white]pip install --upgrade reconhound[/bold white] to update.",
         border_style="yellow",
         padding=(0, 2)
     ))

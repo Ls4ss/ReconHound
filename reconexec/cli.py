@@ -33,7 +33,7 @@ click.Option.make_metavar = _compat_make_metavar
 
 import importlib.metadata
 try:
-    __version__ = importlib.metadata.version("reconexec")
+    __version__ = importlib.metadata.version("reconhound")
 except importlib.metadata.PackageNotFoundError:
     __version__ = "dev"
 
@@ -77,7 +77,7 @@ cli_name = "reconexec"
 
 app = typer.Typer(
     name=cli_name,
-    help="""ReconHound v3.1.0 - Advanced Passive Recon Like a Boss
+    help="""ReconHound v3.1.1 - Advanced Passive Recon Like a Boss
 
  ┌─────────────┐   ┌────────────────┐   ┌────────────────┐   ┌─────────────┐
  │  ReconHound  │──▶│ Asset Mapping  │──▶│ Threat Intel   │──▶│ ReconHound  │

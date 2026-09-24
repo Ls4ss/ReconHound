@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "reconhound"
-version = "3.1.0"
+version = "3.1.1"
 description = "ReconExec: The core CLI engine powering the ReconHound EASM platform."
 readme = "README.md"
 requires-python = ">=3.11"

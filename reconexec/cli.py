@@ -77,10 +77,10 @@ cli_name = "reconexec"
 
 app = typer.Typer(
     name=cli_name,
-    help="""ReconExec v3.1.0 - Advanced Passive Recon Like a Boss
+    help="""ReconHound v3.1.0 - Advanced Passive Recon Like a Boss
 
  ┌─────────────┐   ┌────────────────┐   ┌────────────────┐   ┌─────────────┐
- │  ReconExec  │──▶│ Asset Mapping  │──▶│ Threat Intel   │──▶│ ReconHound  │
+ │  ReconHound  │──▶│ Asset Mapping  │──▶│ Threat Intel   │──▶│ ReconHound  │
  │ (Discovery) │   │ (FQDNs/IPs/DB) │   │ (CVE/EPSS/PoC) │   │ (Web Graph) │
  └─────────────┘   └────────────────┘   └────────────────┘   └─────────────┘
 """,
@@ -329,7 +329,7 @@ def _execute_scan(
         console=console,
         transient=True,
     ) as progress:
-        task_id = progress.add_task("[bold cyan]Initializing ReconExec Intelligence Engine...", total=None)
+        task_id = progress.add_task("[bold cyan]Initializing ReconHound Intelligence Engine...", total=None)
 
         def progress_cb(module_name: str, message: str) -> None:
             progress.update(task_id, description=f"[bold cyan][{module_name}][/bold cyan] {message}")
@@ -474,10 +474,10 @@ def update_command() -> None:
     newer_version = check_for_updates(__version__, force=True)
     
     if newer_version:
-        console.print(f" [bold yellow]Notice:[/bold yellow] A new release of [bold cyan]ReconExec[/bold cyan] is available ([dim]{__version__}[/dim] -> [bold green]{newer_version}[/bold green])")
+        console.print(f" [bold yellow]Notice:[/bold yellow] A new release of [bold cyan]ReconHound[/bold cyan] is available ([dim]{__version__}[/dim] -> [bold green]{newer_version}[/bold green])")
         console.print(" Run [bold white]pip install --break-system-packages --upgrade reconhound[/bold white] to update.\n")
     else:
-        print_success("ReconExec engine is up to date!\n")
+        print_success("ReconHound engine is up to date!\n")
         
     print_section_header("Intelligence Databases Update")
     print_info("Refreshing ExploitDB/SearchSploit mapping database...")
@@ -595,7 +595,7 @@ def start_server(
                 print_info(f"PID: {status['pid']}")
                 return
         
-        print_info(f"Starting ReconExec web server on {host}:{port}...")
+        print_info(f"Starting ReconHound web server on {host}:{port}...")
         if db:
             print_info(f"Database: {db}")
         else:
@@ -804,8 +804,8 @@ def list_databases() -> None:
 
 @app.command(name="version", rich_help_panel="System & Configuration")
 def version_command() -> None:
-    """Show ReconExec version and maintainer information."""
-    console.print(f"[bold cyan]ReconExec[/bold cyan] version [bold white]{__version__}[/bold white] - Attack Surface Management Engine")
+    """Show ReconHound version and maintainer information."""
+    console.print(f"[bold cyan]ReconHound[/bold cyan] version [bold white]{__version__}[/bold white] - Attack Surface Management Engine")
     console.print("[dim]Developed by Lucas S. (Ls4ss) - https://lucassouza.io[/dim]")
 
 

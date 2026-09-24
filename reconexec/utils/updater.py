@@ -61,7 +61,7 @@ def _print_update_warning(current: str, latest: str) -> None:
     from reconexec.utils.logger import console
     from rich.panel import Panel
     console.print(Panel(
-        f"[bold yellow]Notice:[/bold yellow] A new release of [bold cyan]ReconExec[/bold cyan] is available ([dim]{current}[/dim] -> [bold green]{latest}[/bold green])\n"
+        f"[bold yellow]Notice:[/bold yellow] A new release of [bold cyan]ReconHound[/bold cyan] is available ([dim]{current}[/dim] -> [bold green]{latest}[/bold green])\n"
         f"Run [bold white]pip install --upgrade reconhound[/bold white] to update.",
         border_style="yellow",
         padding=(0, 2)

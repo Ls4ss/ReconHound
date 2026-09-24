@@ -3979,3 +3979,35 @@ html, body {
         display: none; /* Hide subtitle on very small screens to save space */
     }
 }
+
+/* Filter Categories Accordion */
+.filter-category {
+    background: rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 6px;
+    overflow: hidden;
+    margin-bottom: 2px;
+}
+.filter-category-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 12px;
+    cursor: pointer;
+    user-select: none;
+    transition: background 0.2s;
+    list-style: none; /* Hide default triangle */
+}
+.filter-category-header::-webkit-details-marker {
+    display: none; /* Hide default triangle in webkit */
+}
+.filter-category-header:hover {
+    background: rgba(0, 240, 255, 0.05);
+}
+.filter-category[open] .filter-category-header .chevron {
+    transform: rotate(180deg);
+}
+.filter-category-content .filter-checkbox {
+    padding: 4px 0;
+    margin-bottom: 4px;
+}

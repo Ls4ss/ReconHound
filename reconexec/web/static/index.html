@@ -170,63 +170,61 @@
 </div>
 </div>
 <!-- Filters Popover -->
-<div class="toolbar-popover hidden" id="filters-popover" style="display: none; width: 280px; background: rgba(30, 30, 45, 0.95); border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.5); border: 1px solid #444; padding: 12px; backdrop-filter: blur(5px);">
-<div class="filter-group" style="display: flex; flex-direction: column;">
-<label class="filter-checkbox filter-3d-matrix-item" style="border-bottom: 1px solid rgba(140, 82, 255, 0.25); padding-bottom: 0.7rem; margin-bottom: 0.2rem;">
-<input id="pop-filter-3d-matrix" type="checkbox"/>
-<span class="checkmark"></span>
-<span style="color: #00e5ff; font-weight: 600;">3D Risk Matrix</span> <span style="color: var(--text-muted); font-size: 0.78rem;">(Active + Threat + Impact)</span>
-</label>
-<label class="filter-checkbox">
-<input id="pop-filter-kev" type="checkbox"/>
-<span class="checkmark"></span>
-<span style="color: #ff4757; font-weight: 600;">CISA KEV</span> <span style="color: var(--text-muted); font-size: 0.78rem;">(Known Exploited)</span>
-</label>
-<label class="filter-checkbox">
-<input id="pop-filter-high-epss" type="checkbox"/>
-<span class="checkmark"></span>
-<span style="color: #ffa502; font-weight: 600;">High EPSS</span> <span style="color: var(--text-muted); font-size: 0.78rem;">(&gt;50% Probability)</span>
-</label>
-<label class="filter-checkbox">
-<input id="pop-filter-critical" type="checkbox"/>
-<span class="checkmark"></span>
-<span style="color: #ff3838; font-weight: 600;">Critical Severity</span> <span style="color: var(--text-muted); font-size: 0.78rem;">(CVSS 9.0+)</span>
-</label>
-<label class="filter-checkbox" style="border-bottom: 1px solid rgba(255, 255, 255, 0.08); padding-bottom: 0.5rem; margin-bottom: 0.2rem;">
-<input id="pop-filter-show-root" type="checkbox"/>
-<span class="checkmark"></span>
-<span style="color: #a855f7; font-weight: 600;">Show Target Root</span> <span style="color: var(--text-muted); font-size: 0.78rem;">(Anchor Node)</span>
-</label>
-<label class="filter-checkbox">
-<input id="pop-filter-hide-low-info" type="checkbox"/>
-<span class="checkmark"></span>
-<span style="color: #70a1ff; font-weight: 600;">Hide Low &amp; Info</span> <span style="color: var(--text-muted); font-size: 0.78rem;">(Noise Reduction)</span>
-</label>
-<label class="filter-checkbox">
-<input id="pop-filter-nuclei-only" type="checkbox"/>
-<span class="checkmark"></span>
-<span style="color: #c084fc; font-weight: 600;">Nuclei Findings Only</span> <span style="color: var(--text-muted); font-size: 0.78rem;">(Templates)</span>
-</label>
-<label class="filter-checkbox">
-<input id="pop-filter-with-pocs" type="checkbox"/>
-<span class="checkmark"></span>
-<span style="color: #00d2d3; font-weight: 600;">Verified Public PoCs</span> <span style="color: var(--text-muted); font-size: 0.78rem;">(ExploitDB / GitHub)</span>
-</label>
-<label class="filter-checkbox" style="border-top: 1px solid rgba(255, 255, 255, 0.08); padding-top: 0.5rem; margin-top: 0.2rem;">
-<input id="pop-filter-services-only" type="checkbox"/>
-<span class="checkmark"></span>
-<span style="color: #2ed573; font-weight: 600;">Exposed Services</span> <span style="color: var(--text-muted); font-size: 0.78rem;">(All Branches)</span>
-</label>
-<label class="filter-checkbox">
-<input id="pop-filter-verified-services" type="checkbox"/>
-<span class="checkmark"></span>
-<span style="color: #26de81; font-weight: 600;">Verified Active Services</span> <span style="color: var(--text-muted); font-size: 0.78rem;">(Masscan / HTTP)</span>
-</label>
-<label class="filter-checkbox">
-<input id="pop-filter-vuln-services" type="checkbox"/>
-<span class="checkmark"></span>
-<span style="color: #eb4d4b; font-weight: 600;">Vulnerable Services</span> <span style="color: var(--text-muted); font-size: 0.78rem;">(Direct Findings)</span>
-</label>
+<div class="toolbar-popover hidden" id="filters-popover" style="display: none; width: 320px; background: rgba(30, 30, 45, 0.95); border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.5); border: 1px solid #444; padding: 12px; backdrop-filter: blur(5px); max-height: 80vh; overflow-y: auto;">
+<div class="filter-group" style="display: flex; flex-direction: column; gap: 8px;">
+
+    <!-- 1. Strategic Views -->
+    <details class="filter-category" open>
+        <summary class="filter-category-header">
+            <div style="display: flex; align-items: center; gap: 8px; font-weight: 600; color: var(--text-main);">
+                <i data-lucide="crosshair" style="width: 14px; height: 14px; color: var(--cyan-accent);"></i> Strategic Views
+            </div>
+            <i class="chevron ui-icon" data-lucide="chevron-down" style="width: 16px; height: 16px; color: var(--text-muted); transition: transform 0.2s;"></i>
+        </summary>
+        <div class="filter-category-content" style="padding: 8px 4px 4px 8px; display: flex; flex-direction: column;">
+            <label class="filter-checkbox"><input id="pop-filter-web-surface" type="checkbox"/><span class="checkmark"></span><span style="color: var(--text-main); font-weight: 500;">Web Attack Surface</span> <span style="color: var(--text-muted); font-size: 0.75rem;">(HTTP/HTTPS)</span></label>
+            <label class="filter-checkbox"><input id="pop-filter-bare-metal" type="checkbox"/><span class="checkmark"></span><span style="color: var(--text-main); font-weight: 500;">Infrastructure Mapping</span> <span style="color: var(--text-muted); font-size: 0.75rem;">(Bare-Metal)</span></label>
+            <label class="filter-checkbox"><input id="pop-filter-waf-bypass" type="checkbox"/><span class="checkmark"></span><span style="color: var(--text-main); font-weight: 500;">Origin IP Discovery</span> <span style="color: var(--text-muted); font-size: 0.75rem;">(WAF Bypass)</span></label>
+            <label class="filter-checkbox"><input id="pop-filter-show-root" type="checkbox"/><span class="checkmark"></span><span style="color: var(--text-main); font-weight: 500;">Show Target Root</span> <span style="color: var(--text-muted); font-size: 0.75rem;">(Anchor Node)</span></label>
+        </div>
+    </details>
+
+    <!-- 2. Threat & Risk -->
+    <details class="filter-category">
+        <summary class="filter-category-header">
+            <div style="display: flex; align-items: center; gap: 8px; font-weight: 600; color: var(--text-main);">
+                <i data-lucide="shield-alert" style="width: 14px; height: 14px; color: #ef4444;"></i> Threat &amp; Risk
+            </div>
+            <i class="chevron ui-icon" data-lucide="chevron-down" style="width: 16px; height: 16px; color: var(--text-muted); transition: transform 0.2s;"></i>
+        </summary>
+        <div class="filter-category-content" style="padding: 8px 4px 4px 8px; display: flex; flex-direction: column;">
+            <label class="filter-checkbox"><input id="pop-filter-3d-matrix" type="checkbox"/><span class="checkmark"></span><span style="color: var(--text-main); font-weight: 500;">3D Risk Matrix</span> <span style="color: var(--text-muted); font-size: 0.75rem;">(God Mode)</span></label>
+            <label class="filter-checkbox"><input id="pop-filter-weaponized" type="checkbox"/><span class="checkmark"></span><span style="color: var(--text-main); font-weight: 500;">Weaponized Assets</span> <span style="color: var(--text-muted); font-size: 0.75rem;">(Pwnable Root)</span></label>
+            <label class="filter-checkbox"><input id="pop-filter-takeover" type="checkbox"/><span class="checkmark"></span><span style="color: var(--text-main); font-weight: 500;">Subdomain Takeovers</span> <span style="color: var(--text-muted); font-size: 0.75rem;">(Dangling DNS)</span></label>
+            <label class="filter-checkbox"><input id="pop-filter-kev" type="checkbox"/><span class="checkmark"></span><span style="color: var(--text-main); font-weight: 500;">CISA KEV</span> <span style="color: var(--text-muted); font-size: 0.75rem;">(Known Exploited)</span></label>
+            <label class="filter-checkbox"><input id="pop-filter-high-epss" type="checkbox"/><span class="checkmark"></span><span style="color: var(--text-main); font-weight: 500;">High EPSS</span> <span style="color: var(--text-muted); font-size: 0.75rem;">(&gt;50%)</span></label>
+            <label class="filter-checkbox"><input id="pop-filter-critical" type="checkbox"/><span class="checkmark"></span><span style="color: var(--text-main); font-weight: 500;">Critical Severity</span> <span style="color: var(--text-muted); font-size: 0.75rem;">(CVSS 9.0+)</span></label>
+        </div>
+    </details>
+
+    <!-- 3. Noise Reduction -->
+    <details class="filter-category">
+        <summary class="filter-category-header">
+            <div style="display: flex; align-items: center; gap: 8px; font-weight: 600; color: var(--text-main);">
+                <i data-lucide="filter" style="width: 14px; height: 14px; color: #8b5cf6;"></i> Noise Reduction
+            </div>
+            <i class="chevron ui-icon" data-lucide="chevron-down" style="width: 16px; height: 16px; color: var(--text-muted); transition: transform 0.2s;"></i>
+        </summary>
+        <div class="filter-category-content" style="padding: 8px 4px 4px 8px; display: flex; flex-direction: column;">
+            <label class="filter-checkbox"><input id="pop-filter-hide-low-info" type="checkbox"/><span class="checkmark"></span><span style="color: var(--text-main); font-weight: 500;">Hide Low &amp; Info</span> <span style="color: var(--text-muted); font-size: 0.75rem;">(Clean Noise)</span></label>
+            <label class="filter-checkbox"><input id="pop-filter-services-only" type="checkbox"/><span class="checkmark"></span><span style="color: var(--text-main); font-weight: 500;">Exposed Services</span> <span style="color: var(--text-muted); font-size: 0.75rem;">(All Branches)</span></label>
+            <label class="filter-checkbox"><input id="pop-filter-verified-services" type="checkbox"/><span class="checkmark"></span><span style="color: var(--text-main); font-weight: 500;">Verified Active Services</span> <span style="color: var(--text-muted); font-size: 0.75rem;">(HTTP/Masscan)</span></label>
+            <label class="filter-checkbox"><input id="pop-filter-vuln-services" type="checkbox"/><span class="checkmark"></span><span style="color: var(--text-main); font-weight: 500;">Vulnerable Services</span> <span style="color: var(--text-muted); font-size: 0.75rem;">(Direct Findings)</span></label>
+            <label class="filter-checkbox"><input id="pop-filter-nuclei-only" type="checkbox"/><span class="checkmark"></span><span style="color: var(--text-main); font-weight: 500;">Nuclei Findings Only</span> <span style="color: var(--text-muted); font-size: 0.75rem;">(Templates)</span></label>
+            <label class="filter-checkbox"><input id="pop-filter-with-pocs" type="checkbox"/><span class="checkmark"></span><span style="color: var(--text-main); font-weight: 500;">Verified Public PoCs</span> <span style="color: var(--text-muted); font-size: 0.75rem;">(ExploitDB/GitHub)</span></label>
+        </div>
+    </details>
+
 </div>
 </div>
 <!-- Export Popover -->

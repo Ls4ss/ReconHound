@@ -3076,6 +3076,11 @@ class EASMDashboard {
         };
 
         setupFilterSync('filter-show-root', 'pop-filter-show-root', 'showRoot');
+        setupFilterSync('filter-web-surface', 'pop-filter-web-surface', 'webSurface');
+        setupFilterSync('filter-bare-metal', 'pop-filter-bare-metal', 'bareMetal');
+        setupFilterSync('filter-waf-bypass', 'pop-filter-waf-bypass', 'wafBypass');
+        setupFilterSync('filter-weaponized', 'pop-filter-weaponized', 'weaponized');
+        setupFilterSync('filter-takeover', 'pop-filter-takeover', 'takeover');
         setupFilterSync('filter-3d-matrix', 'pop-filter-3d-matrix', 'matrix3d');
         setupFilterSync('filter-kev', 'pop-filter-kev', 'kev');
         setupFilterSync('filter-high-epss', 'pop-filter-high-epss', 'highEpss');
@@ -3468,8 +3473,9 @@ class EASMDashboard {
     applyFilters(options = {}) {
         if (!this.cy) return;
 
-        const hasVulnFilters = this.filters.matrix3d || this.filters.kev || this.filters.highEpss || this.filters.critical || this.filters.hideLowInfo || this.filters.nucleiOnly || this.filters.withPocs;
-        const isSearchOrVulnFilterActive = Boolean(this.searchTerm || hasVulnFilters);
+        const hasVulnFilters = this.filters.matrix3d || this.filters.kev || this.filters.highEpss || this.filters.critical || this.filters.hideLowInfo || this.filters.nucleiOnly || this.filters.withPocs || this.filters.takeover || this.filters.weaponized;
+        const hasGraphFilters = this.filters.webSurface || this.filters.bareMetal || this.filters.wafBypass;
+        const isSearchOrVulnFilterActive = Boolean(this.searchTerm || hasVulnFilters || hasGraphFilters);
         const isGlobalFilterActive = Boolean(isSearchOrVulnFilterActive || this.filters.showRoot);
 
         if (!isGlobalFilterActive && (!this.visibleLeadNodes || this.visibleLeadNodes.size === 0)) {
@@ -3630,6 +3636,11 @@ class EASMDashboard {
                 if (!realWorldThreat) return false;
             }
 
+            if (this.filters.takeover) {
+                const title = String(data.name || data.label || '').toLowerCase();
+                const tags = String(data.tags || '').toLowerCase();
+                if (!title.includes('takeover') && !tags.includes('takeover') && !title.includes('dangling') && !tags.includes('dangling')) return false;
+            }
             if (this.filters.kev && data.is_cisa_kev !== true && data.is_cisa_kev !== 1) return false;
             if (this.filters.highEpss && parseFloat(data.epss_score || 0) <= 0.5) return false;
             if (this.filters.critical && severity !== 'CRITICAL') return false;
@@ -3692,6 +3703,76 @@ class EASMDashboard {
             });
             nodesToKeep.clear();
             vulnNodes.forEach(id => nodesToKeep.add(id));
+        }
+
+        // Weaponized Root Assets
+        if (this.filters.weaponized) {
+            const rootNodes = new Set();
+            this.cy.nodes('[type="ip"], [type="domain"], [type="subdomain"]').forEach(node => {
+                if (nodesToKeep.has(node.id())) {
+                    let hasPocVuln = false;
+                    const checkVuln = (vNode) => {
+                        const d = vNode.data();
+                        if (d.has_pocs === true || (Array.isArray(d.exploits) && d.exploits.length > 0)) {
+                            hasPocVuln = true;
+                        }
+                    };
+                    // Descend to check vulnerabilities
+                    node.outgoers('node').forEach(child => {
+                        if (child.data('type') === 'vulnerability') checkVuln(child);
+                        if (child.data('type') === 'service' || child.data('type') === 'http' || child.data('type') === 'https') {
+                            child.outgoers('node[type="vulnerability"]').forEach(v => checkVuln(v));
+                        }
+                    });
+                    if (hasPocVuln) rootNodes.add(node.id());
+                }
+            });
+            nodesToKeep.clear();
+            rootNodes.forEach(id => nodesToKeep.add(id));
+        }
+
+        // Structural Filters (Web Surface, Bare-Metal, WAF Bypass)
+        if (hasGraphFilters) {
+            const structuralKeep = new Set();
+            
+            this.cy.nodes().forEach(node => {
+                if (!nodesToKeep.has(node.id())) return;
+                const type = node.data('type');
+                const port = node.data('port');
+                
+                let keep = true;
+                if (this.filters.webSurface) {
+                    if (['network', 'ip'].includes(type)) keep = false;
+                    if (['service'].includes(type) && port != 80 && port != 443 && port != 8080 && port != 8443) keep = false;
+                }
+                
+                if (this.filters.bareMetal) {
+                    if (['domain', 'subdomain'].includes(type)) keep = false;
+                }
+                
+                if (this.filters.wafBypass) {
+                    // Origin IP Discovery: Keep only IPs marked as historical or directly connected from sources like SecurityTrails
+                    if (type === 'ip') {
+                        const src = String(node.data('sources') || '').toLowerCase();
+                        const isHistorical = node.data('historical') === true || src.includes('securitytrails') || src.includes('alienvault');
+                        if (!isHistorical) keep = false;
+                    } else if (!['network', 'target'].includes(type)) {
+                        keep = false;
+                    }
+                }
+                
+                if (keep) structuralKeep.add(node.id());
+            });
+            
+            // Re-add ancestors for the kept structural nodes to maintain graph connectivity
+            const finalKeep = new Set();
+            structuralKeep.forEach(id => {
+                finalKeep.add(id);
+                addAllAncestors(this.cy.getElementById(id), finalKeep);
+            });
+            
+            nodesToKeep.clear();
+            finalKeep.forEach(id => nodesToKeep.add(id));
         }
 
         // Target Root visibility toggle

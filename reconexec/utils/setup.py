@@ -439,7 +439,7 @@ class SetupManager:
         warning_text = (
             "ReconExec needs to download and map the full Exploit-DB database (~150MB).\n"
             "This process performs heavy JSON indexing to map CVEs to exploit IDs locally.\n\n"
-            "☕ Depending on your internet speed and CPU, this usually takes 1 to 3 minutes.\n"
+            "This process is highly dependent on your internet connection and CPU.\n"
             "Feel free to grab a coffee while we crunch the data!"
         )
         self.console.print(Panel(warning_text, title="Exploit-DB Synchronization", border_style="cyan", expand=False))

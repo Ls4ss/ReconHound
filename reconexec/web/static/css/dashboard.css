@@ -3888,3 +3888,94 @@ html, body {
         overflow: visible !important;
     }
 }
+
+/* Custom Branding V3.1.0 */
+.custom-brand-wrapper {
+    text-decoration: none; 
+    display: flex; 
+    align-items: center; 
+    gap: 12px; 
+    font-family: 'JetBrains Mono', monospace; 
+    color: var(--text-main);
+}
+
+.custom-brand-logo {
+    height: 48px; 
+    width: auto; 
+    object-fit: contain;
+    transition: transform 0.25s ease;
+}
+.custom-brand-wrapper:hover .custom-brand-logo {
+    transform: scale(1.06);
+}
+
+.custom-brand-text {
+    display: flex; 
+    flex-direction: column; 
+    justify-content: center;
+}
+
+.custom-brand-title {
+    display: flex; 
+    align-items: center; 
+    gap: 8px; 
+    margin: 0; 
+    padding: 0; 
+    line-height: 1;
+    font-size: 1.5rem;
+    font-weight: 700;
+}
+
+.custom-brand-version {
+    font-size: 0.5em; 
+    background: rgba(0, 240, 255, 0.1); 
+    color: var(--cyan-accent); 
+    border: 1px solid rgba(0, 240, 255, 0.3); 
+    padding: 1px 6px; 
+    border-radius: 4px; 
+    font-weight: bold; 
+    font-family: var(--font-mono); 
+    letter-spacing: 0.5px;
+}
+
+.custom-brand-subtitle {
+    margin-top: 4px; 
+    line-height: 1; 
+    text-align: left;
+    font-size: 0.75rem;
+    color: var(--text-muted);
+}
+
+/* Responsiveness for Branding */
+@media (max-width: 768px) {
+    .custom-brand-logo {
+        height: 38px;
+    }
+    .custom-brand-wrapper {
+        gap: 8px;
+    }
+    .custom-brand-title {
+        font-size: 1.25rem;
+    }
+    .custom-brand-version {
+        padding: 1px 4px;
+        font-size: 0.45em;
+    }
+    .custom-brand-subtitle {
+        font-size: 0.65rem;
+        margin-top: 2px;
+    }
+}
+
+@media (max-width: 480px) {
+    .custom-brand-logo {
+        height: 32px;
+    }
+    .custom-brand-title {
+        font-size: 1.1rem;
+        gap: 6px;
+    }
+    .custom-brand-subtitle {
+        display: none; /* Hide subtitle on very small screens to save space */
+    }
+}

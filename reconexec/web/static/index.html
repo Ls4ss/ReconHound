@@ -133,13 +133,7 @@
 </div>
 </details>
 </div>
-<!-- Inventory Button Panel -->
-<div class="panel inventory-panel asset-accordion-panel" style="margin-top: 10px;">
-<div class="accordion-header" id="btn-toggle-inventory" style="border-radius: 6px;">
-<span class="accordion-title"><i class="ui-icon panel-title-icon" data-lucide="table"></i> <span class="title-text">Inventory</span></span>
-<i class="ui-icon accordion-icon" data-lucide="arrow-up-right"></i>
-</div>
-</div>
+
 <!-- Sidebar Footer -->
 <div class="sidebar-footer">
 <div class="sidebar-logout" style="padding-bottom: 15px; border-bottom: 1px solid rgba(255, 255, 255, 0.05); margin-bottom: 15px;">
@@ -952,7 +946,7 @@
                 window.renderInventoryTable();
             };
 
-            function toggleInventory() {
+            window.toggleInventoryDrawer = function() {
                 const isOpen = drawerInventory.style.bottom === '0px';
                 if (isOpen) {
                     drawerInventory.style.bottom = '-100vh';
@@ -964,9 +958,9 @@
                 }
             }
 
-            if (btnInventory) btnInventory.addEventListener('click', toggleInventory);
-            if (closeInventory) closeInventory.addEventListener('click', toggleInventory);
-            if (backdropInventory) backdropInventory.addEventListener('click', toggleInventory);
+            if (btnInventory) btnInventory.addEventListener('click', window.toggleInventoryDrawer);
+            if (closeInventory) closeInventory.addEventListener('click', window.toggleInventoryDrawer);
+            if (backdropInventory) backdropInventory.addEventListener('click', window.toggleInventoryDrawer);
 
             // Resizing logic
             const resizer = document.getElementById('inventory-resizer');

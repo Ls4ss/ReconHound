@@ -5245,8 +5245,7 @@ class EASMDashboard {
                 
                 const actId = btn.getAttribute('data-action-id');
                 if (actId === 'ctx-action-explore-assets') {
-                    const btn = document.getElementById('btn-toggle-inventory');
-                    if (btn) btn.click();
+                    if (window.toggleInventoryDrawer) window.toggleInventoryDrawer();
                 } else if (actId === 'ctx-action-expand-all') {
                     if (isGraphExpanded) {
                         this.deselectAllLeads();
@@ -5307,8 +5306,7 @@ class EASMDashboard {
                 icon: 'compass',
                 disabled: false,
                 action: () => {
-                    const btn = document.getElementById('btn-toggle-inventory');
-                    if (btn) btn.click();
+                    if (window.toggleInventoryDrawer) window.toggleInventoryDrawer();
                     this.hideContextMenu();
                 }
             });

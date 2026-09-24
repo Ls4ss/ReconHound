@@ -1416,15 +1416,8 @@ class EASMDashboard {
         
         // Notify blank canvas on first load if no explicit leads are selected
         if (selectedLeadIds.length === 0 && !this._hasNotifiedBlankCanvas) {
-            const rootNode = this.cy.getElementById('target_root');
-            if (rootNode.length > 0) {
-                if (typeof this.showToast === 'function') {
-                    this.showToast('info', 'Interactive Canvas: Double-click the root node to expand connections, or use the Inventory sidebar.');
-                }
-            } else {
-                if (typeof this.showToast === 'function') {
-                    this.showToast('info', 'Empty Canvas: Select assets from the Inventory sidebar to begin mapping.');
-                }
+            if (typeof this.showToast === 'function') {
+                this.showToast('info', 'Empty Canvas: Select assets from the Inventory sidebar or Search to begin mapping.');
             }
             this._hasNotifiedBlankCanvas = true;
         }
@@ -1441,54 +1434,17 @@ class EASMDashboard {
             }
         });
 
-        // Second pass: For each selected asset, add ancestry towards root and downstream descendants
-        const addAncestors = (nodeId, visited = new Set()) => {
-            if (visited.has(nodeId)) return;
-            visited.add(nodeId);
-            
-            const node = this.cy.getElementById(nodeId);
-            if (!node.length) return;
-            
-            node.incomers('node').forEach(parentNode => {
-                const parentId = parentNode.id();
-                visibleNodes.add(parentId);
-                addAncestors(parentId, visited);
-            });
-
-            if (node.data('type') === 'ip') {
-                node.outgoers('node[type="network"]').forEach(netNode => {
-                    const netId = netNode.id();
-                    visibleNodes.add(netId);
-                    addAncestors(netId, visited);
-                });
-            }
-
-            if (node.data('type') === 'domain' || node.data('type') === 'subdomain') {
-                node.outgoers('node[type="ip"]').forEach(ipNode => {
-                    ipNode.outgoers('node[type="network"]').forEach(netNode => {
-                        const netId = netNode.id();
-                        visibleNodes.add(netId);
-                        addAncestors(netId, visited);
-                    });
-                });
-            }
-        };
-
-        // Recursive addDescendants REMOVED to enforce BloodHound-style interactive hop-by-hop expansion.
+        // Recursive addAncestors REMOVED to enforce BloodHound-style interactive hop-by-hop expansion.
 
         selectedLeadIds.forEach(assetId => {
-            addAncestors(assetId);
-            // Selected leads themselves are visible
+            // Selected leads themselves are visible (No automatic ancestors added for strict BloodHound style)
             visibleNodes.add(assetId);
         });
 
-        // Always ensure target_root is visible if any asset is selected
-        const rootNode = this.cy.getElementById('target_root');
-        if (rootNode.length > 0) {
-            visibleNodes.add('target_root');
-        }
+        // Forced target_root visibility removed for strict BloodHound style
+        // (Canvas starts empty unless target_root is explicitly selected or expanded into)
 
-        // Expansion Pass: Iteratively show 1-hop descendants of explicitly expanded nodes
+        // Expansion Pass: Iteratively show 1-hop descendants/ancestors of explicitly expanded nodes
         this.expandedCanvasNodes = this.expandedCanvasNodes || new Set();
         const processExpansions = () => {
             let addedNew = false;
@@ -1496,9 +1452,9 @@ class EASMDashboard {
                 if (visibleNodes.has(nodeId)) {
                     const node = this.cy.getElementById(nodeId);
                     if (node.length) {
-                        node.outgoers('node').forEach(child => {
-                            if (!visibleNodes.has(child.id())) {
-                                visibleNodes.add(child.id());
+                        node.neighborhood('node').forEach(neighbor => {
+                            if (!visibleNodes.has(neighbor.id())) {
+                                visibleNodes.add(neighbor.id());
                                 addedNew = true;
                             }
                         });
@@ -2219,27 +2175,22 @@ class EASMDashboard {
                 // Double tap detected: Toggle Expansion
                 this.expandedCanvasNodes = this.expandedCanvasNodes || new Set();
                 
-                const outgoers = node.outgoers('node');
-                if (outgoers.length > 0) {
-                    // Check if all outgoers are currently visible
-                    const allVisible = outgoers.every(child => !child.hidden());
+                const neighbors = node.neighborhood('node');
+                if (neighbors.length > 0) {
+                    // Check if all neighbors are currently visible
+                    const allVisible = neighbors.every(n => !n.hidden());
                     
                     if (allVisible) {
-                        // FORCE COLLAPSE: Remove this node and any other parent holding these children open
+                        // FORCE COLLAPSE: Remove this node and fold
                         this.expandedCanvasNodes.delete(node.id());
-                        outgoers.forEach(child => {
-                            child.incomers('node').forEach(parent => {
-                                this.expandedCanvasNodes.delete(parent.id());
-                            });
+                        neighbors.forEach(n => {
+                            n.incomers('node').forEach(parent => this.expandedCanvasNodes.delete(parent.id()));
+                            n.outgoers('node').forEach(child => this.expandedCanvasNodes.delete(child.id()));
                         });
                     } else {
                         // Expand
-                        if (outgoers.length >= 500) {
-                            if (!window.confirm(`Safety Warning: This node has ${outgoers.length} connections.
-
-Expanding this many nodes at once may cause your browser to freeze temporarily while drawing the graph.
-
-Are you sure you want to proceed?`)) {
+                        if (neighbors.length >= 500) {
+                            if (!window.confirm(`Safety Warning: This node has ${neighbors.length} connections.\n\nExpanding this many nodes at once may cause your browser to freeze temporarily while drawing the graph.\n\nAre you sure you want to proceed?`)) {
                                 lastTapTime = 0;
                                 lastTapNodeId = null;
                                 return;
@@ -2792,9 +2743,122 @@ Are you sure you want to proceed?`)) {
         // Search functionality
         const searchInput = document.getElementById('search-input');
         if (searchInput) {
+            // Create suggestions container
+            let suggestionsBox = document.getElementById('search-suggestions');
+            if (!suggestionsBox) {
+                suggestionsBox = document.createElement('div');
+                suggestionsBox.id = 'search-suggestions';
+                suggestionsBox.style.cssText = 'position: absolute; top: 100%; left: 0; width: 100%; max-height: 300px; overflow-y: auto; background: rgba(30, 30, 45, 0.95); border: 1px solid #444; border-radius: 4px; box-shadow: 0 4px 12px rgba(0,0,0,0.5); z-index: 1000; display: none;';
+                // Append it to the parent wrapper of search input (ensure parent is relative)
+                searchInput.parentElement.style.position = 'relative';
+                searchInput.parentElement.appendChild(suggestionsBox);
+            }
+
+            // Close suggestions when clicking outside
+            document.addEventListener('click', (e) => {
+                if (e.target !== searchInput && !suggestionsBox.contains(e.target)) {
+                    suggestionsBox.style.display = 'none';
+                }
+            });
+
             searchInput.addEventListener('input', (e) => {
-                this.searchTerm = e.target.value.toLowerCase().trim();
-                this.applyFilters({ relayout: false });
+                const term = e.target.value.toLowerCase().trim();
+
+                if (term.length < 2) {
+                    suggestionsBox.style.display = 'none';
+                    return;
+                }
+
+                // Gather suggestions from graph nodes
+                const matches = [];
+                this.cy.nodes().forEach(node => {
+                    const d = node.data();
+                    if (d.id === 'target_root' || d.is_root) return; // Skip root from search
+
+                    const searchable = [d.label, d.name, d.ip, d.cve_id, d.service, d.product].filter(Boolean).join(' ').toLowerCase();
+                    if (searchable.includes(term)) {
+                        // Pick icon
+                        let iconName = 'circle';
+                        if (d.type === 'ip') iconName = 'server';
+                        else if (d.type === 'domain' || d.type === 'subdomain') iconName = 'globe';
+                        else if (d.type === 'vulnerability') iconName = 'shield-alert';
+                        else if (d.type === 'service' || d.type === 'http' || d.type === 'https') iconName = 'activity';
+                        else if (d.type === 'network') iconName = 'network';
+
+                        const displayName = d.label || d.name || d.ip || d.id;
+                        matches.push({ id: d.id, text: displayName, icon: iconName, type: d.type });
+                    }
+                });
+
+                if (matches.length === 0) {
+                    suggestionsBox.style.display = 'none';
+                    return;
+                }
+
+                // Render top 15 matches
+                suggestionsBox.innerHTML = '';
+                matches.slice(0, 15).forEach(m => {
+                    const item = document.createElement('div');
+                    item.style.cssText = 'padding: 8px 12px; display: flex; align-items: center; gap: 8px; cursor: pointer; color: #ccc; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 13px;';
+                    item.onmouseover = () => { item.style.background = 'rgba(255,255,255,0.1)'; item.style.color = '#fff'; };
+                    item.onmouseout = () => { item.style.background = 'transparent'; item.style.color = '#ccc'; };
+                    
+                    // Highlight match in text
+                    const regex = new RegExp(`(${term})`, 'gi');
+                    const highlightedText = m.text.replace(regex, '<b style="color: #4da6ff;">$1</b>');
+                    
+                    item.innerHTML = `<i data-lucide="${m.icon}" style="width: 14px; height: 14px;"></i> <span>${highlightedText}</span> <span style="margin-left: auto; font-size: 10px; opacity: 0.5;">${m.type}</span>`;
+                    
+                    item.addEventListener('click', () => {
+                        // Action on select
+                        searchInput.value = m.text;
+                        this.searchTerm = ''; // Keep search empty internally to strictly isolate the selected lead
+                        suggestionsBox.style.display = 'none';
+                        this.expandedCanvasNodes = new Set(); // Reset expansions so canvas is clean
+                        
+                        // Select only this node, isolating it on canvas
+                        this.selectedLeads.clear();
+                        this.selectedLeads.add(m.id);
+                        
+                        // Sync checkboxes in inventory if it exists
+                        document.querySelectorAll('.lead-checkbox').forEach(cb => {
+                            cb.checked = (cb.value === m.id);
+                        });
+
+                        // Ensure the node has a valid position before layout, otherwise cose layout will fail on single nodes
+                        const targetNode = this.cy.getElementById(m.id);
+                        if (targetNode.length > 0) {
+                            const pos = targetNode.position();
+                            if (!pos || isNaN(pos.x) || isNaN(pos.y) || (pos.x === 0 && pos.y === 0)) {
+                                targetNode.position({ x: this.cy.width() / 2, y: this.cy.height() / 2 });
+                            }
+                            targetNode.show(); // Ensure it's rendered for layout
+                        }
+
+                        this.applyLeadFilter({ relayout: true });
+                        this.renderLeadSelector();
+                        
+                        // Center on the new node
+                        setTimeout(() => {
+                            const selectedNode = this.cy.getElementById(m.id);
+                            if (selectedNode.length > 0) {
+                                this.cy.nodes().removeClass('cy-selected').unselect();
+                                selectedNode.addClass('cy-selected').select();
+                                if (typeof this.showNodeInspector === 'function') {
+                                    this.showNodeInspector(selectedNode);
+                                }
+                                this.cy.animate({
+                                    fit: { eles: selectedNode, padding: 50 },
+                                    duration: 500
+                                });
+                            }
+                        }, 600);
+                    });
+                    suggestionsBox.appendChild(item);
+                });
+
+                suggestionsBox.style.display = 'block';
+                if (typeof lucide !== 'undefined') lucide.createIcons();
             });
         }
 
@@ -2914,7 +2978,7 @@ Are you sure you want to proceed?`)) {
                 if (cbSide && cbSide !== e.target) cbSide.checked = val;
                 if (cbPop && cbPop !== e.target) cbPop.checked = val;
                 this.filters[filterKey] = val;
-                this.applyLeadFilter({ relayout: false });
+                this.applyLeadFilter({ relayout: true });
             };
 
             if (cbSide) cbSide.addEventListener('change', handleChange);
@@ -3319,11 +3383,15 @@ Are you sure you want to proceed?`)) {
     applyFilters() {
         if (!this.cy) return;
 
-        if (this.selectedLeads.size === 0) {
-            return; // Asset filter already hid everything
+        const hasVulnFilters = this.filters.matrix3d || this.filters.kev || this.filters.highEpss || this.filters.critical || this.filters.hideLowInfo || this.filters.nucleiOnly || this.filters.withPocs;
+        const isGlobalFilterActive = Boolean(this.searchTerm || hasVulnFilters);
+
+        if (!isGlobalFilterActive && this.selectedLeads.size === 0) {
+            this.cy.nodes().hide();
+            this.cy.edges().hide();
+            return;
         }
 
-        // Helper to trace full ancestor lineage up to target_root (Strict Attack Path: strictly upwards towards root)
         const addAllAncestors = (startNode, targetSet, visited = new Set()) => {
             if (!startNode || startNode.length === 0) return;
             const nodeId = startNode.id();
@@ -3332,12 +3400,11 @@ Are you sure you want to proceed?`)) {
             
             targetSet.add(nodeId);
             const nodeType = startNode.data('type');
+            const shouldTrace = (pId) => isGlobalFilterActive || !this.visibleLeadNodes || this.visibleLeadNodes.has(pId);
 
-            // 1. Vulnerability -> Service / IP
             if (nodeType === 'vulnerability' || nodeType === 'exploit') {
                 startNode.incomers('node').forEach(parent => {
                     const pType = parent.data('type');
-                    // When 3D Risk Matrix is active, only trace through verified active services
                     if (this.filters.matrix3d || this.filters.verifiedServicesOnly) {
                         if (['service', 'http', 'https'].includes(pType)) {
                             const sData = parent.data();
@@ -3346,60 +3413,38 @@ Are you sure you want to proceed?`)) {
                             if (!isSrvActive) return;
                         }
                     }
-                    if (!this.visibleLeadNodes || this.visibleLeadNodes.has(parent.id())) {
-                        addAllAncestors(parent, targetSet, visited);
-                    }
+                    if (shouldTrace(parent.id())) addAllAncestors(parent, targetSet, visited);
                 });
                 return;
             }
 
-            // 2. Service -> IP
             if (['service', 'http', 'https', 'cluster_services'].includes(nodeType)) {
                 startNode.incomers('node[type="ip"]').forEach(parentIp => {
-                    if (!this.visibleLeadNodes || this.visibleLeadNodes.has(parentIp.id())) {
-                        addAllAncestors(parentIp, targetSet, visited);
-                    }
+                    if (shouldTrace(parentIp.id())) addAllAncestors(parentIp, targetSet, visited);
                 });
                 return;
             }
 
-            // 3. IP -> Network (ASN) + Direct Resolving Subdomains -> Target Root
             if (nodeType === 'ip') {
-                // IP -> Network (ASN) -> Target Root
                 startNode.outgoers('node[type="network"]').forEach(netNode => {
-                    const netId = netNode.id();
-                    if (!this.visibleLeadNodes || this.visibleLeadNodes.has(netId)) {
-                        addAllAncestors(netNode, targetSet, visited);
-                    }
+                    if (shouldTrace(netNode.id())) addAllAncestors(netNode, targetSet, visited);
                 });
-
-                // IP -> Direct Incomer Subdomain / Domain -> Target Root
                 startNode.incomers('node[type="subdomain"], node[type="domain"]').forEach(subNode => {
-                    const subId = subNode.id();
-                    if (!this.visibleLeadNodes || this.visibleLeadNodes.has(subId)) {
-                        addAllAncestors(subNode, targetSet, visited);
-                    }
+                    if (shouldTrace(subNode.id())) addAllAncestors(subNode, targetSet, visited);
                 });
-
-                // Direct link from Target Root
                 startNode.incomers('node[type="target"]').forEach(targetNode => {
                     targetSet.add(targetNode.id());
                 });
                 return;
             }
 
-            // 4. Subdomain -> Parent Domain / Subdomain -> Target Root
             if (nodeType === 'subdomain') {
                 startNode.incomers('node[type="domain"], node[type="subdomain"], node[type="target"]').forEach(parent => {
-                    const pId = parent.id();
-                    if (!this.visibleLeadNodes || this.visibleLeadNodes.has(pId)) {
-                        addAllAncestors(parent, targetSet, visited);
-                    }
+                    if (shouldTrace(parent.id())) addAllAncestors(parent, targetSet, visited);
                 });
                 return;
             }
 
-            // 5. Network / Domain -> Target Root
             if (nodeType === 'network' || nodeType === 'domain') {
                 startNode.incomers('node[type="target"]').forEach(targetNode => {
                     targetSet.add(targetNode.id());
@@ -3407,16 +3452,11 @@ Are you sure you want to proceed?`)) {
                 return;
             }
 
-            // Fallback for any other node types
             startNode.incomers('node').forEach(parent => {
-                const pId = parent.id();
-                if (!this.visibleLeadNodes || this.visibleLeadNodes.has(pId)) {
-                    addAllAncestors(parent, targetSet, visited);
-                }
+                if (shouldTrace(parent.id())) addAllAncestors(parent, targetSet, visited);
             });
         };
 
-        // Helper to trace full descendant subtree downwards (children services, vulns, clusters)
         const addAllDescendants = (startNode, targetSet, visited = new Set()) => {
             if (!startNode || startNode.length === 0) return;
             const nodeId = startNode.id();
@@ -3425,27 +3465,21 @@ Are you sure you want to proceed?`)) {
 
             startNode.outgoers('node').forEach(child => {
                 const cId = child.id();
-                if ((!this.visibleLeadNodes || this.visibleLeadNodes.has(cId)) && nodesToKeep.has(cId)) {
+                if (isGlobalFilterActive || !this.visibleLeadNodes || this.visibleLeadNodes.has(cId)) {
                     targetSet.add(cId);
                     addAllDescendants(child, targetSet, visited);
                 }
             });
         };
 
-        // 1. Search filter matching IDs
         const searchMatchingNodeIds = new Set();
         if (this.searchTerm) {
             this.cy.nodes().forEach(node => {
-                if (this.visibleLeadNodes && !this.visibleLeadNodes.has(node.id())) return;
                 const data = node.data();
                 let parentData = {};
                 const parentNode = node.incomers('node').first();
                 if (parentNode.length > 0) {
                     parentData = parentNode.data();
-                } else if (false) {
-                    const parentId = data.parent_ip || data.parent_srv;
-                    const pNode = this.cy.getElementById(parentId);
-                    if (pNode.length > 0) parentData = pNode.data();
                 }
 
                 const isRoot = node.id() === 'target_root' || data.is_root === true;
@@ -3454,23 +3488,9 @@ Are you sure you want to proceed?`)) {
                 const parentFqdnsStr = (!isRoot && Array.isArray(parentData.fqdns)) ? parentData.fqdns.join(' ') : '';
 
                 const searchableText = [
-                    data.label,
-                    data.name,
-                    data.ip,
-                    data.cve_id,
-                    data.service,
-                    data.product,
-                    data.banner,
-                    data.org,
-                    data.country,
-                    data.port ? data.port.toString() : '',
-                    fqdnsStr,
-                    targetsListStr,
-                    parentData.label,
-                    parentData.name,
-                    parentData.ip,
-                    parentData.org,
-                    parentFqdnsStr
+                    data.label, data.name, data.ip, data.cve_id, data.service, data.product, data.banner,
+                    data.org, data.country, data.port ? data.port.toString() : '',
+                    fqdnsStr, targetsListStr, parentData.label, parentData.name, parentData.ip, parentData.org, parentFqdnsStr
                 ].filter(Boolean).join(' ').toLowerCase();
                 
                 if (searchableText.includes(this.searchTerm)) {
@@ -3479,8 +3499,6 @@ Are you sure you want to proceed?`)) {
             });
         }
 
-        // 2. Vulnerability filter evaluator
-        const hasVulnFilters = this.filters.matrix3d || this.filters.kev || this.filters.highEpss || this.filters.critical || this.filters.hideLowInfo || this.filters.nucleiOnly || this.filters.withPocs;
         const vulnMatchesFilter = (vulnNode, parentContext = null) => {
             if (!vulnNode) return false;
             const data = typeof vulnNode.data === 'function' ? vulnNode.data() : vulnNode;
@@ -3488,9 +3506,7 @@ Are you sure you want to proceed?`)) {
             const source = String(data.source || '').toLowerCase();
 
             if (this.filters.matrix3d) {
-                // Dimensão 1: Exposição e Validação Ativa (O Ativo)
                 let hasDirectActiveService = false;
-                
                 if (parentContext && ['service', 'http', 'https'].includes(parentContext.data('type'))) {
                     const sData = parentContext.data();
                     if (sData.verified_active === true || sData.is_active_scan === true) {
@@ -3516,16 +3532,10 @@ Are you sure you want to proceed?`)) {
                         hasDirectActiveService = sData.verified_active === true || sData.is_active_scan === true;
                     }
                 }
-
-                // Sem serviço ativo diretamente associado -> desqualificado
                 if (!hasDirectActiveService) return false;
-
-                // Dimensão 2: Gravidade Técnica (O Impacto: elimina ruído Low/Info/Unknown)
                 const cvss = parseFloat(data.cvss_score || 0);
                 const hasTechImpact = severity === 'CRITICAL' || severity === 'HIGH' || (severity === 'MEDIUM' && cvss >= 5.0) || cvss >= 6.5;
                 if (!hasTechImpact) return false;
-
-                // Dimensão 3: Armamento no Mundo Real (A Ameaça Ativa: CISA KEV, Alto EPSS ou PoCs)
                 const isKev = data.is_cisa_kev === true || data.is_cisa_kev === 'true' || data.is_cisa_kev === 1;
                 const epss = parseFloat(data.epss_score || 0);
                 const hasPocs = data.has_pocs === true || (Array.isArray(data.exploits) && data.exploits.length > 0) || (parseInt(data.exploit_count || 0) > 0);
@@ -3533,75 +3543,147 @@ Are you sure you want to proceed?`)) {
                 if (!realWorldThreat) return false;
             }
 
-            if (this.filters.kev) {
-                if (data.is_cisa_kev !== true && data.is_cisa_kev !== 1) return false;
-            }
-            if (this.filters.highEpss) {
-                const epssScore = parseFloat(data.epss_score || 0);
-                if (epssScore <= 0.5) return false;
-            }
-            if (this.filters.critical) {
-                if (severity !== 'CRITICAL') return false;
-            }
-            if (this.filters.hideLowInfo) {
-                if (severity === 'LOW' || severity === 'INFO' || severity === 'UNKNOWN') return false;
-            }
-            if (this.filters.nucleiOnly) {
-                if (!source.includes('nuclei')) return false;
-            }
-            if (this.filters.withPocs) {
-                const hasPocs = data.has_pocs === true || (Array.isArray(data.exploits) && data.exploits.length > 0);
-                if (!hasPocs) return false;
-            }
+            if (this.filters.kev && data.is_cisa_kev !== true && data.is_cisa_kev !== 1) return false;
+            if (this.filters.highEpss && parseFloat(data.epss_score || 0) <= 0.5) return false;
+            if (this.filters.critical && severity !== 'CRITICAL') return false;
+            if (this.filters.hideLowInfo && (severity === 'LOW' || severity === 'INFO' || severity === 'UNKNOWN')) return false;
+            if (this.filters.nucleiOnly && !source.includes('nuclei')) return false;
+            if (this.filters.withPocs && !(data.has_pocs === true || (Array.isArray(data.exploits) && data.exploits.length > 0))) return false;
             return true;
         };
 
-        // Determine which nodes and clusters should be kept
         const nodesToKeep = new Set();
+        
+        this.cy.nodes().forEach(node => {
+            if (isGlobalFilterActive || !this.visibleLeadNodes || this.visibleLeadNodes.has(node.id())) {
+                nodesToKeep.add(node.id());
+            }
+        });
+
+        if (this.searchTerm) {
+            const searchNodes = new Set();
+            searchMatchingNodeIds.forEach(id => {
+                searchNodes.add(id);
+                addAllAncestors(this.cy.getElementById(id), searchNodes);
+            });
+            const toRemove = [];
+            nodesToKeep.forEach(id => {
+                if (!searchNodes.has(id)) toRemove.push(id);
+            });
+            toRemove.forEach(id => nodesToKeep.delete(id));
+        }
 
         if (hasVulnFilters) {
-                        // Find all matching vulnerabilities within asset scope
+            const vulnNodes = new Set();
             this.cy.nodes('[type="vulnerability"]').forEach(node => {
-                if (this.visibleLeadNodes && !this.visibleLeadNodes.has(node.id())) return;
+                let isRelevant = !this.searchTerm;
+                if (!isRelevant) {
+                    if (nodesToKeep.has(node.id())) isRelevant = true;
+                    else {
+                        node.incomers('node').forEach(p => {
+                            if (nodesToKeep.has(p.id())) isRelevant = true;
+                        });
+                    }
+                }
+                if (!isRelevant) return;
                 
                 let matchesAnyContext = false;
                 node.incomers('node').forEach(parent => {
                     if (vulnMatchesFilter(node, parent)) {
                         matchesAnyContext = true;
-                        nodesToKeep.add(parent.id());
-                        addAllAncestors(parent, nodesToKeep);
+                        vulnNodes.add(parent.id());
+                        addAllAncestors(parent, vulnNodes);
                     }
                 });
                 
                 if (matchesAnyContext) {
-                    nodesToKeep.add(node.id());
+                    vulnNodes.add(node.id());
                 } else if (vulnMatchesFilter(node)) {
-                    // Fallback for isolated nodes
-                    nodesToKeep.add(node.id());
-                    addAllAncestors(node, nodesToKeep);
+                    vulnNodes.add(node.id());
+                    addAllAncestors(node, vulnNodes);
                 }
             });
+            nodesToKeep.clear();
+            vulnNodes.forEach(id => nodesToKeep.add(id));
+        }
 
-                            }
+        // Forced target_root visibility removed for strict BloodHound style
+        // to allow isolating only the searched node without the root always appearing.
 
-        // Final visibility pass based on filters
         this.cy.nodes().forEach(node => {
-            if (!nodesToKeep.has(node.id())) {
-                node.hide();
-            }
+            if (!nodesToKeep.has(node.id())) node.hide();
+            else node.show();
         });
 
         this.cy.edges().forEach(edge => {
-            if (!nodesToKeep.has(edge.source().id()) || !nodesToKeep.has(edge.target().id())) {
-                edge.hide();
-            } else {
-                edge.show();
-            }
+            if (!nodesToKeep.has(edge.source().id()) || !nodesToKeep.has(edge.target().id())) edge.hide();
+            else edge.show();
         });
 
+        // Trigger layout if nodes were revealed (especially by global filters)
+        if (this._layoutDebounceTimer) {
+            clearTimeout(this._layoutDebounceTimer);
+        }
+        this._layoutDebounceTimer = setTimeout(() => {
+            if (!this.cy) return;
+            this.cy.resize();
+            const visibleElements = this.cy.elements(':visible');
+            if (visibleElements.length === 0) return;
+            
+            const hasUnpositionedNodes = visibleElements.nodes().some(n => {
+                const pos = n.position();
+                return !pos || isNaN(pos.x) || isNaN(pos.y) || (pos.x === 0 && pos.y === 0);
+            });
+
+            // If global filter is active, we almost certainly want to relayout to accommodate newly revealed ancestors
+            if (hasUnpositionedNodes || isGlobalFilterActive) {
+                this._hasRunInitialLayout = true;
+                const layoutSelect = document.getElementById('layout-select');
+                let layoutName = layoutSelect ? layoutSelect.value : this.getAvailableLayout();
+                if (layoutName === 'cose-bilkent' && typeof cytoscapeCoseBilkent === 'undefined') {
+                    layoutName = 'cose';
+                }
+                const layoutOptions = this.getLayoutOptions(layoutName, visibleElements);
+
+                if (layoutOptions.name === 'preset' && layoutOptions.positions) {
+                    const posMap = layoutOptions.positions;
+                    visibleElements.nodes().forEach(node => {
+                        const targetPos = posMap[node.id()];
+                        if (targetPos) {
+                            node.animate({
+                                position: targetPos,
+                                duration: 500,
+                                easing: 'ease-in-out'
+                            });
+                        }
+                    });
+                    setTimeout(() => {
+                        if (this.cy) {
+                            this.cy.resize();
+                            const currentVisible = this.cy.nodes(':visible');
+                            if (currentVisible.length > 0) {
+                                this.cy.animate({ fit: { eles: currentVisible, padding: 50 }, duration: 500 });
+                            }
+                        }
+                    }, 600);
+                } else {
+                    const layout = visibleElements.layout({
+                        ...layoutOptions,
+                        name: layoutOptions.name || layoutName,
+                        animate: true,
+                        animationDuration: 500,
+                        fit: true,
+                        padding: 30
+                    });
+                    layout.run();
+                }
+            } else {
+                this.cy.animate({ fit: { eles: visibleElements, padding: 50 }, duration: 500 });
+            }
+        }, 100);
     }
 
-    renderRiskMetricsAccordion(nodeData, elements) {
+        renderRiskMetricsAccordion(nodeData, elements) {
         const connectedVulns = this.findConnectedVulnerabilities(nodeData.id, elements);
         const connectedServices = (nodeData.type === 'ip' || nodeData.type === 'domain' || nodeData.type === 'subdomain' || nodeData.type === 'target' || nodeData.type === 'network') 
             ? this.findConnectedServices(nodeData.id, elements) 

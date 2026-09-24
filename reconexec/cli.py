@@ -77,7 +77,7 @@ cli_name = "reconexec"
 
 app = typer.Typer(
     name=cli_name,
-    help="""ReconExec v3.0.0 - Advanced Passive Recon Like a Boss
+    help="""ReconExec v3.1.0 - Advanced Passive Recon Like a Boss
 
  ┌─────────────┐   ┌────────────────┐   ┌────────────────┐   ┌─────────────┐
  │  ReconExec  │──▶│ Asset Mapping  │──▶│ Threat Intel   │──▶│ ReconHound  │

@@ -1617,7 +1617,7 @@ class EASMDashboard {
                         'background-color': '#111116',
                         'label': function(ele) {
                             const name = ele.data('name') || ele.data('label') || 'Target';
-                            return `${name}\n(Scope Anchor)`;
+                            return `${name}\n(ReconExec)`;
                         },
                         'color': '#ffffff',
                         'text-valign': 'bottom',

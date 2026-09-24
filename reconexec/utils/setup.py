@@ -384,14 +384,14 @@ class SetupManager:
             self.console.print("  [green][+] All Python core dependencies are satisfied.[/green]")
 
         # Step 4: Masscan capabilities & dependency configuration
-        self.console.print("\n⚡ [bold white]Step 4/6: Configuring Masscan network capabilities...[/bold white]")
+        self.console.print("\n[+] [bold white]Step 4/6: Configuring Masscan network capabilities...[/bold white]")
         masscan_bin = shutil.which("masscan")
         if masscan_bin:
             # Check libpcap library integrity
             try:
                 res = subprocess.run([masscan_bin, "--echo"], capture_output=True, text=True, timeout=3, check=False)
                 if "failed to load libpcap" in (res.stdout + res.stderr).lower():
-                    self.console.print("  [yellow]⚠ Masscan found, but required library 'libpcap' is missing.[/yellow]")
+                    self.console.print("  [yellow][!] Masscan found, but required library 'libpcap' is missing.[/yellow]")
                     is_root = hasattr(os, "geteuid") and os.geteuid() == 0
                     if is_root and shutil.which("apt-get"):
                         self.console.print("  [cyan]Attempting automatic installation of libpcap0.8...[/cyan]")
@@ -399,11 +399,11 @@ class SetupManager:
                             subprocess.run(["apt-get", "update", "-qq"], check=False)
                             install_res = subprocess.run(["apt-get", "install", "-y", "-qq", "libpcap0.8"], check=False)
                             if install_res.returncode == 0:
-                                self.console.print("  [green]✔ Successfully installed libpcap0.8.[/green]")
+                                self.console.print("  [green][+] Successfully installed libpcap0.8.[/green]")
                             else:
-                                self.console.print("  [yellow]⚠ Please install manually: sudo apt install -y libpcap0.8[/yellow]")
+                                self.console.print("  [yellow][!] Please install manually: sudo apt install -y libpcap0.8[/yellow]")
                         except Exception:
-                            self.console.print("  [yellow]⚠ Please install manually: sudo apt install -y libpcap0.8[/yellow]")
+                            self.console.print("  [yellow][!] Please install manually: sudo apt install -y libpcap0.8[/yellow]")
                     else:
                         self.console.print("  [yellow]Run manually: sudo apt install -y libpcap0.8 (or pacman/dnf equivalent)[/yellow]")
             except Exception:
@@ -411,7 +411,7 @@ class SetupManager:
 
             is_root = hasattr(os, "geteuid") and os.geteuid() == 0
             if is_root:
-                self.console.print("  [green]✔ Running as root: raw packet sockets are natively authorized.[/green]")
+                self.console.print("  [green][+] Running as root: raw packet sockets are natively authorized.[/green]")
             else:
                 setcap_bin = shutil.which("setcap")
                 if setcap_bin:
@@ -432,13 +432,68 @@ class SetupManager:
             self.console.print("    [dim]Install on Linux with: sudo apt install -y masscan (or pacman/dnf)[/dim]")
 
         # Step 5: ExploitDB Cache Update
-        self.console.print("\n[+] [bold white]Step 5/6: Initializing ExploitDB vulnerability mapping...[/bold white]")
-        try:
-            from reconexec.modules.exploitdb import ExploitDBModule
-            ExploitDBModule.update_database()
-            self.console.print("  [green][+] ExploitDB mapping database initialized & updated.[/green]")
-        except Exception as exc:
-            self.console.print(f"  [yellow][!] ExploitDB update notice: {exc}[/yellow]")
+        self.console.print("\n[+] [bold white]Step 5/6: Initializing Exploit Vulnerability Mapping...[/bold white]")
+        from rich.panel import Panel
+        from rich.prompt import Confirm
+        
+        warning_text = (
+            "ReconExec needs to download and map the full Exploit-DB database (~150MB).\n"
+            "This process performs heavy JSON indexing to map CVEs to exploit IDs locally.\n\n"
+            "☕ Depending on your internet speed and CPU, this usually takes 1 to 3 minutes.\n"
+            "Feel free to grab a coffee while we crunch the data!"
+        )
+        self.console.print(Panel(warning_text, title="Exploit-DB Synchronization", border_style="cyan", expand=False))
+        
+        if Confirm.ask("Do you want to synchronize the Exploit-DB database now? (You can skip and do it later)", default=True):
+            try:
+                from rich.progress import Progress, TextColumn, BarColumn, TaskProgressColumn, TimeRemainingColumn
+                
+                with Progress(
+                    TextColumn("[progress.description]{task.description}"),
+                    BarColumn(),
+                    TaskProgressColumn(),
+                    TimeRemainingColumn(),
+                    console=self.console,
+                ) as progress:
+                    task = progress.add_task("[cyan]Downloading & Indexing Exploits...", total=100)
+                    
+                    cmd = [shutil.which("cve_searchsploit") or "cve_searchsploit", "-u"]
+                    proc = subprocess.Popen(
+                        cmd, 
+                        stdout=subprocess.PIPE, 
+                        stderr=subprocess.STDOUT
+                    )
+                    
+                    import re
+                    pattern = re.compile(r'\s*(\d+)%\s*\(')
+                    buffer = ""
+                    
+                    while True:
+                        char = proc.stdout.read(1)
+                        if not char:
+                            break
+                        
+                        try:
+                            char_str = char.decode('utf-8')
+                        except UnicodeDecodeError:
+                            continue
+                            
+                        if char_str in ('\r', '\n'):
+                            match = pattern.search(buffer)
+                            if match:
+                                pct = float(match.group(1))
+                                progress.update(task, completed=pct)
+                            buffer = ""
+                        else:
+                            buffer += char_str
+                            
+                    progress.update(task, completed=100)
+                
+                self.console.print("  [green][+] Exploit-DB mapping database initialized & updated.[/green]")
+            except Exception as exc:
+                self.console.print(f"  [yellow][!] ExploitDB update failed: {exc}[/yellow]")
+        else:
+            self.console.print("  [yellow][!] Skipping Exploit-DB synchronization.[/yellow]")
 
         # Step 6: Nuclei Templates Check
         self.console.print("\n[+] [bold white]Step 6/6: Checking Nuclei vulnerability engine...[/bold white]")

@@ -129,7 +129,7 @@ class WebServerManager:
                 import json
                 state = json.loads(self.state_file.read_text(encoding="utf-8"))
                 if not self.is_running():
-                    if "host" in state and host == "127.0.0.1":
+                    if "host" in state and host in ("127.0.0.1", "0.0.0.0"):
                         host = state["host"]
                     if "port" in state and port == 8000:
                         port = state["port"]
@@ -278,6 +278,17 @@ class WebServerManager:
         self.state_file.write_text(json.dumps(state, indent=2))
     
     def _cleanup_state(self) -> None:
-        """Remove state file."""
+        """Clean up state file but preserve host and port overrides."""
         if self.state_file.exists():
-            self.state_file.unlink()
+            try:
+                state = self._read_state()
+                new_state = {}
+                if "host" in state:
+                    new_state["host"] = state["host"]
+                if "port" in state:
+                    new_state["port"] = state["port"]
+                new_state["status"] = "STOPPED"
+                new_state["pid"] = None
+                self._write_state(new_state)
+            except Exception:
+                self.state_file.unlink()

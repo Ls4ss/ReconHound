@@ -606,9 +606,16 @@ def start_server(
         
         if success:
             real_ip = get_real_ip()
+            actual_port = port
+            actual_host = host
+            status = manager.get_status()
+            if status:
+                actual_port = status.get('port', port)
+                actual_host = status.get('host', host)
+                
             print_success(f"[+] ReconHound web server started successfully!")
-            console.print(f"  -> [bold cyan]Local Access:[/bold cyan]   [bold underline cyan]http://localhost:{port}[/bold underline cyan]")
-            console.print(f"  -> [bold cyan]Network Access:[/bold cyan] [bold underline cyan]http://{real_ip}:{port}[/bold underline cyan]")
+            console.print(f"  -> [bold cyan]Local Access:[/bold cyan]   [bold underline cyan]http://localhost:{actual_port}[/bold underline cyan]")
+            console.print(f"  -> [bold cyan]Network Access:[/bold cyan] [bold underline cyan]http://{real_ip}:{actual_port}[/bold underline cyan]")
             if db:
                 print_info(f"[i] Initial Database: {db}")
             else:

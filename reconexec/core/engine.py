@@ -1265,5 +1265,4 @@ class ThreatTrackEngine:
 
 
 # Alias for backward compatibility and clean branding
-DetectIEngine = ThreatTrackEngine
 

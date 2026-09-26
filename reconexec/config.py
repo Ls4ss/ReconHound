@@ -10,9 +10,9 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 # Define the global base directory for ReconExec data
-custom_path = os.getenv("DETECTI_HOME", str(Path.home() / ".reconexec"))
-DETECTI_HOME = Path(custom_path)
-DETECTI_HOME.mkdir(parents=True, exist_ok=True)
+custom_path = os.getenv("RECONHOUND_HOME", str(Path.home() / ".reconexec"))
+RECONHOUND_HOME = Path(custom_path)
+RECONHOUND_HOME.mkdir(parents=True, exist_ok=True)
 
 
 def is_placeholder_key(val: Optional[str]) -> bool:
@@ -56,7 +56,7 @@ def sanitize_api_key(val: Optional[str]) -> Optional[str]:
 def _find_legacy_api_key() -> Optional[str]:
     """Look for legacy API.txt file in working directory or package root."""
     candidate_paths = [
-        DETECTI_HOME / "API.txt",
+        RECONHOUND_HOME / "API.txt",
         Path.cwd() / "API.txt",
         Path(__file__).resolve().parent / "API.txt",
         Path(__file__).resolve().parent.parent / "API.txt",
@@ -77,10 +77,10 @@ class Settings(BaseSettings):
     """ReconExec Application Settings."""
 
     model_config = SettingsConfigDict(
-        env_file=(str(DETECTI_HOME / ".env"), ".env", "reconexec/.env", "threattrack/.env"),
+        env_file=(str(RECONHOUND_HOME / ".env"), ".env", "reconexec/.env", "threattrack/.env"),
         env_file_encoding="utf-8",
         extra="ignore",
-        env_prefix="DETECTI_",
+        env_prefix="RECONHOUND_",
     )
 
     # API Keys (can also be read from direct standard env vars like SHODAN_API_KEY)

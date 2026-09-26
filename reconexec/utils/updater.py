@@ -2,11 +2,11 @@ import json
 import time
 from typing import Optional
 from pathlib import Path
-from reconexec.config import DETECTI_HOME
+from reconexec.config import RECONHOUND_HOME
 
 def check_for_updates(current_version: str, force: bool = False) -> Optional[str]:
     """Check PyPI for a newer version of reconexec, caching the result to avoid spamming."""
-    cache_file = DETECTI_HOME / "last_update_check.json"
+    cache_file = RECONHOUND_HOME / "last_update_check.json"
     
     if cache_file.exists() and not force:
         try:

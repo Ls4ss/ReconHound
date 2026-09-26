@@ -39,13 +39,13 @@ class DeleteDbRequest(BaseModel):
 
 @router.get("/databases")
 async def list_databases(request: Request) -> Dict:
-    """List all available SQLite databases in DETECTI_HOME/data/dbs/ and return the currently active one."""
+    """List all available SQLite databases in RECONHOUND_HOME/data/dbs/ and return the currently active one."""
     try:
-        from config import DETECTI_HOME
+        from config import RECONHOUND_HOME
     except ImportError:
-        DETECTI_HOME = Path.home() / ".reconexec"
+        RECONHOUND_HOME = Path.home() / ".reconexec"
         
-    data_dir = DETECTI_HOME / "data" / "dbs"
+    data_dir = RECONHOUND_HOME / "data" / "dbs"
     databases = []
     
     current_db_path = getattr(request.app.state, "db_path", None)
@@ -134,10 +134,10 @@ async def select_database(req: SelectDbRequest, request: Request) -> Dict:
 
 def _get_dbs_dir() -> Path:
     try:
-        from config import DETECTI_HOME
+        from config import RECONHOUND_HOME
     except ImportError:
-        DETECTI_HOME = Path.home() / ".reconexec"
-    base = DETECTI_HOME / "data" / "dbs"
+        RECONHOUND_HOME = Path.home() / ".reconexec"
+    base = RECONHOUND_HOME / "data" / "dbs"
     if not base.exists():
         base.mkdir(parents=True, exist_ok=True)
     return base
@@ -542,11 +542,11 @@ async def import_scan_data(file: UploadFile = File(...)):
             raise HTTPException(status_code=400, detail=f"Invalid JSON format or schema mismatch: {str(e)}")
             
         # 2. Generate a new database path
-        from reconexec.config import DETECTI_HOME
+        from reconexec.config import RECONHOUND_HOME
         from reconexec.core.database.storage import DatabaseManager
         from datetime import datetime
         
-        dbs_dir = DETECTI_HOME / "data" / "dbs"
+        dbs_dir = RECONHOUND_HOME / "data" / "dbs"
         dbs_dir.mkdir(parents=True, exist_ok=True)
         
         base_name = file.filename[:-5] if file.filename.endswith('.json') else file.filename

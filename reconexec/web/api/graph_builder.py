@@ -169,23 +169,23 @@ class GraphBuilder:
             if target_type == "file":
                 from pathlib import Path
                 try:
-                    from config import DETECTI_HOME
+                    from config import RECONHOUND_HOME
                 except ImportError:
-                    DETECTI_HOME = Path.home() / ".reconexec"
+                    RECONHOUND_HOME = Path.home() / ".reconexec"
                 clean_path = str(target_name).strip()
                 candidates = [
                     Path(clean_path),
-                    DETECTI_HOME / clean_path,
-                    DETECTI_HOME / "data" / clean_path,
-                    DETECTI_HOME / "data" / "targets" / clean_path,
-                    DETECTI_HOME / "tests" / clean_path,
+                    RECONHOUND_HOME / clean_path,
+                    RECONHOUND_HOME / "data" / clean_path,
+                    RECONHOUND_HOME / "data" / "targets" / clean_path,
+                    RECONHOUND_HOME / "tests" / clean_path,
                 ]
                 # Also try adding standard text extensions
                 if "." not in clean_path:
                     for ext in [".txt", ".scope", ".list"]:
                         candidates.append(Path(f"{clean_path}{ext}"))
-                        candidates.append(DETECTI_HOME / f"{clean_path}{ext}")
-                        candidates.append(DETECTI_HOME / "data" / f"{clean_path}{ext}")
+                        candidates.append(RECONHOUND_HOME / f"{clean_path}{ext}")
+                        candidates.append(RECONHOUND_HOME / "data" / f"{clean_path}{ext}")
 
                 file_obj = None
                 for cand in candidates:

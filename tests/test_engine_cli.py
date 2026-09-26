@@ -18,7 +18,7 @@ except Exception as e:
     reconexec_cli = None
     app = None
 
-from core.engine import ThreatTrackEngine, DetectIEngine
+from core.engine import ThreatTrackEngine
 from core.models import Finding, FindingType, PortData
 
 runner = CliRunner()

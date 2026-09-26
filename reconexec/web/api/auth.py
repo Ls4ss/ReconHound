@@ -10,8 +10,8 @@ from jose import JWTError, jwt
 from reconexec.core.database.config_db import ConfigDBManager, verify_password
 
 from dotenv import load_dotenv
-from reconexec.config import DETECTI_HOME
-load_dotenv(DETECTI_HOME / ".env")
+from reconexec.config import RECONHOUND_HOME
+load_dotenv(RECONHOUND_HOME / ".env")
 
 # Secret key for JWT
 SECRET_KEY = os.environ.get("JWT_SECRET_KEY")
@@ -28,8 +28,8 @@ class Token(BaseModel):
     token_type: str
 
 def get_config_db():
-    from reconexec.config import DETECTI_HOME
-    db_path = DETECTI_HOME / "data" / "config.sqlite"
+    from reconexec.config import RECONHOUND_HOME
+    db_path = RECONHOUND_HOME / "data" / "config.sqlite"
     return ConfigDBManager(db_path)
 
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):

@@ -52,22 +52,22 @@ def create_app(db_path: str = None) -> FastAPI:
         allow_headers=["*"],
     )
     
-    # Load DETECTI_HOME for global path resolution
+    # Load RECONHOUND_HOME for global path resolution
     try:
-        from config import DETECTI_HOME
+        from config import RECONHOUND_HOME
     except ImportError:
-        DETECTI_HOME = Path.home() / ".reconexec"
+        RECONHOUND_HOME = Path.home() / ".reconexec"
 
     # Check if db_path was provided or auto-discover from data/dbs/
     resolved_db_path = None
     if db_path:
         p = Path(db_path)
         if not p.is_absolute():
-            candidate = DETECTI_HOME / "data" / "dbs" / db_path
+            candidate = RECONHOUND_HOME / "data" / "dbs" / db_path
             if candidate.exists():
                 p = candidate
             elif not db_path.endswith(".sqlite"):
-                cand_ext = DETECTI_HOME / "data" / "dbs" / f"{db_path}.sqlite"
+                cand_ext = RECONHOUND_HOME / "data" / "dbs" / f"{db_path}.sqlite"
                 if cand_ext.exists():
                     p = cand_ext
         if p.exists():
@@ -75,7 +75,7 @@ def create_app(db_path: str = None) -> FastAPI:
     
     if not resolved_db_path:
         # Auto-discover databases in data/dbs/ - Prioritize example.com.sqlite as default if present
-        dbs_dir = DETECTI_HOME / "data" / "dbs"
+        dbs_dir = RECONHOUND_HOME / "data" / "dbs"
         if dbs_dir.exists():
             example_db = dbs_dir / "example.com.sqlite"
             if example_db.exists():

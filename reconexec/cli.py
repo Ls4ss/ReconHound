@@ -37,8 +37,8 @@ try:
 except importlib.metadata.PackageNotFoundError:
     __version__ = "dev"
 
-from reconexec.config import settings, DETECTI_HOME
-from reconexec.core.engine import ThreatTrackEngine, DetectIEngine
+from reconexec.config import settings, RECONHOUND_HOME
+from reconexec.core.engine import ThreatTrackEngine
 from reconexec.modules.exploitdb import ExploitDBModule
 from reconexec.reporters.html_reporter import HTMLReporter
 from reconexec.reporters.json_reporter import JSONReporter
@@ -313,7 +313,7 @@ def _execute_scan(
             else:
                 db_name = target_to_db_name(target)
             
-            dbs_dir = DETECTI_HOME / "data" / "dbs"
+            dbs_dir = RECONHOUND_HOME / "data" / "dbs"
             dbs_dir.mkdir(parents=True, exist_ok=True)
             final_db_path = dbs_dir / db_name
             final_db_name = db_name
@@ -755,7 +755,7 @@ def restart_server(
 def list_databases() -> None:
     """List all available EASM target SQLite databases in ./data/dbs/."""
     
-    data_dir = DETECTI_HOME / "data" / "dbs"
+    data_dir = RECONHOUND_HOME / "data" / "dbs"
     if not data_dir.exists():
         print_warning("No databases directory found. Run a scan with --persist to create databases.")
         return

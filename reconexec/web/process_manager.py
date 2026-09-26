@@ -16,13 +16,13 @@ except ImportError:
     psutil = None
     PSUTIL_AVAILABLE = False
 
-from reconexec.config import DETECTI_HOME
+from reconexec.config import RECONHOUND_HOME
 
 
 class WebServerManager:
     """Manages background web server process lifecycle."""
     
-    def __init__(self, state_file: Path = DETECTI_HOME / "run" / ".webserver.json"):
+    def __init__(self, state_file: Path = RECONHOUND_HOME / "run" / ".webserver.json"):
         self.state_file = state_file
         self.state_file.parent.mkdir(parents=True, exist_ok=True)
     
@@ -144,19 +144,19 @@ class WebServerManager:
             # Resolve database path
             if not os.path.isabs(db_path):
                 # Check if it's in ./data/dbs/ directory
-                data_db_path = DETECTI_HOME / "data" / "dbs" / db_path
+                data_db_path = RECONHOUND_HOME / "data" / "dbs" / db_path
                 if data_db_path.exists():
                     resolved_db_path = str(data_db_path.resolve())
                 else:
                     # Try with .sqlite extension if not present
                     if not db_path.endswith('.sqlite'):
-                        data_db_path_with_ext = DETECTI_HOME / "data" / "dbs" / f"{db_path}.sqlite"
+                        data_db_path_with_ext = RECONHOUND_HOME / "data" / "dbs" / f"{db_path}.sqlite"
                         if data_db_path_with_ext.exists():
                             resolved_db_path = str(data_db_path_with_ext.resolve())
                         else:
                             # Try removing underscores and using dots (example_com -> example.com)
                             normalized_name = db_path.replace('_', '.')
-                            data_db_normalized = DETECTI_HOME / "data" / "dbs" / f"{normalized_name}.sqlite"
+                            data_db_normalized = RECONHOUND_HOME / "data" / "dbs" / f"{normalized_name}.sqlite"
                             if data_db_normalized.exists():
                                 resolved_db_path = str(data_db_normalized.resolve())
                             else:

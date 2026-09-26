@@ -12,7 +12,7 @@ from typing import Any, Dict, List, Optional, Tuple
 from rich.console import Console
 from rich.table import Table
 
-from reconexec.config import DETECTI_HOME
+from reconexec.config import RECONHOUND_HOME
 
 class SetupManager:
     """Manages prerequisite diagnostics and automated system setup for ReconExec."""
@@ -83,7 +83,7 @@ class SetupManager:
     def check_directories(self) -> Dict[str, Any]:
         """Ensure required operational directories exist."""
         dirs = [
-            DETECTI_HOME / "data" / "dbs",
+            RECONHOUND_HOME / "data" / "dbs",
             Path.cwd() / "reports",
         ]
         missing = [d for d in dirs if not d.exists()]
@@ -97,7 +97,7 @@ class SetupManager:
 
     def check_env_file(self) -> Dict[str, Any]:
         """Check if .env configuration file exists."""
-        env_path = DETECTI_HOME / ".env"
+        env_path = RECONHOUND_HOME / ".env"
         exists = env_path.is_file()
         return {
             "name": "Environment Configuration (.env)",
@@ -236,7 +236,7 @@ class SetupManager:
 
     def check_demo_database(self) -> Dict[str, Any]:
         """Check default demo graph database."""
-        db_path = DETECTI_HOME / "data" / "dbs" / "example.com.sqlite"
+        db_path = RECONHOUND_HOME / "data" / "dbs" / "example.com.sqlite"
         exists = db_path.is_file()
         return {
             "name": "Default Demo Graph Dataset",
@@ -286,7 +286,7 @@ class SetupManager:
                 import hashlib
                 import re
                 jwt_secret = hashlib.sha256(password.encode('utf-8')).hexdigest()
-                env_path = DETECTI_HOME / '.env'
+                env_path = RECONHOUND_HOME / '.env'
                 if env_path.exists():
                     with open(env_path, 'r') as f:
                         env_content = f.read()
@@ -305,9 +305,9 @@ class SetupManager:
             sys.path.insert(0, str(self.root_dir))
             from reconexec.core.database.config_db import ConfigDBManager, get_password_hash
             
-            db_dir = DETECTI_HOME / "data" / "dbs"
+            db_dir = RECONHOUND_HOME / "data" / "dbs"
             db_dir.mkdir(parents=True, exist_ok=True)
-            config_db = ConfigDBManager(DETECTI_HOME / "data" / "config.sqlite")
+            config_db = ConfigDBManager(RECONHOUND_HOME / "data" / "config.sqlite")
             
             if config_db.user_exists("admin"):
                 change = self.console.input("  [yellow]Admin user already exists. Do you want to change the password? (y/N): [/yellow]").strip().lower()
@@ -347,11 +347,11 @@ class SetupManager:
 
         # Step 1: Create Directories & Copy Demo DB
         self.console.print("[+] [bold white]Step 1/6: Initializing project directories...[/bold white]")
-        for d in [DETECTI_HOME / "data" / "dbs", Path.cwd() / "reports"]:
+        for d in [RECONHOUND_HOME / "data" / "dbs", Path.cwd() / "reports"]:
             d.mkdir(parents=True, exist_ok=True)
             
         demo_db_src = self.root_dir / "data" / "dbs" / "example.com.sqlite"
-        demo_db_dst = DETECTI_HOME / "data" / "dbs" / "example.com.sqlite"
+        demo_db_dst = RECONHOUND_HOME / "data" / "dbs" / "example.com.sqlite"
         if demo_db_src.exists() and not demo_db_dst.exists():
             shutil.copy2(demo_db_src, demo_db_dst)
             self.console.print("  [green][+] Demo database (example.com.sqlite) initialized.[/green]")
@@ -360,7 +360,7 @@ class SetupManager:
 
         # Step 2: Configure .env
         self.console.print("\n[+] [bold white]Step 2/6: Checking environment configuration (.env)...[/bold white]")
-        env_file = DETECTI_HOME / ".env"
+        env_file = RECONHOUND_HOME / ".env"
         if env_file.exists():
             self.console.print(f"  [green][+] Existing .env file detected at {env_file} and preserved.[/green]")
         else:

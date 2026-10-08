@@ -2245,6 +2245,11 @@ class EASMDashboard {
             }
         });
 
+        // Autocura do Estado Global: Limpeza de estado quando a janela perde o foco
+        window.addEventListener('blur', () => { isModifierHeld = false; });
+        document.addEventListener('visibilitychange', () => { if (document.hidden) isModifierHeld = false; });
+        window.addEventListener('contextmenu', () => { isModifierHeld = false; });
+
         // Node Left-Click Handler:
         // Single click: select ONLY this node and show inspector
         // Ctrl/Cmd + Left-Click: toggle selection on this node while keeping previously selected nodes
@@ -2254,6 +2259,12 @@ class EASMDashboard {
         this.cy.on('tap', 'node', (event) => {
             const node = event.target;
             const originalEvent = event.originalEvent;
+            
+            // Re-sincroniza o estado global caso o evento fisico nativo afirme que a tecla esta pressionada
+            if (originalEvent && (originalEvent.ctrlKey || originalEvent.metaKey || originalEvent.shiftKey)) {
+                isModifierHeld = true;
+            }
+            
             const isMultiSelect = isModifierHeld || (originalEvent && (originalEvent.ctrlKey || originalEvent.metaKey || originalEvent.shiftKey));
 
             this.hideContextMenu();
@@ -4271,7 +4282,10 @@ class EASMDashboard {
         try {
             this.selectedNode = node;
             const data = (typeof node.data === 'function') ? node.data() : (node.data || node);
-            if (!data) return;
+            if (!data) {
+                console.warn('[ReconHound UI] Falha ao abrir Inspetor: O nó selecionado não possui payload de dados (data).');
+                return;
+            }
 
             const renderSourceTags = (sourcesList) => {
                 if (!sourcesList || !Array.isArray(sourcesList) || sourcesList.length === 0) return '';
@@ -4311,7 +4325,10 @@ class EASMDashboard {
             const drawer = document.getElementById('inspector-drawer');
             const content = document.getElementById('inspector-content');
             const title = document.getElementById('inspector-title');
-            if (!drawer || !content || !title) return;
+            if (!drawer || !content || !title) {
+                console.warn('[ReconHound UI] Falha ao abrir Inspetor Lateral: Elementos do DOM (drawer/content/title) ausentes.');
+                return;
+            }
 
             // Set title based on node type
             const nodeType = (data.type || 'UNKNOWN').toUpperCase();
